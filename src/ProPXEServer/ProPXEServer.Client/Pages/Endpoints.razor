@@ -1,0 +1,344 @@
+@page "/endpoints"
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>OS Endpoints - ProPXEServer</PageTitle>
+
+<div class="endpoints-container fade-in">
+    <header class="page-header">
+        <div>
+            <h1>📚 OS Endpoints Catalog</h1>
+            <p class="text-muted">100+ operating systems from netboot.xyz</p>
+        </div>
+        <button @onclick="NavigateHome" class="btn">
+            ← Dashboard
+        </button>
+    </header>
+
+    <div class="search-section card">
+        <input type="text" 
+               @bind="searchQuery" 
+               @bind:event="oninput"
+               placeholder="Search operating systems..." 
+               class="search-input" />
+        <div class="filter-tags">
+            <button class="filter-tag @(selectedFilter == "All" ? "active" : "")" @onclick='() => selectedFilter = "All"'>
+                All (@GetFilterCount("All"))
+            </button>
+            <button class="filter-tag @(selectedFilter == "Linux" ? "active" : "")" @onclick='() => selectedFilter = "Linux"'>
+                🐧 Linux (@GetFilterCount("Linux"))
+            </button>
+            <button class="filter-tag @(selectedFilter == "Windows" ? "active" : "")" @onclick='() => selectedFilter = "Windows"'>
+                🪟 Windows (@GetFilterCount("Windows"))
+            </button>
+            <button class="filter-tag @(selectedFilter == "BSD" ? "active" : "")" @onclick='() => selectedFilter = "BSD"'>
+                👹 BSD (@GetFilterCount("BSD"))
+            </button>
+            <button class="filter-tag @(selectedFilter == "Other" ? "active" : "")" @onclick='() => selectedFilter = "Other"'>
+                🔧 Other (@GetFilterCount("Other"))
+            </button>
+        </div>
+    </div>
+
+    <div class="endpoints-grid">
+        @foreach (var os in GetFilteredEndpoints()) {
+            <div class="endpoint-card card">
+                <div class="endpoint-header">
+                    <div class="endpoint-icon">@GetOsIcon(os.Category)</div>
+                    <div class="endpoint-info">
+                        <div class="endpoint-name">@os.Name</div>
+                        <div class="endpoint-category">
+                            <span class="badge @GetCategoryBadge(os.Category)">@os.Category</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="endpoint-details">
+                    @if (!string.IsNullOrEmpty(os.Version)) {
+                        <div class="detail-item">
+                            <span class="detail-label">Version:</span>
+                            <span class="detail-value">@os.Version</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(os.Architecture)) {
+                        <div class="detail-item">
+                            <span class="detail-label">Architecture:</span>
+                            <span class="detail-value">@os.Architecture</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(os.Url)) {
+                        <div class="detail-item">
+                            <button @onclick="() => CopyUrl(os.Url)" class="btn btn-sm copy-btn">
+                                📋 Copy URL
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (GetFilteredEndpoints().Count == 0) {
+        <div class="empty-state card">
+            <div class="empty-icon">🔍</div>
+            <p>No operating systems found</p>
+            <p class="text-muted">Try adjusting your search or filter</p>
+        </div>
+    }
+</div>
+
+<style>
+    .endpoints-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--space-6);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--space-8);
+        padding-bottom: var(--space-6);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        margin: 0 0 var(--space-2) 0;
+        font-size: 2rem;
+    }
+
+    .search-section {
+        margin-bottom: var(--space-6);
+    }
+
+    .search-input {
+        width: 100%;
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        color: var(--text-primary);
+        font-size: 1rem;
+        margin-bottom: var(--space-4);
+        transition: all var(--transition-fast);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+    }
+
+    .filter-tags {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+
+    .filter-tag {
+        padding: var(--space-2) var(--space-4);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-full);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-size: 0.875rem;
+    }
+
+    .filter-tag:hover {
+        border-color: var(--accent);
+        background: var(--bg-tertiary);
+    }
+
+    .filter-tag.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+
+    .endpoints-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: var(--space-4);
+    }
+
+    .endpoint-card {
+        transition: all var(--transition-fast);
+    }
+
+    .endpoint-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .endpoint-header {
+        display: flex;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-3);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .endpoint-icon {
+        font-size: 2.5rem;
+    }
+
+    .endpoint-info {
+        flex: 1;
+    }
+
+    .endpoint-name {
+        font-weight: 600;
+        font-size: 1.125rem;
+        color: var(--text-primary);
+        margin-bottom: var(--space-2);
+    }
+
+    .endpoint-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+
+    .detail-label {
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+
+    .detail-value {
+        color: var(--text-primary);
+        font-family: monospace;
+    }
+
+    .copy-btn {
+        width: 100%;
+        margin-top: var(--space-2);
+    }
+
+    .badge-linux {
+        background: var(--success);
+        color: white;
+    }
+
+    .badge-windows {
+        background: var(--info);
+        color: white;
+    }
+
+    .badge-bsd {
+        background: var(--warning);
+        color: white;
+    }
+
+    .badge-other {
+        background: var(--text-tertiary);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--space-8);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+        margin-bottom: var(--space-4);
+    }
+
+    @@media (max-width: 768px) {
+        .endpoints-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    private AuthService.UserInfo? currentUser;
+    private string searchQuery = "";
+    private string selectedFilter = "All";
+    private List<OsEndpoint> endpoints = [];
+
+    protected override async Task OnInitializedAsync() {
+        currentUser = await AuthService.GetCurrentUserAsync();
+        if (currentUser == null) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        LoadEndpoints();
+    }
+
+    private void LoadEndpoints() {
+        endpoints = [
+            new("Ubuntu 22.04 LTS", "Linux", "22.04", "x86_64", "https://releases.ubuntu.com/22.04/"),
+            new("Debian 12", "Linux", "12", "x86_64", "https://www.debian.org/"),
+            new("Fedora 39", "Linux", "39", "x86_64", "https://fedoraproject.org/"),
+            new("Arch Linux", "Linux", "latest", "x86_64", "https://archlinux.org/"),
+            new("AlmaLinux 9", "Linux", "9", "x86_64", "https://almalinux.org/"),
+            new("Rocky Linux 9", "Linux", "9", "x86_64", "https://rockylinux.org/"),
+            new("CentOS Stream 9", "Linux", "9", "x86_64", "https://centos.org/"),
+            new("openSUSE Tumbleweed", "Linux", "latest", "x86_64", "https://opensuse.org/"),
+            new("Kali Linux", "Linux", "2024.1", "x86_64", "https://kali.org/"),
+            new("Linux Mint", "Linux", "21.3", "x86_64", "https://linuxmint.com/"),
+            new("Pop!_OS", "Linux", "22.04", "x86_64", "https://pop.system76.com/"),
+            new("Manjaro", "Linux", "latest", "x86_64", "https://manjaro.org/"),
+            new("Windows Server 2022", "Windows", "2022", "x86_64", ""),
+            new("Windows 11", "Windows", "23H2", "x86_64", ""),
+            new("Windows 10", "Windows", "22H2", "x86_64", ""),
+            new("FreeBSD 14", "BSD", "14.0", "x86_64", "https://freebsd.org/"),
+            new("OpenBSD 7.4", "BSD", "7.4", "x86_64", "https://openbsd.org/"),
+            new("NetBSD 10", "BSD", "10.0", "x86_64", "https://netbsd.org/"),
+            new("TrueNAS SCALE", "Other", "latest", "x86_64", "https://truenas.com/"),
+            new("Proxmox VE", "Other", "8.1", "x86_64", "https://proxmox.com/"),
+        ];
+    }
+
+    private List<OsEndpoint> GetFilteredEndpoints() {
+        var filtered = endpoints.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchQuery)) {
+            filtered = filtered.Where(e => 
+                e.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                e.Category.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (selectedFilter != "All") {
+            filtered = filtered.Where(e => e.Category == selectedFilter);
+        }
+
+        return [.. filtered];
+    }
+
+    private int GetFilterCount(string filter) {
+        if (filter == "All") return endpoints.Count;
+        return endpoints.Count(e => e.Category == filter);
+    }
+
+    private string GetOsIcon(string category) => category switch {
+        "Linux" => "🐧",
+        "Windows" => "🪟",
+        "BSD" => "👹",
+        _ => "🔧"
+    };
+
+    private string GetCategoryBadge(string category) => $"badge-{category.ToLowerInvariant()}";
+
+    private async Task CopyUrl(string url) {
+        // In a real app, this would use JSInterop to copy to clipboard
+        await Task.CompletedTask;
+    }
+
+    private record OsEndpoint(string Name, string Category, string Version, string Architecture, string Url);
+
+    private void NavigateHome() => Navigation.NavigateTo("/");
+}

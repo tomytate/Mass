@@ -1,0 +1,180 @@
+@page "/login"
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="login-container">
+    <div class="login-card">
+        <h1>🚀 ProPXE Server</h1>
+        <p class="subtitle">Network Boot Made Simple</p>
+
+        @if (!string.IsNullOrEmpty(errorMessage)) {
+            <div class="alert alert-error">@errorMessage</div>
+        }
+
+        <div class="form-container">
+            <input type="email" 
+                   @bind="email" 
+                   placeholder="Email" 
+                   class="input" />
+            
+            <input type="password" 
+                   @bind="password" 
+                   placeholder="Password" 
+                   class="input" />
+
+            <button @onclick="HandleLogin" 
+                    disabled="@isLoading" 
+                    class="btn btn-primary">
+                @if (isLoading) {
+                    <span>Loading...</span>
+                } else {
+                    <span>Sign In</span>
+                }
+            </button>
+
+            <button @onclick="() => showRegister = !showRegister" 
+                    class="btn btn-secondary">
+                @(showRegister ? "Back to Login" : "Create Account")
+            </button>
+
+            @if (showRegister) {
+                <button @onclick="HandleRegister" 
+                        disabled="@isLoading" 
+                        class="btn btn-accent">
+                    Register
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .login-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .login-card h1 {
+        text-align: center;
+        margin: 0 0 0.5rem 0;
+        color: #667eea;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .input {
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .btn {
+        padding: 0.75rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+    }
+
+    .btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+    }
+
+    .btn-accent {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .alert-error {
+        background: #fee;
+        color: #c00;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private bool isLoading = false;
+    private bool showRegister = false;
+    private string? errorMessage;
+
+    private async Task HandleLogin() {
+        isLoading = true;
+        errorMessage = null;
+
+        var success = await AuthService.LoginAsync(email, password);
+        
+        if (success) {
+            Navigation.NavigateTo("/");
+        } else {
+            errorMessage = "Invalid email or password";
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleRegister() {
+        isLoading = true;
+        errorMessage = null;
+
+        var success = await AuthService.RegisterAsync(email, password);
+        
+        if (success) {
+            Navigation.NavigateTo("/");
+        } else {
+            errorMessage = "Registration failed. Email may already be in use.";
+        }
+
+        isLoading = false;
+    }
+}

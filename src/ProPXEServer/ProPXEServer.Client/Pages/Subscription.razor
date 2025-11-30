@@ -1,0 +1,352 @@
+@page "/subscription"
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="subscription-container">
+    <header class="page-header">
+        <h1>💳 Subscription</h1>
+        <button @onclick="NavigateHome" class="btn btn-back">
+            ← Back
+        </button>
+    </header>
+
+    @if (currentUser == null) {
+        <div class="loading">Loading...</div>
+    } else if (currentUser.IsSubscribed) {
+        <div class="subscription-active">
+            <div class="status-card">
+                <div class="status-icon">✓</div>
+                <h2>Active Subscription</h2>
+                <p class="status-label">Status: <span class="status-active">@currentUser.SubscriptionStatus</span></p>
+                @if (currentUser.SubscriptionExpiry.HasValue) {
+                    <p class="expiry-date">Renews: @currentUser.SubscriptionExpiry.Value.ToString("MMMM dd, yyyy")</p>
+                }
+                <div class="actions">
+                    <button @onclick="ManageBilling" class="btn btn-primary">
+                        Manage Billing
+                    </button>
+                </div>
+            </div>
+
+            <div class="features-list">
+                <h3>Your Benefits</h3>
+                <div class="feature">✓ Unlimited boot files</div>
+                <div class="feature">✓ Real-time monitoring</div>
+                <div class="feature">✓ WebDAV access</div>
+                <div class="feature">✓ API access</div>
+                <div class="feature">✓ Priority support</div>
+            </div>
+        </div>
+    } else {
+        <div class="subscription-offer">
+            <div class="pricing-card">
+                <div class="pricing-badge">Pro Plan</div>
+                <div class="pricing-amount">
+                    <span class="currency">$</span>
+                    <span class="price">20</span>
+                    <span class="period">/month</span>
+                </div>
+                
+                <div class="features">
+                    <div class="feature">✓ Unlimited boot files & configurations</div>
+                    <div class="feature">✓ Real-time PXE monitoring & analytics</div>
+                    <div class="feature">✓ WebDAV file management</div>
+                    <div class="feature">✓ REST API access</div>
+                    <div class="feature">✓ Priority email support</div>
+                    <div class="feature">✓ 30-day money-back guarantee</div>
+                </div>
+
+                <button @onclick="StartCheckout" 
+                        disabled="@isProcessing" 
+                        class="btn btn-subscribe">
+                    @if (isProcessing) {
+                        <span>Processing...</span>
+                    } else {
+                        <span>Subscribe Now →</span>
+                    }
+                </button>
+
+                <p class="secure-note">🔒 Secure payment via Stripe</p>
+            </div>
+
+            <div class="faq-section">
+                <h3>Frequently Asked Questions</h3>
+                <div class="faq-item">
+                    <strong>Can I cancel anytime?</strong>
+                    <p>Yes! Cancel your subscription at any time from the billing portal.</p>
+                </div>
+                <div class="faq-item">
+                    <strong>What payment methods do you accept?</strong>
+                    <p>We accept all major credit cards via Stripe.</p>
+                </div>
+                <div class="faq-item">
+                    <strong>Is there a free trial?</strong>
+                    <p>We offer a 30-day money-back guarantee on all subscriptions.</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .subscription-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        background: #f3f4f6;
+        color: #374151;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .subscription-active {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .status-card {
+        background: white;
+        padding: 3rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .status-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+    }
+
+    .status-active {
+        color: #10b981;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .expiry-date {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .pricing-card {
+        background: white;
+        padding: 3rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .pricing-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+    }
+
+    .pricing-amount {
+        margin-bottom: 2rem;
+    }
+
+    .currency {
+        font-size: 2rem;
+        vertical-align: top;
+        color: #666;
+    }
+
+    .price {
+        font-size: 4rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .period {
+        font-size: 1.5rem;
+        color: #666;
+    }
+
+    .features {
+        text-align: left;
+        margin: 2rem 0;
+        padding: 2rem 0;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .feature {
+        padding: 0.75rem 0;
+        color: #333;
+        font-size: 1.125rem;
+    }
+
+    .features-list {
+        background: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .features-list h3 {
+        margin-top: 0;
+        color: #333;
+    }
+
+    .features-list .feature {
+        padding: 0.5rem 0;
+        color: #10b981;
+        font-weight: 500;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-subscribe {
+        width: 100%;
+        padding: 1.25rem 2rem;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-subscribe:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(16,185,129,0.3);
+    }
+
+    .btn-subscribe:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .secure-note {
+        margin-top: 1rem;
+        color: #666;
+        font-size: 0.875rem;
+    }
+
+    .faq-section {
+        margin-top: 3rem;
+    }
+
+    .faq-section h3 {
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    .faq-item {
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: white;
+       border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .faq-item strong {
+        display: block;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .faq-item p {
+        margin: 0;
+        color: #666;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 4rem;
+        font-size: 1.5rem;
+        color: #666;
+    }
+</style>
+
+@code {
+    private AuthService.UserInfo? currentUser;
+    private bool isProcessing = false;
+
+    protected override async Task OnInitializedAsync() {
+        currentUser = await AuthService.GetCurrentUserAsync();
+        if (currentUser == null) {
+            Navigation.NavigateTo("/login");
+        }
+    }
+
+    private async Task StartCheckout() {
+        isProcessing = true;
+
+        try {
+            var response = await Http.PostAsync("/api/subscription/create-checkout", null);
+            if (response.IsSuccessStatusCode) {
+                var result = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
+                if (result?.Url != null) {
+                    await JS.InvokeVoidAsync("open", result.Url, "_self");
+                }
+            }
+        }
+        catch { }
+        finally {
+            isProcessing = false;
+        }
+    }
+
+    private async Task ManageBilling() {
+        try {
+            var response = await Http.PostAsync("/api/subscription/portal", null);
+            if (response.IsSuccessStatusCode) {
+                var result = await response.Content.ReadFromJsonAsync<PortalResponse>();
+                if (result?.Url != null) {
+                    await JS.InvokeVoidAsync("open", result.Url, "_blank");
+                }
+            }
+        }
+        catch { }
+    }
+
+    private record CheckoutResponse(string Url);
+    private record PortalResponse(string Url);
+
+    private void NavigateHome() => Navigation.NavigateTo("/");
+}

@@ -1,0 +1,54 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="ColorPalette.axaml"/>
+        <ResourceInclude Source="Typography.axaml"/>
+    </ResourceDictionary.MergedDictionaries>
+    
+    <!-- Card Style -->
+    <Style x:Key="CardBorder" Selector="Border">
+        <Setter Property="Background" Value="{StaticResource BackgroundSecondaryBrush}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMD}"/>
+        <Setter Property="Padding" Value="{StaticResource SpaceXL}"/>
+    </Style>
+    
+    <!-- Inner Card Style -->
+    <Style x:Key="InnerCardBorder" Selector="Border">
+        <Setter Property="Background" Value="{StaticResource BackgroundPrimaryBrush}"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
+        <Setter Property="Padding" Value="{StaticResource SpaceLG}"/>
+    </Style>
+    
+    <!-- Section Header Style -->
+    <Style x:Key="SectionHeader" Selector="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeMD}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+    </Style>
+    
+    <!-- Primary Button Style -->
+    <Style x:Key="PrimaryButton" Selector="Button">
+        <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="Padding" Value="15,8"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
+    </Style>
+    
+    <!-- Secondary Button Style -->
+    <Style x:Key="SecondaryButton" Selector="Button">
+        <Setter Property="Background" Value="{StaticResource BackgroundTertiaryBrush}"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="Padding" Value="15,8"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
+    </Style>
+    
+    <!-- Danger Button Style -->
+    <Style x:Key="DangerButton" Selector="Button">
+        <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
+        <Setter Property="Padding" Value="15,8"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
+    </Style>
+    
+</ResourceDictionary>

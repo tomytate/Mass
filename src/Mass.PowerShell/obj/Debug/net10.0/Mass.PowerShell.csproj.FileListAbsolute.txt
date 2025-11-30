@@ -1,0 +1,13 @@
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\bin\Debug\net10.0\MassPowerShell.psm1
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\bin\Debug\net10.0\Mass.PowerShell.psd1
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\bin\Debug\net10.0\Mass.PowerShell.deps.json
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\bin\Debug\net10.0\Mass.PowerShell.dll
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\bin\Debug\net10.0\Mass.PowerShell.pdb
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.dll
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\refint\Mass.PowerShell.dll
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\Mass.PowerShell.pdb
+C:\Users\Administrator\Desktop\ProUSBMediaSuite\src\Mass.PowerShell\obj\Debug\net10.0\ref\Mass.PowerShell.dll

@@ -1,0 +1,164 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:Mass.Launcher.ViewModels"
+        xmlns:services="using:Mass.Launcher.Services"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="Mass.Launcher.MainWindow"
+        x:DataType="vm:ShellViewModel"
+        Title="Mass Suite"
+        Width="1200" Height="800"
+        MinWidth="900" MinHeight="600"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <Window.Styles>
+        <Style Selector="Button.nav-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="15,12"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2"/>
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="Button.nav-button:pointerover">
+            <Setter Property="Background" Value="#3D3D3D"/>
+        </Style>
+        <Style Selector="Button.nav-button:pressed">
+            <Setter Property="Background" Value="#4D4D4D"/>
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+
+        <Grid ColumnDefinitions="250, *">
+            <Border Grid.Column="0" Background="#1E1E1E" Padding="20" BorderBrush="#2D2D2D" BorderThickness="0,0,1,0">
+                <StackPanel Spacing="10">
+                    <StackPanel Spacing="4" Margin="0,10,0,30">
+                        <TextBlock Text="MASS SUITE" FontWeight="Bold" FontSize="20" Foreground="White"/>
+                        <TextBlock Text="v1.0.0" FontSize="11" Opacity="0.5" Foreground="White"/>
+                    </StackPanel>
+                    
+                    <Button Command="{Binding NavigateHomeCommand}" Classes="nav-button" AutomationProperties.Name="Home">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🏠" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Home]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <Button Command="{Binding NavigateProUsbCommand}" Classes="nav-button" AutomationProperties.Name="ProUSB">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="💾" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[ProUSB]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <Button Command="{Binding NavigateMassBootCommand}" Classes="nav-button" AutomationProperties.Name="MassBoot">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🖥️" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[MassBoot]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <Button Command="{Binding NavigateWorkflowsCommand}" Classes="nav-button" AutomationProperties.Name="Workflows">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚙️" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Workflows]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding NavigateHealthCommand}" Classes="nav-button" AutomationProperties.Name="Health">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="❤️" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Health]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding NavigateLogsCommand}" Classes="nav-button" AutomationProperties.Name="Logs">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="📋" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Logs]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding NavigateOperationsConsoleCommand}" Classes="nav-button" AutomationProperties.Name="Operations">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚡" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Operations]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding NavigateScriptingCommand}" Classes="nav-button" AutomationProperties.Name="Scripting">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="📜" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Scripting]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <Rectangle Height="1" Fill="#2D2D2D" Margin="0,15"/>
+                    
+                    <Button Command="{Binding NavigatePluginsCommand}" Classes="nav-button" AutomationProperties.Name="Plugins">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="🔌" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Plugins]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    
+                    <Button Command="{Binding NavigateSettingsCommand}" Classes="nav-button" AutomationProperties.Name="Settings">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Text="⚙️" FontSize="16"/>
+                            <TextBlock Text="{Binding Source={x:Static services:Localizer.Instance}, Path=[Settings]}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- Main Content -->
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+                <!-- Top Bar -->
+                <Border Grid.Row="0" Height="60" Background="#1E1E1E" BorderBrush="#2D2D2D" BorderThickness="0,0,0,1" Padding="20,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CurrentView.Title, FallbackValue='Mass Suite'}" FontSize="18" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                            <Button Classes="icon-button" Content="🔔"/>
+                            <Button Classes="icon-button" Content="⚙️" Command="{Binding NavigateSettingsCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Content Area -->
+                <TransitioningContentControl Grid.Row="1" Content="{Binding CurrentView}"/>
+            </Grid>
+
+            <!-- Consent Dialog Overlay -->
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" 
+                  Background="#AA000000" 
+                  IsVisible="{Binding IsConsentDialogVisible}">
+                <ContentControl Content="{Binding ConsentDialog}" 
+                                HorizontalAlignment="Center" 
+                                VerticalAlignment="Center"/>
+            </Grid>
+        </Grid>
+    </Panel>
+</Window>

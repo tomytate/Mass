@@ -1,0 +1,302 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Mass.Core/1.0.0": {
+        "dependencies": {
+          "CommunityToolkit.Mvvm": "8.4.0",
+          "Microsoft.Extensions.DependencyInjection": "10.0.0",
+          "NLua": "1.7.6",
+          "System.Diagnostics.PerformanceCounter": "10.0.0",
+          "YamlDotNet": "16.3.0"
+        },
+        "runtime": {
+          "Mass.Core.dll": {}
+        }
+      },
+      "CommunityToolkit.Mvvm/8.4.0": {
+        "runtime": {
+          "lib/net8.0/CommunityToolkit.Mvvm.dll": {
+            "assemblyVersion": "8.4.0.0",
+            "fileVersion": "8.4.0.1"
+          }
+        }
+      },
+      "KeraLua/1.4.7": {
+        "runtime": {
+          "lib/net8.0/KeraLua.dll": {
+            "assemblyVersion": "1.4.7.0",
+            "fileVersion": "1.4.7.0"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/android-arm/native/liblua54.so": {
+            "rid": "android-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/android-arm64/native/liblua54.so": {
+            "rid": "android-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/android-x64/native/liblua54.so": {
+            "rid": "android-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/android-x86/native/liblua54.so": {
+            "rid": "android-x86",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/ios/native/liblua54.framework/Info.plist": {
+            "rid": "ios",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/ios/native/liblua54.framework/liblua54": {
+            "rid": "ios",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/liblua54.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/liblua54.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/maccatalyst/native/liblua54.framework/Info.plist": {
+            "rid": "maccatalyst",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/maccatalyst/native/liblua54.framework/liblua54": {
+            "rid": "maccatalyst",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx/native/liblua54.dylib": {
+            "rid": "osx",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/tvos/native/liblua54.framework/Info.plist": {
+            "rid": "tvos",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/tvos/native/liblua54.framework/liblua54": {
+            "rid": "tvos",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm/native/lua54.dll": {
+            "rid": "win-arm",
+            "assetType": "native",
+            "fileVersion": "5.4.8.0"
+          },
+          "runtimes/win-arm64/native/lua54.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "5.4.8.0"
+          },
+          "runtimes/win-x64/native/lua54.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "5.4.8.0"
+          },
+          "runtimes/win-x86/native/lua54.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "5.4.8.0"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection/10.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.DependencyInjection.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.0": {
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "NLua/1.7.6": {
+        "dependencies": {
+          "KeraLua": "1.4.7"
+        },
+        "runtime": {
+          "lib/net8.0/NLua.dll": {
+            "assemblyVersion": "1.7.6.0",
+            "fileVersion": "1.7.6.0"
+          }
+        }
+      },
+      "System.Configuration.ConfigurationManager/10.0.0": {
+        "dependencies": {
+          "System.Diagnostics.EventLog": "10.0.0",
+          "System.Security.Cryptography.ProtectedData": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/System.Configuration.ConfigurationManager.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "System.Diagnostics.EventLog/10.0.0": {
+        "runtime": {
+          "lib/net10.0/System.Diagnostics.EventLog.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net10.0/System.Diagnostics.EventLog.Messages.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win/lib/net10.0/System.Diagnostics.EventLog.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "System.Diagnostics.PerformanceCounter/10.0.0": {
+        "dependencies": {
+          "System.Configuration.ConfigurationManager": "10.0.0"
+        },
+        "runtime": {
+          "lib/net10.0/System.Diagnostics.PerformanceCounter.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net10.0/System.Diagnostics.PerformanceCounter.dll": {
+            "rid": "win",
+            "assetType": "runtime",
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "System.Security.Cryptography.ProtectedData/10.0.0": {
+        "runtime": {
+          "lib/net10.0/System.Security.Cryptography.ProtectedData.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
+      "YamlDotNet/16.3.0": {
+        "runtime": {
+          "lib/net8.0/YamlDotNet.dll": {
+            "assemblyVersion": "16.0.0.0",
+            "fileVersion": "16.3.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Mass.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CommunityToolkit.Mvvm/8.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tqVU8yc/ADO9oiTRyTnwhFN68hCwvkliMierptWOudIAvWY1mWCh5VFh+guwHJmpMwfg0J0rY+yyd5Oy7ty9Uw==",
+      "path": "communitytoolkit.mvvm/8.4.0",
+      "hashPath": "communitytoolkit.mvvm.8.4.0.nupkg.sha512"
+    },
+    "KeraLua/1.4.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CFkQpPGxCQYDjaum3oT9rFtMjQV/Pru10I2Lr6w5h6kMMyZUQ47s6Px3Uh0n0jIwvTijEVhHsiym2rREJX+huw==",
+      "path": "keralua/1.4.7",
+      "hashPath": "keralua.1.4.7.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-f0RBabswJq+gRu5a+hWIobrLWiUYPKMhCD9WO3sYBAdSy3FFH14LMvLVFZc2kPSCimBLxSuitUhsd6tb0TAY6A==",
+      "path": "microsoft.extensions.dependencyinjection/10.0.0",
+      "hashPath": "microsoft.extensions.dependencyinjection.10.0.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.DependencyInjection.Abstractions/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-L3AdmZ1WOK4XXT5YFPEwyt0ep6l8lGIPs7F5OOBZc77Zqeo01Of7XXICy47628sdVl0v/owxYJTe86DTgFwKCA==",
+      "path": "microsoft.extensions.dependencyinjection.abstractions/10.0.0",
+      "hashPath": "microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512"
+    },
+    "NLua/1.7.6": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-wmXyLco2qvS1vfkUY50FineJtScRFiLPvuXNvylj+V7QK0CUPj8fhHzOJzNCVzybLLz/Rwi0MX8lW/nbbcERTw==",
+      "path": "nlua/1.7.6",
+      "hashPath": "nlua.1.7.6.nupkg.sha512"
+    },
+    "System.Configuration.ConfigurationManager/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-0B+BzJ6pPMrRzJrVsttKf9MfDj6Syw9xoY+agcS9VssYQali1446+jTf5v1K94AMFUBxLXqDZlaTjO5edaI3jA==",
+      "path": "system.configuration.configurationmanager/10.0.0",
+      "hashPath": "system.configuration.configurationmanager.10.0.0.nupkg.sha512"
+    },
+    "System.Diagnostics.EventLog/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-uaFRda9NjtbJRkdx311eXlAA3n2em7223c1A8d1VWyl+4FL9vkG7y2lpPfBU9HYdj/9KgdRNdn1vFK8ZYCYT/A==",
+      "path": "system.diagnostics.eventlog/10.0.0",
+      "hashPath": "system.diagnostics.eventlog.10.0.0.nupkg.sha512"
+    },
+    "System.Diagnostics.PerformanceCounter/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-ZnhizmMstYa05UNuwiMew7EsGApEy6qBcvBBSxoUcaX8WvkE2pb+iQyRWyQZ8E0mq7PlPBjwVh4+6ie+B6oeZA==",
+      "path": "system.diagnostics.performancecounter/10.0.0",
+      "hashPath": "system.diagnostics.performancecounter.10.0.0.nupkg.sha512"
+    },
+    "System.Security.Cryptography.ProtectedData/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-qy6C3gQRTrfhFfuiIYU1jNwWfFdJpBVo1BARW7jgMm1zTEm3LRzLLyOLJGaAuKE+nZCGkEP71y4rj9NWjqLGdQ==",
+      "path": "system.security.cryptography.protecteddata/10.0.0",
+      "hashPath": "system.security.cryptography.protecteddata.10.0.0.nupkg.sha512"
+    },
+    "YamlDotNet/16.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA==",
+      "path": "yamldotnet/16.3.0",
+      "hashPath": "yamldotnet.16.3.0.nupkg.sha512"
+    }
+  }
+}

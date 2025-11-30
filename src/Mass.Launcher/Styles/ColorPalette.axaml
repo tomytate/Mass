@@ -1,0 +1,70 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <!-- Primary Colors -->
+    <Color x:Key="PrimaryColor">#6366F1</Color>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    
+    <!-- Success/Positive -->
+    <Color x:Key="SuccessColor">#10B981</Color>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    
+    <!-- Info/Informational -->
+    <Color x:Key="InfoColor">#3B82F6</Color>
+    <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
+    
+    <!-- Warning -->
+    <Color x:Key="WarningColor">#F59E0B</Color>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    
+    <!-- Error/Danger -->
+    <Color x:Key="ErrorColor">#EF4444</Color>
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+    
+    <!-- Danger (Critical) -->
+    <Color x:Key="DangerColor">#DC2626</Color>
+    <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+    
+    <!-- Background Layers -->
+    <Color x:Key="BackgroundPrimaryColor">#1A1A1A</Color>
+    <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimaryColor}"/>
+    
+    <Color x:Key="BackgroundSecondaryColor">#2D2D2D</Color>
+    <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondaryColor}"/>
+    
+    <Color x:Key="BackgroundTertiaryColor">#333333</Color>
+    <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiaryColor}"/>
+    
+    <Color x:Key="BackgroundHoverColor">#3D3D3D</Color>
+    <SolidColorBrush x:Key="BackgroundHoverBrush" Color="{StaticResource BackgroundHoverColor}"/>
+    
+    <!-- Console/Terminal -->
+    <Color x:Key="ConsoleBackgroundColor">#1E1E1E</Color>
+    <SolidColorBrush x:Key="ConsoleBackgroundBrush" Color="{StaticResource ConsoleBackgroundColor}"/>
+    
+    <Color x:Key="ConsoleOutputBackgroundColor">#000000</Color>
+    <SolidColorBrush x:Key="ConsoleOutputBackgroundBrush" Color="{StaticResource ConsoleOutputBackgroundColor}"/>
+    
+    <Color x:Key="ConsoleTextColor">#00FF00</Color>
+    <SolidColorBrush x:Key="ConsoleTextBrush" Color="{StaticResource ConsoleTextColor}"/>
+    
+    <!-- Borders & Dividers -->
+    <Color x:Key="BorderColor">#404040</Color>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+    
+    <Color x:Key="DividerColor">#2D2D2D</Color>
+    <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
+    
+    <!-- Text Colors -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B3B3B3"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#6B7280"/>
+    
+    <!-- Status Colors -->
+    <Color x:Key="StatusActiveColor">#10B981</Color>
+    <SolidColorBrush x:Key="StatusActiveBrush" Color="{StaticResource StatusActiveColor}"/>
+    
+    <Color x:Key="StatusInactiveColor">#6B7280</Color>
+    <SolidColorBrush x:Key="StatusInactiveBrush" Color="{StaticResource StatusInactiveColor}"/>
+    
+</ResourceDictionary>

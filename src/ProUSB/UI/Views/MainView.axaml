@@ -1,0 +1,308 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ProUSB.UI.ViewModels"
+             xmlns:cv="using:Avalonia.Data.Converters"
+             x:Class="ProUSB.UI.Views.MainView"
+             x:DataType="vm:MainViewModel"
+             DragDrop.AllowDrop="True">
+
+    <UserControl.Styles>
+        <!-- Typography -->
+        <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="20"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/></Style>
+        <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="Medium"/><Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/><Setter Property="Margin" Value="0,0,0,8"/></Style>
+        <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="12"/><Setter Property="Foreground" Value="{DynamicResource TextTertiary}"/><Setter Property="Margin" Value="0,0,0,4"/></Style>
+        
+        <!-- Controls -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="BoxShadow" Value="0 4 12 0 #40000000"/>
+        </Style>
+        
+        <Style Selector="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+        
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="CaretBrush" Value="White"/>
+        </Style>
+
+        <Style Selector="Button.primary">
+            <Setter Property="Background" Value="#6366F1"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="20,10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.primary:pointerover"><Setter Property="Background" Value="#4F46E5"/></Style>
+        <Style Selector="Button.primary:disabled"><Setter Property="Background" Value="#333333"/><Setter Property="Foreground" Value="#666666"/></Style>
+
+        <Style Selector="Button.secondary">
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.secondary:pointerover"><Setter Property="Background" Value="#4D4D4D"/></Style>
+        
+        <Style Selector="Button.eject">
+            <Setter Property="Background" Value="#FF6B35"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.eject:pointerover"><Setter Property="Background" Value="#FF7F4D"/></Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        </Style>
+        
+        <Style Selector="NumericUpDown">
+            <Setter Property="Background" Value="{DynamicResource ControlBackground}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+        
+        <!-- Drag-Drop Visual Feedback -->
+        <Style Selector="Border.drop-zone">
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="8"/>
+        </Style>
+        <Style Selector="Border.drop-zone:dragging">
+            <Setter Property="BorderBrush" Value="#6366F1"/>
+            <Setter Property="Background" Value="#200078D4"/>
+        </Style>
+    </UserControl.Styles>
+
+    <UserControl.Resources>
+        <!-- Dark Theme Colors -->
+        <Color x:Key="DarkWindowBackground">#0F0F12</Color>
+        <Color x:Key="DarkCardBackground">#1A1A20</Color>
+        <Color x:Key="DarkControlBackground">#09090B</Color>
+        <Color x:Key="DarkTextPrimary">#FFFFFF</Color>
+        <Color x:Key="DarkTextSecondary">#E0E0E0</Color>
+        <Color x:Key="DarkTextTertiary">#A0A0A0</Color>
+        
+        <!-- Light Theme Colors -->
+        <Color x:Key="LightWindowBackground">#F5F5F5</Color>
+        <Color x:Key="LightCardBackground">#FFFFFF</Color>
+        <Color x:Key="LightControlBackground">#EEEEEE</Color>
+        <Color x:Key="LightTextPrimary">#0F0F12</Color>
+        <Color x:Key="LightTextSecondary">#404040</Color>
+        <Color x:Key="LightTextTertiary">#666666</Color>
+        
+        <SolidColorBrush x:Key="WindowBackground" Color="{DynamicResource DarkWindowBackground}"/>
+        <SolidColorBrush x:Key="CardBackground" Color="{DynamicResource DarkCardBackground}"/>
+        <SolidColorBrush x:Key="ControlBackground" Color="{DynamicResource DarkControlBackground}"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="{DynamicResource DarkTextPrimary}"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="{DynamicResource DarkTextSecondary}"/>
+        <SolidColorBrush x:Key="TextTertiary" Color="{DynamicResource DarkTextTertiary}"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="40,*,Auto">
+        <!-- Title Bar -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Background="Transparent">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="16,0">
+                <TextBlock Text="⚡" VerticalAlignment="Center"/>
+                <TextBlock Text="ProUSB Media Suite" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"/>
+            </StackPanel>
+            
+            <!-- Theme Toggle -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,120,0" IsHitTestVisible="True">
+                <Button Command="{Binding ToggleThemeCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="Toggle Dark/Light Mode">
+                    <TextBlock Text="🌙"/>
+                </Button>
+                <Button Command="{Binding ShowHistoryCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="View Burn History">
+                    <TextBlock Text="📊"/>
+                </Button>
+                <Button Command="{Binding ShowLibraryCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="ISO Library">
+                    <TextBlock Text="📚"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="16">
+            <!-- Left Column: Source & Destination -->
+            <ScrollViewer Grid.Column="0" Margin="0,0,8,0">
+                <StackPanel>
+                    <!-- Device Selection -->
+                    <TextBlock Text="DRIVE PROPERTIES" Classes="h2"/>
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <StackPanel>
+                                <TextBlock Text="Device" Classes="label"/>
+                                <Grid ColumnDefinitions="*,8,Auto,8,Auto">
+                                    <ComboBox Grid.Column="0" ItemsSource="{Binding Devs}" SelectedItem="{Binding SelDev}" PlaceholderText="Select USB Drive...">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding FriendlyName}" FontWeight="Medium"/>
+                                                    <TextBlock Text="{Binding TotalSize}" FontSize="11" Foreground="#A0A0A0"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="2" Command="{Binding RefreshCommand}" Classes="secondary" ToolTip.Tip="Refresh Devices">
+                                        <TextBlock Text="⟳"/>
+                                    </Button>
+                                    <Button Grid.Column="4" 
+                                            Command="{Binding EjectDeviceCommand}" 
+                                            Classes="eject" 
+                                            ToolTip.Tip="Safely Eject Device"
+                                            IsEnabled="{Binding SelDev, Converter={x:Static cv:ObjectConverters.IsNotNull}}">
+                                        <TextBlock Text="⏏"/>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Text="Boot Selection" Classes="label"/>
+                                <Border Classes="drop-zone" Name="IsoDropZone" Padding="0">
+                                    <Grid ColumnDefinitions="*,8,Auto">
+                                        <TextBox Grid.Column="0" Text="{Binding Iso}" Watermark="Drag ISO here or click SELECT" IsReadOnly="True"/>
+                                        <Button Grid.Column="2" Command="{Binding BrowseCommand}" Classes="secondary">
+                                            <TextBlock Text="SELECT"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="💡 Tip: Drag and drop ISO files directly here!" FontSize="10" Foreground="#808080" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            
+                            <StackPanel IsVisible="{Binding SelDev, Converter={x:Static cv:ObjectConverters.IsNotNull}}">
+                                <TextBlock Text="⚠️ Warning: All data on device will be destroyed." Foreground="#FF453A" FontSize="11"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Format Options -->
+                    <TextBlock Text="FORMAT OPTIONS" Classes="h2"/>
+                    <Border Classes="card">
+                        <StackPanel Spacing="12">
+                            <StackPanel>
+                                <TextBlock Text="Partition Scheme" Classes="label"/>
+                                <ComboBox ItemsSource="{Binding PartitionSchemes}" SelectedIndex="{Binding PartitionSchemeIndex}"/>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Text="File System" Classes="label"/>
+                                <ComboBox ItemsSource="{Binding FileSystems}" SelectedIndex="{Binding FileSystemIndex}"/>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock Text="Cluster Size" Classes="label"/>
+                                <ComboBox ItemsSource="{Binding ClusterSizes}" SelectedIndex="{Binding ClusterSizeIndex}"/>
+                            </StackPanel>
+                            
+                            <Expander Header="Advanced Format Options" Foreground="#A0A0A0">
+                                <StackPanel Spacing="12" Margin="0,8,0,0">
+                                    <CheckBox IsChecked="{Binding QuickFormat}" Content="Quick Format"/>
+                                    <CheckBox IsChecked="{Binding BypassWin11}" Content="Bypass Windows 11 Requirements (TPM/Secure Boot)"/>
+                                    <CheckBox IsChecked="{Binding IsRaw}" Content="List USB Hard Drives"/>
+                                    
+                                    <!-- Persistence Size -->
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="Persistence Size (MB) - For Linux Live USBs" Classes="label" Foreground="#A0A0A0"/>
+                                        <Grid ColumnDefinitions="*,8,Auto">
+                                            <NumericUpDown Grid.Column="0" 
+                                                         Value="{Binding PersistenceSize}" 
+                                                         Minimum="0" 
+                                                         Maximum="32768" 
+                                                         Increment="128"
+                                                         FormatString="N0"
+                                                         Padding="12,8"/>
+                                            <TextBlock Grid.Column="2" 
+                                                     Text="0 = Disabled" 
+                                                     VerticalAlignment="Center" 
+                                                     FontSize="10" 
+                                                     Foreground="#808080"/>
+                                        </Grid>
+                                        <TextBlock Text="💡 Creates casper-rw file for persistent storage on Ubuntu/Mint Live USBs" 
+                                                 FontSize="10" 
+                                                 Foreground="#808080" 
+                                                 TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Right Column: Status & Log -->
+            <Grid Grid.Column="1" RowDefinitions="*,Auto" Margin="8,0,0,0">
+                <!-- Log Console -->
+                <Border Grid.Row="0" Classes="card" Background="#111111" BorderBrush="#333333" BorderThickness="1">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0" Text="LOG" Classes="label" Margin="0,0,0,8"/>
+                        <TextBox Grid.Row="1" Text="{Binding LogText}" FontFamily="Consolas, Monospace" FontSize="11" Foreground="#00FF00" TextWrapping="Wrap" IsReadOnly="True" Background="Transparent" BorderThickness="0" CaretBrush="Transparent"/>
+                    </Grid>
+                </Border>
+
+                <!-- Status & Action -->
+                <StackPanel Grid.Row="1" Spacing="12">
+                    <Border Classes="card" Padding="12">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Status" Classes="label"/>
+                                    <TextBlock Text="{Binding Status}" Foreground="#6366F1" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <!-- Estimated Time Remaining -->
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" IsVisible="{Binding TimeRemainingText, Converter={x:Static cv:StringConverters.IsNotNullOrEmpty}}">
+                                    <TextBlock Text="Time Remaining" Classes="label" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="{Binding TimeRemainingText}" Foreground="#10B981" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                </StackPanel>
+                            </Grid>
+                            <ProgressBar Value="{Binding Prog}" Maximum="100" Height="6" Background="#333333" Foreground="#6366F1" CornerRadius="3"/>
+                            <!-- Speed Indicator -->
+                            <TextBlock Text="{Binding SpeedText}" FontSize="10" Foreground="#A0A0A0" HorizontalAlignment="Right" IsVisible="{Binding SpeedText, Converter={x:Static cv:StringConverters.IsNotNullOrEmpty}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <Button Command="{Binding StartCommand}" Classes="primary" HorizontalAlignment="Stretch" IsEnabled="{Binding !IsBusy}">
+                            <TextBlock Text="START"/>
+                        </Button>
+                        
+                        <Button Grid.Column="2" 
+                                Command="{Binding CancelCommand}" 
+                                Classes="secondary" 
+                                IsEnabled="{Binding CanCancel}"
+                                Background="#FF453A">
+                            <TextBlock Text="CANCEL"/>
+                        </Button>
+                    </Grid>
+                    
+                    <!-- Close button logic might need adjustment if embedded -->
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Footer / Status Bar -->
+        <Border Grid.Row="2" Background="{DynamicResource CardBackground}" Padding="12,4">
+            <Grid ColumnDefinitions="Auto,*,Auto,8,Auto">
+                <TextBlock Text="Ready" FontSize="11" Foreground="#808080"/>
+                <TextBlock Grid.Column="2" Text="✅ System Drive Protection Active" FontSize="11" Foreground="#10B981"/>
+                <TextBlock Grid.Column="4" Text="{Binding VersionText}" FontSize="11" Foreground="#808080"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

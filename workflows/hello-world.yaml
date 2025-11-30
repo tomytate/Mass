@@ -1,0 +1,30 @@
+name: Hello World Workflow
+version: 1.0.0
+description: Simple example workflow demonstrating basic commands
+
+parameters:
+  message: "Hello from Mass Suite!"
+
+steps:
+  - id: step1
+    name: Echo Message
+    type: Command
+    parameters:
+      command: echo ${message}
+      workingDirectory: .
+    
+  - id: step2
+    name: Create Test File
+    type: Command
+    parameters:
+      command: echo "Workflow executed successfully" > workflow-test.txt
+      workingDirectory: .
+    maxRetries: 2
+    retryDelayMs: 500
+    
+  - id: step3
+    name: List Files
+    type: Command
+    parameters:
+      command: dir
+      workingDirectory: .

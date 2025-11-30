@@ -1,0 +1,27 @@
+{
+    "name": "HTTP Request Example",
+    "version": "1.0.0",
+    "description": "Demonstrates HTTP request steps",
+    "parameters": {},
+    "steps": [
+        {
+            "id": "step1",
+            "name": "Check GitHub API",
+            "type": "HttpRequest",
+            "parameters": {
+                "url": "https://api.github.com",
+                "method": "GET"
+            }
+        },
+        {
+            "id": "step2",
+            "name": "Log Success",
+            "type": "Command",
+            "parameters": {
+                "command": "echo GitHub API is accessible",
+                "workingDirectory": "."
+            },
+            "condition": "true"
+        }
+    ]
+}

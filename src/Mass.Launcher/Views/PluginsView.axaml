@@ -1,0 +1,64 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Mass.Launcher.Views.PluginsView"
+             x:DataType="vm:PluginsViewModel">
+    
+    <ScrollViewer>
+        <StackPanel Spacing="20" Margin="20">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Plugins" FontSize="32" FontWeight="Bold"/>
+                <Button Grid.Column="1" Command="{Binding RefreshCommand}" Content="Refresh" Padding="15,8" Background="{StaticResource PrimaryBrush}" Foreground="White" CornerRadius="{StaticResource RadiusSM}"/>
+            </Grid>
+            
+            <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="INSTALLED PLUGINS" Classes="SectionHeader"/>
+                    
+                    <ItemsControl ItemsSource="{Binding Plugins}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource BackgroundPrimaryBrush}" CornerRadius="{StaticResource RadiusSM}" Padding="{StaticResource SpaceLG}" Margin="0,0,0,10">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto">
+                                        <TextBlock Grid.Column="0" Grid.Row="0" Text="🔌" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                        
+                                        <StackPanel Grid.Column="1" Grid.Row="0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"/>
+                                            <TextBlock Text="{Binding Version}" FontSize="11" Opacity="0.6" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        
+                                        <ToggleSwitch Grid.Column="2" Grid.Row="0" IsChecked="{Binding IsEnabled}" VerticalAlignment="Center"/>
+                                        
+                                        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Description}" FontSize="12" Opacity="0.7" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                        
+                                        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal" Spacing="10" Margin="0,8,0,0">
+                                            <TextBlock Text="Author:" FontSize="11" Opacity="0.5"/>
+                                            <TextBlock Text="{Binding Author}" FontSize="11" Opacity="0.7"/>
+                                            <TextBlock Text="|" FontSize="11" Opacity="0.3" Margin="5,0"/>
+                                            <TextBlock Text="State:" FontSize="11" Opacity="0.5"/>
+                                            <TextBlock Text="{Binding State}" FontSize="11" Opacity="0.7"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    
+                    <TextBlock Text="No plugins installed" FontSize="14" Opacity="0.5" HorizontalAlignment="Center" Margin="20" IsVisible="{Binding !Plugins.Count}"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="PLUGIN DIRECTORIES" Classes="SectionHeader"/>
+                    <TextBlock Text="Plugins are loaded from:" FontSize="12" Opacity="0.7"/>
+                    <TextBlock Text="%APPDATA%\MassSuite\plugins\" FontFamily="Consolas" FontSize="11" Opacity="0.6"/>
+                    <TextBlock Text=".\plugins\" FontFamily="Consolas" FontSize="11" Opacity="0.6"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

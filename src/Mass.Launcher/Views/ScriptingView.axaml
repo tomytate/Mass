@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Mass.Launcher.Views.ScriptingView"
+             x:DataType="vm:ScriptingViewModel">
+
+    <Grid RowDefinitions="*,Auto,200">
+        <!-- Code Editor -->
+        <Border Grid.Row="0" Background="{StaticResource ConsoleBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="{StaticResource RadiusSM}" Margin="0,0,0,10">
+            <TextBox Text="{Binding ScriptInput}" 
+                     AcceptsReturn="True" 
+                     AcceptsTab="True"
+                     FontFamily="Consolas, Monospace"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Watermark="-- Enter Lua script here..."
+                     VerticalAlignment="Stretch"
+                     HorizontalAlignment="Stretch"/>
+        </Border>
+
+        <!-- Controls -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <Button Command="{Binding RunScriptCommand}" Content="Run Script" Classes="accent"/>
+            <Button Command="{Binding ClearLogCommand}" Content="Clear Log"/>
+        </StackPanel>
+
+        <!-- Output Log -->
+        <Border Grid.Row="2" Background="{StaticResource ConsoleOutputBackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="{StaticResource RadiusSM}">
+            <ScrollViewer>
+                <SelectableTextBlock Text="{Binding OutputLog}" 
+                                   FontFamily="Consolas, Monospace"
+                                   Foreground="{StaticResource ConsoleTextBrush}"
+                                   Margin="10"/>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

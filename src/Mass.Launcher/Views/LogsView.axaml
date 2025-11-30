@@ -1,0 +1,107 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             xmlns:converters="using:Mass.Launcher.Converters"
+             x:Class="Mass.Launcher.Views.LogsView"
+             x:DataType="vm:LogsViewModel">
+    
+    <ScrollViewer>
+        <StackPanel Spacing="30" Margin="40">
+            <StackPanel Spacing="10">
+                <TextBlock Text="LOGS &amp; DIAGNOSTICS" FontSize="36" FontWeight="Bold"/>
+                <TextBlock Text="View application logs and diagnostic information" FontSize="16" Opacity="0.7"/>
+            </StackPanel>
+
+            <!-- Filters -->
+            <Grid ColumnDefinitions="*,200,Auto,Auto" ColumnSpacing="15">
+                <TextBox Grid.Column="0" 
+                         Text="{Binding SearchText}" 
+                         Watermark="Search logs..."
+                         Padding="10"/>
+                
+                <ComboBox Grid.Column="1" 
+                          ItemsSource="{Binding LogLevels}"
+                          SelectedItem="{Binding SelectedLevel}"
+                          Padding="10"/>
+                
+                <Button Grid.Column="2" 
+                        Content="Refresh" 
+                        Command="{Binding LoadLogsCommand}"
+                        Padding="15,8"/>
+                
+                <Button Grid.Column="3" 
+                        Content="Export" 
+                        Command="{Binding ExportLogsCommand}"
+                        Padding="15,8"/>
+            </Grid>
+
+            <!-- Log Entries -->
+            <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="0" Height="500">
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding LogEntries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="15,10" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                                    <Grid ColumnDefinitions="150,80,150,*">
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="{Binding Timestamp, StringFormat='{}{0:yyyy-MM-dd HH:mm:ss}'}" 
+                                                   FontFamily="Consolas" 
+                                                   FontSize="11" 
+                                                   Opacity="0.7"/>
+                                        
+                                        <Border Grid.Column="1" 
+                                                Background="{Binding Level, Converter={StaticResource LogLevelToBrushConverter}}"
+                                                CornerRadius="3"
+                                                Padding="6,2"
+                                                HorizontalAlignment="Left">
+                                            <TextBlock Text="{Binding Level}" 
+                                                       FontSize="10" 
+                                                       FontWeight="Bold"
+                                                       Foreground="White"/>
+                                        </Border>
+                                        
+                                        <TextBlock Grid.Column="2" 
+                                                   Text="{Binding Category}" 
+                                                   FontFamily="Consolas" 
+                                                   FontSize="11" 
+                                                   Opacity="0.6"/>
+                                        
+                                        <TextBlock Grid.Column="3" 
+                                                   Text="{Binding Message}" 
+                                                   TextWrapping="Wrap"
+                                                   FontFamily="Consolas" 
+                                                   FontSize="11"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Stats -->
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Log Statistics" FontSize="16" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*,*,*">
+                        <StackPanel Grid.Column="0" Spacing="5">
+                            <TextBlock Text="Total Entries" Opacity="0.7" FontSize="12"/>
+                            <TextBlock Text="{Binding LogEntries.Count}" FontSize="20" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="5">
+                            <TextBlock Text="Current Filter" Opacity="0.7" FontSize="12"/>
+                            <TextBlock Text="{Binding SelectedLevel}" FontSize="20" FontWeight="Bold"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="5">
+                            <Button Content="Clear All Logs" 
+                                    Command="{Binding ClearLogsCommand}"
+                                    Background="{StaticResource DangerBrush}"
+                                    Foreground="White"
+                                    Padding="15,8"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

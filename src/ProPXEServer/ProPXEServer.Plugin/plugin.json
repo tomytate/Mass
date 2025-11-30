@@ -1,0 +1,16 @@
+{
+    "id": "propxeserver",
+    "name": "ProPXEServer",
+    "version": "1.0.0",
+    "description": "PXE network boot server",
+    "author": "Mass Suite Team",
+    "icon": "🖥️",
+    "entryAssembly": "ProPXEServer.Plugin.dll",
+    "entryType": "ProPXEServer.Plugin.ProPXEServerPlugin",
+    "dependencies": [],
+    "permissions": [
+        "network",
+        "filesystem"
+    ],
+    "enabled": true
+}

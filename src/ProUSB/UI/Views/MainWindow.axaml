@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ProUSB.UI.ViewModels"
+        xmlns:v="using:ProUSB.UI.Views"
+        x:Class="ProUSB.UI.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="ProUSB Media Suite"
+        Width="900" Height="700"
+        MinWidth="700" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="40"
+        Background="{DynamicResource WindowBackground}"
+        TransparencyLevelHint="Mica"
+        Foreground="{DynamicResource TextPrimary}"
+        DragDrop.AllowDrop="True">
+    
+    <v:MainView />
+</Window>

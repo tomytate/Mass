@@ -1,0 +1,18 @@
+{
+    "WelcomeMessage": "Welcome to Mass Suite",
+    "Home": "Home",
+    "ProUSB": "ProUSB",
+    "MassBoot": "MassBoot",
+    "Workflows": "Workflows",
+    "Health": "Health",
+    "Logs": "Logs",
+    "Operations": "Operations",
+    "Scripting": "Scripting",
+    "Plugins": "Plugins",
+    "Settings": "Settings",
+    "Language": "Language",
+    "Theme": "Theme",
+    "TelemetryEnabled": "Telemetry Enabled",
+    "TelemetryDisabled": "Telemetry Disabled",
+    "ViewLogs": "View Local Telemetry Logs"
+}

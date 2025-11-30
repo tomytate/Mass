@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             x:Class="Mass.Launcher.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+    
+    <ScrollViewer>
+        <StackPanel Spacing="30" Margin="40">
+            <StackPanel Spacing="10">
+                <TextBlock Text="{Binding WelcomeMessage}" FontSize="36" FontWeight="Bold"/>
+                <TextBlock Text="Professional Deployment &amp; Media Creation Suite" FontSize="16" Opacity="0.7"/>
+                <TextBlock Text="{Binding VersionInfo}" FontSize="12" Opacity="0.5" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <StackPanel Spacing="15">
+                <TextBlock Text="FAVORITES" FontSize="14" FontWeight="SemiBold" Opacity="0.7" IsVisible="{Binding Favorites.Count}"/>
+                <ItemsControl ItemsSource="{Binding Favorites}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4" HorizontalAlignment="Left"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).NavigateToFavoriteCommand}"
+                                    CommandParameter="{Binding}"
+                                    Background="{StaticResource BackgroundSecondaryBrush}"
+                                    Padding="15"
+                                    Margin="0,0,15,15"
+                                    Width="180"
+                                    CornerRadius="8"
+                                    HorizontalContentAlignment="Left"
+                                    Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="{Binding Icon}" FontSize="20"/>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Type}" FontSize="11" Opacity="0.6"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="QUICK ACTIONS" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <ItemsControl ItemsSource="{Binding QuickActions}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4" HorizontalAlignment="Left"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding $parent[UserControl].((vm:HomeViewModel)DataContext).NavigateToModuleCommand}"
+                                    CommandParameter="{Binding NavigationTarget}"
+                                    Background="#2D2D2D"
+                                    Padding="0"
+                                    Margin="0,0,15,15"
+                                    Width="180"
+                                    Height="140"
+                                    CornerRadius="8"
+                                    HorizontalContentAlignment="Stretch"
+                                    VerticalContentAlignment="Stretch"
+                                    Cursor="Hand">
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Background" Value="{StaticResource BackgroundHoverBrush}"/>
+                                    </Style>
+                                </Button.Styles>
+                                <StackPanel Spacing="12" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding Icon}" FontSize="48" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Description}" FontSize="11" Opacity="0.6" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="10,0"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Spacing="15">
+                <TextBlock Text="MODULE STATUS" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <ItemsControl ItemsSource="{Binding ModuleStatus}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}" Margin="0,0,0,10" MaxWidth="600" HorizontalAlignment="Left">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="24" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Status}" FontSize="12" Opacity="0.7" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Ellipse Grid.Column="2" Width="12" Height="12" Fill="{Binding StatusColor}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Spacing="15">
+                <TextBlock Text="SYSTEM INFORMATION" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <Border Background="#2D2D2D" CornerRadius="8" Padding="20" MaxWidth="600" HorizontalAlignment="Left">
+                    <StackPanel Spacing="12">
+                        <Grid ColumnDefinitions="150,*">
+                            <TextBlock Grid.Column="0" Text="Platform" Opacity="0.6"/>
+                            <TextBlock Grid.Column="1" Text=".NET 10.0" FontWeight="Medium"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="150,*">
+                            <TextBlock Grid.Column="0" Text="Architecture" Opacity="0.6"/>
+                            <TextBlock Grid.Column="1" Text="x64" FontWeight="Medium"/>
+                        </Grid>
+                        <Grid ColumnDefinitions="150,*">
+                            <TextBlock Grid.Column="0" Text="Configuration" Opacity="0.6"/>
+                            <TextBlock Grid.Column="1" Text="Release" FontWeight="Medium"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

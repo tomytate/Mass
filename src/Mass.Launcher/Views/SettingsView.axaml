@@ -1,0 +1,172 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Mass.Launcher.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    
+    <ScrollViewer>
+        <StackPanel Spacing="20" Margin="20">
+            <TextBlock Text="Settings" FontSize="32" FontWeight="Bold"/>
+            
+            <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="GENERAL" Classes="SectionHeader"/>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Theme" FontSize="12" Opacity="0.7"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button Command="{Binding SetThemeCommand}" 
+                                    CommandParameter="Dark"
+                                    Content="Dark"
+                                    Padding="15,8"
+                                    Background="{StaticResource PrimaryBrush}"/>
+                            <Button Command="{Binding SetThemeCommand}" 
+                                    CommandParameter="Light"
+                                    Content="Light"
+                                    Padding="15,8"
+                                    Background="{StaticResource BackgroundTertiaryBrush}"/>
+                            <Button Command="{Binding SetThemeCommand}" 
+                                    CommandParameter="System"
+                                    Content="System"
+                                    Padding="15,8"
+                                    Background="#333333"/>
+                        </StackPanel>
+                    </StackPanel>
+                    
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Language" FontSize="12" Opacity="0.7"/>
+                        <ComboBox SelectedItem="{Binding AppSettings.Language}" Width="200" HorizontalAlignment="Left">
+                            <ComboBoxItem Content="English (US)" Tag="en-US"/>
+                            <ComboBoxItem Content="中文" Tag="zh-CN"/>
+                        </ComboBox>
+                    </StackPanel>
+                    
+                    <CheckBox IsChecked="{Binding AppSettings.CheckForUpdates}" 
+                              Content="Check for updates on startup"/>
+                    <CheckBox IsChecked="{Binding AppSettings.MinimizeToTray}" 
+                              Content="Minimize to system tray"/>
+                </StackPanel>
+            </Border>
+            
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="MODULES" Classes="SectionHeader"/>
+                    
+                    <TextBlock Text="Available modules:" FontSize="12" Opacity="0.7"/>
+                    
+                    <ItemsControl ItemsSource="{Binding Plugins}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource BackgroundPrimaryBrush}" CornerRadius="{StaticResource RadiusSM}" Padding="{StaticResource SpaceMD}" Margin="0,0,0,10">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Manifest.Icon}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="20"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Manifest.Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Manifest.Description}" FontSize="11" Opacity="0.6"/>
+                                            <TextBlock Text="{Binding State}" FontSize="10" Opacity="0.4"/>
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="2" 
+                                                      IsChecked="{Binding Manifest.Enabled}"
+                                                      Command="{Binding #Root.((vm:SettingsViewModel)DataContext).TogglePluginCommand}"
+                                                      CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="SECURITY" Classes="SectionHeader"/>
+                    
+                    <Border Background="{StaticResource BackgroundPrimaryBrush}" CornerRadius="{StaticResource RadiusSM}" Padding="{StaticResource SpaceLG}">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding ElevationIcon}" FontSize="32" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Admin Privileges" FontWeight="SemiBold" FontSize="14"/>
+                                <TextBlock Text="{Binding ElevationStatus}" FontSize="12" Opacity="0.7"/>
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    Command="{Binding RestartAsAdminCommand}"
+                                    Content="Run as Administrator"
+                                    Padding="12,6"
+                                    IsVisible="{Binding !IsElevated}"
+                                    Background="{StaticResource PrimaryBrush}"
+                                   Foreground="White"/>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Text="Some operations (disk formatting, driver installation) require administrator privileges." 
+                               FontSize="11" 
+                               Opacity="0.6" 
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="UPDATES" Classes="SectionHeader"/>
+                    
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Current Version" FontSize="12" Opacity="0.7"/>
+                            <TextBlock Text="{Binding CurrentVersion}" FontSize="16" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding UpdateStatus}" FontSize="12" Opacity="0.6" Margin="0,5,0,0"/>
+                        </StackPanel>
+                        
+                        <Button Grid.Column="1"
+                                Command="{Binding CheckForUpdatesCommand}"
+                                Content="Check for Updates"
+                                Padding="15,8"
+                                IsEnabled="{Binding !CheckingForUpdates}"
+                                Background="#6366F1"
+                                Foreground="White"/>
+                    </Grid>
+
+                    <CheckBox IsChecked="{Binding AppSettings.CheckForUpdates}" 
+                              Content="Automatically check for updates on startup"/>
+                </StackPanel>
+            </Border>
+
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="15">
+                    <TextBlock Text="PRIVACY &amp; TELEMETRY" Classes="SectionHeader"/>
+                    
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Help us improve Mass Suite by sending anonymous usage data." 
+                                   FontSize="12" Opacity="0.7" TextWrapping="Wrap"/>
+                        
+                        <ToggleSwitch IsChecked="{Binding AppSettings.Telemetry.Enabled}"
+                                      OnContent="Telemetry Enabled"
+                                      OffContent="Telemetry Disabled"/>
+                                      
+                        <Button Content="View Local Telemetry Logs"
+                                Command="{Binding OpenTelemetryLogsCommand}"
+                                Background="Transparent"
+                                BorderBrush="{StaticResource BorderBrush}"
+                                BorderThickness="1"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Command="{Binding SaveCommand}" 
+                        Content="Save Changes"
+                        Background="#6366F1"
+                        Foreground="White"
+                        Padding="20,10"
+                        CornerRadius="4"/>
+                <Button Command="{Binding ResetCommand}" 
+                        Content="Reset to Defaults"
+                        Background="#333333"
+                        Padding="20,10"
+                        CornerRadius="4"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

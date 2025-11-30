@@ -1,0 +1,18 @@
+{
+    "WelcomeMessage": "Bienvenido a Mass Suite",
+    "Home": "Inicio",
+    "ProUSB": "ProUSB",
+    "MassBoot": "MassBoot",
+    "Workflows": "Flujos de trabajo",
+    "Health": "Salud",
+    "Logs": "Registros",
+    "Operations": "Operaciones",
+    "Scripting": "Scripting",
+    "Plugins": "Complementos",
+    "Settings": "Configuración",
+    "Language": "Idioma",
+    "Theme": "Tema",
+    "TelemetryEnabled": "Telemetría Activada",
+    "TelemetryDisabled": "Telemetría Desactivada",
+    "ViewLogs": "Ver registros locales"
+}

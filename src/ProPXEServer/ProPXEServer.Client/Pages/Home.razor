@@ -1,0 +1,539 @@
+@page "/"
+@inject AuthService AuthService
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>PXE Dashboard - ProPXEServer</PageTitle>
+
+<div class="dashboard fade-in">
+    @if (currentUser == null) {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading dashboard...</p>
+        </div>
+    } else {
+        <header class="dashboard-header">
+            <div>
+                <h1>📡 PXE Boot Dashboard</h1>
+                <p class="text-muted">Network boot monitoring and management</p>
+            </div>
+            <div class="user-info">
+                <span class="user-email">@currentUser.Email</span>
+                @if (currentUser.IsSubscribed) {
+                    <span class="badge badge-success">✓ Pro</span>
+                } else {
+                    <button @onclick="NavigateToSubscription" class="btn btn-success">
+                        Upgrade to Pro $20/mo
+                    </button>
+                }
+                <button @onclick="HandleLogout" class="btn">Logout</button>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <div class="stat-value">@bootEvents.Count</div>
+                    <div class="stat-label">Total Boot Events</div>
+                    <div class="stat-trend text-success">↑ @GetTodayEvents() today</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🖥️</div>
+                <div class="stat-content">
+                    <div class="stat-value">@activeClients</div>
+                    <div class="stat-label">Active Clients (24h)</div>
+                    <div class="stat-trend text-muted">@GetUniqueClients() unique MACs</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-value">11</div>
+                    <div class="stat-label">Boot Files Ready</div>
+                    <div class="stat-trend text-info">netboot.xyz deployed</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚡</div>
+                <div class="stat-content">
+                    <div class="stat-value">@GetSuccessRate()%</div>
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-trend text-success">Excellent</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="events-section card">
+                <div class="section-header">
+                    <h2>🔌 Recent Boot Events</h2>
+                    <button @onclick="RefreshData" class="btn btn-sm">
+                        <span class="refresh-icon">⟳</span> Refresh
+                    </button>
+                </div>
+                <div class="events-list">
+                    @if (bootEvents.Count == 0) {
+                        <div class="empty-state">
+                            <p>No boot events yet. Waiting for PXE clients...</p>
+                        </div>
+                    } else {
+                        @foreach (var evt in bootEvents.Take(10)) {
+                            <div class="event-item slide-in">
+                                <div class="event-icon">@GetEventIcon(evt.EventType)</div>
+                                <div class="event-details">
+                                    <div class="event-type">@evt.EventType</div>
+                                    <div class="event-info">
+                                        <span class="badge badge-info">@evt.MacAddress</span>
+                                        <span class="text-muted">→</span>
+                                        <span>@evt.IpAddress</span>
+                                    </div>
+                                </div>
+                                <div class="event-time">
+                                    <span>@evt.Timestamp.ToString("HH:mm:ss")</span>
+                                    <span class="text-muted">@GetTimeAgo(evt.Timestamp)</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="bootfiles-section card">
+                <div class="section-header">
+                    <h2>📁 netboot.xyz Boot Files</h2>
+                    <span class="badge badge-success">Deployed</span>
+                </div>
+                <div class="bootfiles-grid">
+                    <div class="bootfile-item">
+                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-info">
+                            <div class="bootfile-name">netboot.xyz.kpxe</div>
+                            <span class="badge badge-info">BIOS</span>
+                        </div>
+                    </div>
+                    <div class="bootfile-item">
+                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-info">
+                            <div class="bootfile-name">netboot.xyz.efi</div>
+                            <span class="badge badge-success">UEFI x64</span>
+                        </div>
+                    </div>
+                    <div class="bootfile-item">
+                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-info">
+                            <div class="bootfile-name">netboot.xyz-arm64.efi</div>
+                            <span class="badge badge-warning">ARM64</span>
+                        </div>
+                    </div>
+                    <div class="bootfile-item">
+                        <div class="bootfile-icon">📚</div>
+                        <div class="bootfile-info">
+                            <div class="bootfile-name">100+ OS Options</div>
+                            <span class="badge badge-info">Ready</span>
+                        </div>
+                    </div>
+                </div>
+                <button @onclick="NavigateToFiles" class="btn btn-primary btn-block">
+                    Manage Boot Files →
+                </button>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <button @onclick="NavigateToFiles" class="action-card">
+                <span class="action-icon">📁</span>
+                <span class="action-label">Boot Files</span>
+                <span class="action-desc">Upload & manage</span>
+            </button>
+            <button @onclick="RefreshData" class="action-card">
+                <span class="action-icon">🔄</span>
+                <span class="action-label">Refresh</span>
+                <span class="action-desc">Update stats</span>
+            </button>
+            <button @onclick="NavigateToSubscription" class="action-card">
+                <span class="action-icon">⭐</span>
+                <span class="action-label">Upgrade</span>
+                <span class="action-desc">Go Pro $20/mo</span>
+            </button>
+        </div>
+    }
+</div>
+
+<style>
+    .dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--space-6);
+    }
+
+    .loading-container {
+        text-align: center;
+        padding: 4rem;
+    }
+
+    .loading-container p {
+        margin-top: var(--space-4);
+        color: var(--text-secondary);
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--space-8);
+        padding-bottom: var(--space-6);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .dashboard-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .user-info {
+        display: flex;
+        gap: var(--space-3);
+        align-items: center;
+    }
+
+    .user-email {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-4);
+        margin-bottom: var(--space-8);
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
+        display: flex;
+        gap: var(--space-4);
+        transition: all var(--transition-base);
+    }
+
+    .stat-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: var(--space-1);
+        color: var(--text-primary);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-2);
+    }
+
+    .stat-trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-6);
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+
+    .btn-sm {
+        padding: var(--space-1) var(--space-3);
+        font-size: 0.875rem;
+    }
+
+    .refresh-icon {
+        display: inline-block;
+        transition: transform var(--transition-base);
+    }
+
+    .btn-sm:hover .refresh-icon {
+        transform: rotate(180deg);
+    }
+
+    .events-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .event-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        border-left: 3px solid var(--accent);
+        transition: all var(--transition-fast);
+    }
+
+    .event-item:hover {
+        background: var(--bg-tertiary);
+        transform: translateX(4px);
+    }
+
+    .event-icon {
+        font-size: 1.5rem;
+    }
+
+    .event-details {
+        flex: 1;
+    }
+
+    .event-type {
+        font-weight: 600;
+        margin-bottom: var(--space-1);
+        color: var(--text-primary);
+    }
+
+    .event-info {
+        font-size: 0.875rem;
+        display: flex;
+        gap: var(--space-2);
+        align-items: center;
+    }
+
+    .event-time {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        font-size: 0.875rem;
+    }
+
+    .bootfiles-grid {
+        display: grid;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+    }
+
+    .bootfile-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+    }
+
+    .bootfile-item:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .bootfile-icon {
+        font-size: 1.5rem;
+    }
+
+    .bootfile-info {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .bootfile-name {
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .btn-block {
+        width: 100%;
+        margin-top: var(--space-4);
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+    }
+
+    .action-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-6);
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        text-align: center;
+    }
+
+    .action-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .action-icon {
+        font-size: 3rem;
+    }
+
+    .action-label {
+        font-weight: 600;
+        font-size: 1.125rem;
+        color: var(--text-primary);
+    }
+
+    .action-desc {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--space-8);
+        color: var(--text-secondary);
+    }
+
+    @@media (max-width: 968px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .user-info {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+
+@code {
+    private AuthService.UserInfo? currentUser;
+    private List<PxeEvent> bootEvents = [];
+    private int activeClients = 0;
+    private System.Threading.Timer? _timer;
+
+    protected override async Task OnInitializedAsync() {
+        await LoadData();
+        
+        _timer = new System.Threading.Timer(async _ => {
+            await InvokeAsync(async () => {
+                await RefreshData();
+                StateHasChanged();
+            });
+        }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+    }
+
+    private async Task LoadData() {
+        currentUser = await AuthService.GetCurrentUserAsync();
+        
+        if (currentUser == null) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await RefreshData();
+    }
+
+    private async Task RefreshData() {
+        try {
+            bootEvents = await Http.GetFromJsonAsync<List<PxeEvent>>("/api/pxe/events") ?? [];
+            activeClients = bootEvents
+                .Where(e => e.Timestamp > DateTime.UtcNow.AddHours(-24))
+                .Select(e => e.MacAddress)
+                .Distinct()
+                .Count();
+        }
+        catch { }
+    }
+
+    private async Task HandleLogout() {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private void NavigateToSubscription() {
+        Navigation.NavigateTo("/subscription");
+    }
+
+    private void NavigateToFiles() {
+        Navigation.NavigateTo("/files");
+    }
+
+    private int GetTodayEvents() =>
+        bootEvents.Count(e => e.Timestamp.Date == DateTime.UtcNow.Date);
+
+    private int GetUniqueClients() =>
+        bootEvents.Select(e => e.MacAddress).Distinct().Count();
+
+    private int GetSuccessRate() {
+        if (bootEvents.Count == 0) return 100;
+        var successful = bootEvents.Count(e => !e.EventType.Contains("Error") && !e.EventType.Contains("Failed"));
+        return (int)((double)successful / bootEvents.Count * 100);
+    }
+
+    private string GetEventIcon(string eventType) => eventType switch {
+        var t when t.Contains("DHCP") => "🌐",
+        var t when t.Contains("TFTP") => "📦",
+        var t when t.Contains("HTTP") => "🔗",
+        var t when t.Contains("Boot") => "🚀",
+        _ => "🔌"
+    };
+
+    private string GetTimeAgo(DateTime timestamp) {
+        var diff = DateTime.UtcNow - timestamp;
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        return $"{(int)diff.TotalDays}d ago";
+    }
+
+    private record PxeEvent(int Id, string EventType, string MacAddress, string IpAddress, DateTime Timestamp);
+
+    public void Dispose() {
+        _timer?.Dispose();
+    }
+}

@@ -1,0 +1,448 @@
+@page "/analytics"
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Analytics - ProPXEServer</PageTitle>
+
+<div class="analytics-container fade-in">
+    <header class="page-header">
+        <div>
+            <h1>📊 Analytics & Insights</h1>
+            <p class="text-muted">Boot history, usage statistics, and performance metrics</p>
+        </div>
+        <button @onclick="NavigateHome" class="btn">
+            ← Dashboard
+        </button>
+    </header>
+
+    @if (currentUser == null) {
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Loading analytics...</p>
+        </div>
+    } else {
+        <div class="analytics-grid">
+            <div class="card overview-card">
+                <h2>Overview</h2>
+                <div class="overview-stats">
+                    <div class="overview-stat">
+                        <div class="stat-value">@totalBoots</div>
+                        <div class="stat-label">Total Boots</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="stat-value">@uniqueClients</div>
+                        <div class="stat-label">Unique Clients</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="stat-value">@successRate%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                    <div class="overview-stat">
+                        <div class="stat-value">@avgBootTime</div>
+                        <div class="stat-label">Avg Boot Time</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <h2>Boot Events Over Time</h2>
+                <div class="chart-placeholder">
+                    <div class="placeholder-icon">📈</div>
+                    <p>Chart visualization will appear here</p>
+                    <p class="text-muted">Showing boot events for the last 30 days</p>
+                </div>
+            </div>
+
+            <div class="card architecture-card">
+                <h2>Architecture Breakdown</h2>
+                <div class="architecture-stats">
+                    <div class="arch-item">
+                        <div class="arch-bar">
+                            <div class="arch-fill bios" style="width: 45%"></div>
+                        </div>
+                        <div class="arch-label">
+                            <span class="badge badge-info">BIOS</span>
+                            <span>45%</span>
+                        </div>
+                    </div>
+                    <div class="arch-item">
+                        <div class="arch-bar">
+                            <div class="arch-fill uefi" style="width: 50%"></div>
+                        </div>
+                        <div class="arch-label">
+                            <span class="badge badge-success">UEFI</span>
+                            <span>50%</span>
+                        </div>
+                    </div>
+                    <div class="arch-item">
+                        <div class="arch-bar">
+                            <div class="arch-fill arm" style="width: 5%"></div>
+                        </div>
+                        <div class="arch-label">
+                            <span class="badge badge-warning">ARM64</span>
+                            <span>5%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card top-files-card">
+                <h2>Most Booted Files</h2>
+                <div class="top-files-list">
+                    <div class="top-file-item">
+                        <div class="file-rank">1</div>
+                        <div class="file-details">
+                            <div class="file-name">netboot.xyz.efi</div>
+                            <div class="file-boots">1,234 boots</div>
+                        </div>
+                        <div class="file-bar">
+                            <div class="file-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="top-file-item">
+                        <div class="file-rank">2</div>
+                        <div class="file-details">
+                            <div class="file-name">netboot.xyz.kpxe</div>
+                            <div class="file-boots">856 boots</div>
+                        </div>
+                        <div class="file-bar">
+                            <div class="file-fill" style="width: 69%"></div>
+                        </div>
+                    </div>
+                    <div class="top-file-item">
+                        <div class="file-rank">3</div>
+                        <div class="file-details">
+                            <div class="file-name">ubuntu-22.04.iso</div>
+                            <div class="file-boots">342 boots</div>
+                        </div>
+                        <div class="file-bar">
+                            <div class="file-fill" style="width: 28%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card peak-hours-card">
+                <h2>Peak Usage Hours</h2>
+                <div class="heatmap">
+                    <p class="text-muted">Hour-by-hour boot activity heatmap</p>
+                    <div class="heatmap-grid">
+                        @for (int hour = 0; hour < 24; hour++) {
+                            <div class="heatmap-cell @GetHeatmapClass(hour)" title="@hour:00">
+                                @hour
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card client-list-card">
+                <h2>Top Clients</h2>
+                <div class="client-list">
+                    @foreach (var client in topClients) {
+                        <div class="client-item">
+                            <div class="client-icon">💻</div>
+                            <div class="client-info">
+                                <div class="client-mac">@client.MacAddress</div>
+                                <div class="client-count">@client.BootCount boots</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .analytics-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: var(--space-6);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--space-8);
+        padding-bottom: var(--space-6);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        margin: 0 0 var(--space-2) 0;
+        font-size: 2rem;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: var(--space-6);
+    }
+
+    .overview-card {
+        grid-column: 1 / -1;
+    }
+
+    .overview-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: var(--space-6);
+        margin-top: var(--space-6);
+    }
+
+    .overview-stat {
+        text-align: center;
+    }
+
+    .chart-card {
+        grid-column: 1 / -1;
+    }
+
+    .chart-placeholder {
+        text-align: center;
+        padding: var(--space-8);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        margin-top: var(--space-4);
+    }
+
+    .placeholder-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+        margin-bottom: var(--space-4);
+    }
+
+    .architecture-stats {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-top: var(--space-4);
+    }
+
+    .arch-item {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .arch-bar {
+        height: 24px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .arch-fill {
+        height: 100%;
+        border-radius: var(--radius-md);
+        transition: width var(--transition-base);
+    }
+
+    .arch-fill.bios {
+        background: var(--info);
+    }
+
+    .arch-fill.uefi {
+        background: var(--success);
+    }
+
+    .arch-fill.arm {
+        background: var(--warning);
+    }
+
+    .arch-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+    }
+
+    .top-files-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+        margin-top: var(--space-4);
+    }
+
+    .top-file-item {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: var(--space-4);
+        align-items: center;
+    }
+
+    .file-rank {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-full);
+        background: var(--accent);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .file-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+
+    .file-name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .file-boots {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .file-bar {
+        width: 150px;
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .file-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: var(--radius-full);
+    }
+
+    .heatmap {
+        margin-top: var(--space-4);
+    }
+
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: var(--space-2);
+        margin-top: var(--space-4);
+    }
+
+    .heatmap-cell {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .heatmap-cell.low {
+        background: var(--bg-tertiary);
+        color: var(--text-tertiary);
+    }
+
+    .heatmap-cell.medium {
+        background: rgba(88, 166, 255, 0.3);
+        color: var(--text-primary);
+    }
+
+    .heatmap-cell.high {
+        background: var(--accent);
+        color: white;
+    }
+
+    .heatmap-cell:hover {
+        transform: scale(1.1);
+    }
+
+    .client-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+    }
+
+    .client-item {
+        display: flex;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+    }
+
+    .client-icon {
+        font-size: 1.5rem;
+    }
+
+    .client-info {
+        flex: 1;
+    }
+
+    .client-mac {
+        font-weight: 600;
+        font-family: monospace;
+        color: var(--text-primary);
+    }
+
+    .client-count {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    @@media (max-width: 768px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .overview-card,
+        .chart-card {
+            grid-column: 1;
+        }
+
+        .heatmap-grid {
+            grid-template-columns: repeat(6, 1fr);
+        }
+    }
+</style>
+
+@code {
+    private AuthService.UserInfo? currentUser;
+    private int totalBoots = 2345;
+    private int uniqueClients = 47;
+    private int successRate = 98;
+    private string avgBootTime = "3.2s";
+    private List<TopClient> topClients = [];
+
+    protected override async Task OnInitializedAsync() {
+        currentUser = await AuthService.GetCurrentUserAsync();
+        if (currentUser == null) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        LoadAnalytics();
+    }
+
+    private void LoadAnalytics() {
+        topClients = [
+            new("AA:BB:CC:DD:EE:01", 234),
+            new("AA:BB:CC:DD:EE:02", 187),
+            new("AA:BB:CC:DD:EE:03", 156),
+            new("AA:BB:CC:DD:EE:04", 142),
+            new("AA:BB:CC:DD:EE:05", 98)
+        ];
+    }
+
+    private string GetHeatmapClass(int hour) {
+        if (hour >= 9 && hour <= 17) return "high";
+        if (hour >= 7 && hour <= 20) return "medium";
+        return "low";
+    }
+
+    private record TopClient(string MacAddress, int BootCount);
+
+    private void NavigateHome() => Navigation.NavigateTo("/");
+}

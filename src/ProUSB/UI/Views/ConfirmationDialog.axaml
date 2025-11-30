@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ProUSB.UI.Views.ConfirmationDialog" Width="400" Height="220" SystemDecorations="BorderOnly" WindowStartupLocation="CenterOwner" Background="Transparent" TransparencyLevelHint="Mica">
+    <Border Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1" CornerRadius="8" Padding="24" BoxShadow="0 8 24 0 #66000000">
+        <StackPanel Spacing="20">
+            <StackPanel Spacing="8">
+                <TextBlock Text="⚠️ WARNING" Foreground="#FF453A" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock Text="ALL DATA WILL BE ERASED" Foreground="#E0E0E0" FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+            <Border Background="#2D2D2D" CornerRadius="6" Padding="16">
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="N" FontWeight="Medium" Foreground="White" HorizontalAlignment="Center" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="S" FontSize="12" Foreground="#A0A0A0" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+            
+            <Grid ColumnDefinitions="*,12,*">
+                <Button Grid.Column="0" Click="OnCancelClick" Background="#3D3D3D" Foreground="White" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                    <TextBlock Text="CANCEL" Margin="0,4"/>
+                </Button>
+                <Button Grid.Column="2" Click="OnConfirmClick" Background="#D13438" Foreground="White" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Cursor="Hand">
+                    <TextBlock Text="ERASE &amp; BURN" FontWeight="SemiBold" Margin="0,4"/>
+                </Button>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

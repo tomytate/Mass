@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<div class="app-container">
+    <aside class="app-sidebar">
+        <NavMenu />
+    </aside>
+
+    <main class="app-main">
+        <article class="app-content">
+            @Body
+        </article>
+    </main>
+</div>
+
+<ThemeToggle />
+
+<style>
+    .app-container {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .app-sidebar {
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .app-main {
+        height: 100vh;
+        overflow-y: auto;
+        background: var(--bg-primary);
+    }
+
+    .app-content {
+        min-height: 100%;
+    }
+
+    @@media (max-width: 768px) {
+        .app-container {
+            grid-template-columns: 60px 1fr;
+        }
+    }
+</style>

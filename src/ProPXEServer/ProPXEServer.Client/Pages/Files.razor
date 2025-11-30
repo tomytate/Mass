@@ -1,0 +1,589 @@
+@page "/files"
+@inject HttpClient Http
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Boot Files - ProPXEServer</PageTitle>
+
+<div class="files-container fade-in">
+    <header class="page-header">
+        <div>
+            <h1>📁 Boot Files Management</h1>
+            <p class="text-muted">Upload and manage network boot files</p>
+        </div>
+        <button @onclick="NavigateHome" class="btn">
+            ← Dashboard
+        </button>
+    </header>
+
+    @if (!currentUser?.IsSubscribed ?? true) {
+        <div class="subscription-card card">
+            <div class="subscription-icon">🔒</div>
+            <h2>Unlock Pro Features</h2>
+            <p>Upload custom boot files and manage your PXE environment with a Pro subscription.</p>
+            <ul class="features-list">
+                <li>✓ Unlimited file uploads (100GB storage)</li>
+                <li>✓ Custom boot configurations</li>
+                <li>✓ Priority support</li>
+                <li>✓ Advanced analytics</li>
+            </ul>
+            <button @onclick="NavigateToSubscription" class="btn btn-primary btn-large">
+                Upgrade to Pro - $20/month
+            </button>
+        </div>
+    } else {
+        <div class="upload-section card">
+            <h2>Upload Boot File</h2>
+            <div class="drop-zone @(isDragging ? "dragging" : "")"
+                 @ondragenter="HandleDragEnter"
+                 @ondragleave="HandleDragLeave"
+                 @ondragover:preventDefault
+                 @ondrop="HandleDrop"
+                 @ondrop:preventDefault>
+                <InputFile OnChange="HandleFileSelected" class="file-input" id="fileInput" />
+                <label for="fileInput" class="drop-zone-label">
+                    <div class="drop-zone-icon">📤</div>
+                    <div class="drop-zone-text">
+                        <strong>Drop boot files here</strong> or click to browse
+                    </div>
+                    <div class="drop-zone-hint">Supports: .iso, .efi, .kpxe, .img (Max 10GB)</div>
+                </label>
+            </div>
+
+            @if (selectedFile != null) {
+                <div class="file-preview slide-in">
+                    <div class="preview-icon">📄</div>
+                    <div class="preview-info">
+                        <div class="preview-name">@selectedFile.Name</div>
+                        <div class="preview-size">@FormatBytes(selectedFile.Size)</div>
+                    </div>
+                    <button @onclick="UploadFile" disabled="@isUploading" class="btn btn-primary">
+                        @(isUploading ? "Uploading..." : "Upload")
+                    </button>
+                    <button @onclick="ClearSelection" class="btn">Clear</button>
+                </div>
+            }
+
+            @if (uploadProgress > 0 && isUploading) {
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @uploadProgress%"></div>
+                    </div>
+                    <div class="progress-text">@uploadProgress%</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(uploadMessage)) {
+                <div class="alert @(uploadSuccess ? "alert-success" : "alert-error")">
+                    @uploadMessage
+                </div>
+            }
+        </div>
+
+        <div class="files-section card">
+            <div class="section-header">
+                <h2>Your Boot Files</h2>
+                <div class="storage-meter">
+                    <div class="storage-text">Storage: 2.4GB / 100GB</div>
+                    <div class="storage-bar">
+                        <div class="storage-fill" style="width: 2.4%"></div>
+                    </div>
+                </div>
+            </div>
+
+            @if (bootFiles.Count == 0) {
+                <div class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <p>No boot files uploaded yet.</p>
+                    <p class="text-muted">Upload your first boot file to get started!</p>
+                </div>
+            } else {
+                <div class="files-grid">
+                    @foreach (var file in bootFiles) {
+                        <div class="file-card">
+                            <div class="file-card-header">
+                                <div class="file-icon">@GetFileIcon(file.FileName)</div>
+                                <div class="file-actions">
+                                    <button @onclick="() => DownloadFile(file.Id)" class="btn-icon" title="Download">
+                                        ⬇️
+                                    </button>
+                                    <button @onclick="() => DeleteFile(file.Id)" class="btn-icon btn-danger" title="Delete">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="file-details">
+                                <div class="file-name">@file.FileName</div>
+                                <div class="file-meta">
+                                    <span class="badge badge-info">@GetFileType(file.FileName)</span>
+                                    <span class="text-muted">@FormatBytes(file.FileSizeBytes)</span>
+                                    <span class="text-muted">@file.UploadedAt.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .files-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: var(--space-6);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--space-8);
+        padding-bottom: var(--space-6);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+        margin: 0 0 var(--space-2) 0;
+        font-size: 2rem;
+    }
+
+    .subscription-card {
+        text-align: center;
+        padding: var(--space-8);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .subscription-icon {
+        font-size: 4rem;
+        margin-bottom: var(--space-4);
+    }
+
+    .subscription-card h2 {
+        margin-bottom: var(--space-4);
+        color: var(--text-primary);
+    }
+
+    .subscription-card p {
+        color: var(--text-secondary);
+        margin-bottom: var(--space-6);
+    }
+
+    .features-list {
+        list-style: none;
+        text-align: left;
+        max-width: 400px;
+        margin: 0 auto var(--space-6) auto;
+        padding: 0;
+    }
+
+    .features-list li {
+        padding: var(--space-2) 0;
+        color: var(--text-primary);
+    }
+
+    .btn-large {
+        padding: var(--space-4) var(--space-8);
+        font-size: 1.125rem;
+    }
+
+    .drop-zone {
+        border: 2px dashed var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: var(--space-8);
+        text-align: center;
+        transition: all var(--transition-base);
+        cursor: pointer;
+        position: relative;
+        background: var(--bg-secondary);
+    }
+
+    .drop-zone:hover, .drop-zone.dragging {
+        border-color: var(--accent);
+        background: var(--bg-tertiary);
+    }
+
+    .file-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+    }
+
+    .drop-zone-label {
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .drop-zone-icon {
+        font-size: 4rem;
+        opacity: 0.5;
+    }
+
+    .drop-zone-text {
+        color: var(--text-primary);
+        font-size: 1.125rem;
+    }
+
+    .drop-zone-hint {
+        color: var(--text-tertiary);
+        font-size: 0.875rem;
+    }
+
+    .file-preview {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        margin-top: var(--space-4);
+    }
+
+    .preview-icon {
+        font-size: 2.5rem;
+    }
+
+    .preview-info {
+        flex: 1;
+    }
+
+    .preview-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: var(--space-1);
+    }
+
+    .preview-size {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    .progress-container {
+        margin-top: var(--space-4);
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-bottom: var(--space-2);
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent), var(--info));
+        transition: width var(--transition-base);
+        border-radius: var(--radius-full);
+    }
+
+    .progress-text {
+        text-align: center;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .alert {
+        padding: var(--space-4);
+        border-radius: var(--radius-md);
+        margin-top: var(--space-4);
+    }
+
+    .alert-success {
+        background: rgba(63, 185, 80, 0.1);
+        border: 1px solid var(--success);
+        color: var(--success);
+    }
+
+    .alert-error {
+        background: rgba(248, 81, 73, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-6);
+    }
+
+    .section-header h2 {
+        margin: 0;
+    }
+
+    .storage-meter {
+        text-align: right;
+    }
+
+    .storage-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: var(--space-2);
+    }
+
+    .storage-bar {
+        width: 200px;
+        height: 6px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .storage-fill {
+        height: 100%;
+        background: var(--success);
+        border-radius: var(--radius-full);
+        transition: width var(--transition-base);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: var(--space-8);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        opacity: 0.3;
+        margin-bottom: var(--space-4);
+    }
+
+    .files-grid {
+        display: grid;
+        gap: var(--space-4);
+    }
+
+    .file-card {
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-fast);
+    }
+
+    .file-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .file-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-3);
+    }
+
+    .file-icon {
+        font-size: 2rem;
+    }
+
+    .file-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 1.25rem;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-icon:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--accent);
+    }
+
+    .btn-icon.btn-danger:hover {
+        background: rgba(248, 81, 73, 0.1);
+        border-color: var(--danger);
+    }
+
+    .file-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .file-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-primary);
+    }
+
+    .file-meta {
+        display: flex;
+        gap: var(--space-3);
+        align-items: center;
+        font-size: 0.875rem;
+    }
+
+    @@media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            gap: var(--space-4);
+        }
+
+        .storage-meter {
+            text-align: left;
+        }
+
+        .storage-bar {
+            width: 100%;
+        }
+    }
+</style>
+
+@code {
+    private AuthService.UserInfo? currentUser;
+    private List<BootFile> bootFiles = [];
+    private IBrowserFile? selectedFile;
+    private bool isUploading = false;
+    private bool isDragging = false;
+    private int uploadProgress = 0;
+    private string uploadMessage = "";
+    private bool uploadSuccess = false;
+
+    protected override async Task OnInitializedAsync() {
+        currentUser = await AuthService.GetCurrentUserAsync();
+        if (currentUser == null) {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadFiles();
+    }
+
+    private async Task LoadFiles() {
+        try {
+            // bootFiles = await Http.GetFromJsonAsync<List<BootFile>>("/api/bootfiles") ?? [];
+        }
+        catch { }
+    }
+
+    private void HandleDragEnter() {
+        isDragging = true;
+    }
+
+    private void HandleDragLeave() {
+        isDragging = false;
+    }
+
+    private void HandleDrop() {
+        isDragging = false;
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e) {
+        selectedFile = e.File;
+        uploadProgress = 0;
+        uploadMessage = "";
+    }
+
+    private void ClearSelection() {
+        selectedFile = null;
+        uploadProgress = 0;
+        uploadMessage = "";
+    }
+
+    private async Task UploadFile() {
+        if (selectedFile == null) return;
+
+        isUploading = true;
+        uploadProgress = 0;
+        uploadMessage = "";
+
+        try {
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxAllowedSize: 10L * 1024 * 1024 * 1024));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+            content.Add(fileContent, "file", selectedFile.Name);
+
+            // Simulate progress
+            for (int i = 0; i <= 100; i += 10) {
+                uploadProgress = i;
+                StateHasChanged();
+                await Task.Delay(100);
+            }
+
+            var response = await Http.PostAsync("/api/bootfiles/upload", content);
+            
+            if (response.IsSuccessStatusCode) {
+                uploadSuccess = true;
+                uploadMessage = "✓ File uploaded successfully!";
+                selectedFile = null;
+                uploadProgress = 100;
+                await LoadFiles();
+            } else {
+                uploadSuccess = false;
+                uploadMessage = "⚠ Upload failed. Please try again.";
+            }
+        }
+        catch (Exception ex) {
+            uploadSuccess = false;
+            uploadMessage = $"⚠ Error: {ex.Message}";
+        }
+        finally {
+            isUploading = false;
+        }
+    }
+
+    private async Task DownloadFile(int fileId) {
+        Navigation.NavigateTo($"/api/bootfiles/{fileId}/download", true);
+    }
+
+    private async Task DeleteFile(int fileId) {
+        await Http.DeleteAsync($"/api/bootfiles/{fileId}");
+        await LoadFiles();
+    }
+
+    private static string FormatBytes(long bytes) {
+        string[] sizes = ["B", "KB", "MB", "GB", "TB"];
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1) {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private static string GetFileIcon(string fileName) {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch {
+            ".iso" => "💿",
+            ".efi" => "⚙️",
+            ".kpxe" => "🔧",
+            ".img" => "💾",
+            _ => "📄"
+        };
+    }
+
+    private static string GetFileType(string fileName) {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        if (fileName.Contains("arm64", StringComparison.OrdinalIgnoreCase)) return "ARM64";
+        if (fileName.Contains("efi", StringComparison.OrdinalIgnoreCase)) return "UEFI";
+        if (fileName.Contains("kpxe", StringComparison.OrdinalIgnoreCase)) return "BIOS";
+        return ext.TrimStart('.').ToUpperInvariant();
+    }
+
+    public record BootFile(int Id, string FileName, long FileSizeBytes, DateTime UploadedAt);
+
+    private void NavigateHome() => Navigation.NavigateTo("/");
+    private void NavigateToSubscription() => Navigation.NavigateTo("/subscription");
+}

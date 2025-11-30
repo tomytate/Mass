@@ -1,0 +1,103 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             x:Class="Mass.Launcher.Views.WorkflowsView"
+             x:DataType="vm:WorkflowsViewModel">
+    
+    <ScrollViewer>
+        <StackPanel Spacing="30" Margin="40">
+            <StackPanel Spacing="10">
+                <TextBlock Text="WORKFLOWS" FontSize="36" FontWeight="Bold"/>
+                <TextBlock Text="Automate complex operations with YAML/JSON workflows" FontSize="16" Opacity="0.7"/>
+            </StackPanel>
+
+            <StackPanel Spacing="15">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="AVAILABLE WORKFLOWS" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                        <Button Content="Refresh" Command="{Binding LoadWorkflowsCommand}" Padding="10,5"/>
+                        <Button Content="Open Folder" Command="{Binding OpenWorkflowDirectoryCommand}" Padding="10,5"/>
+                    </StackPanel>
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding Workflows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}" Margin="0,0,0,10">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Grid.Column="0" Spacing="8">
+                                        <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding Description}" FontSize="12" Opacity="0.7"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="15" Margin="0,5,0,0">
+                                            <TextBlock FontSize="11" Opacity="0.6">
+                                                <Run Text="Version: "/>
+                                                <Run Text="{Binding Version}" FontWeight="Medium"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="11" Opacity="0.6">
+                                                <Run Text="Steps: "/>
+                                                <Run Text="{Binding StepCount}" FontWeight="Medium"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="11" Opacity="0.6">
+                                                <Run Text="Status: "/>
+                                                <Run Text="{Binding Status}" FontWeight="Medium"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                        <Button Command="{Binding $parent[UserControl].((vm:WorkflowsViewModel)DataContext).ToggleFavoriteCommand}"
+                                                CommandParameter="{Binding}"
+                                                Background="Transparent"
+                                                Padding="8"
+                                                Cursor="Hand"
+                                                ToolTip.Tip="Toggle Favorite">
+                                            <TextBlock Text="{Binding IsFavorite, Converter={StaticResource BooleanToStarConverter}}" FontSize="20" Foreground="{StaticResource WarningBrush}"/>
+                                        </Button>
+                                        
+                                        <Button Content="Execute" 
+                                                Command="{Binding $parent[UserControl].((vm:WorkflowsViewModel)DataContext).ExecuteWorkflowCommand}"
+                                                CommandParameter="{Binding}"
+                                                Padding="15,8"
+                                                Cursor="Hand"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <StackPanel Spacing="15">
+                <TextBlock Text="EXECUTION LOG" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <Border Background="#2D2D2D" CornerRadius="8" Padding="15" Height="300">
+                    <ScrollViewer>
+                        <ItemsControl ItemsSource="{Binding ExecutionLogs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Margin="0,2"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </StackPanel>
+
+            <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Getting Started" FontSize="16" FontWeight="SemiBold"/>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.7">
+                        1. Click "Open Folder" to access the workflows directory
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.7">
+                        2. Create a new .yaml or .json workflow file
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.7">
+                        3. Click "Refresh" to load your workflow
+                    </TextBlock>
+                    <TextBlock TextWrapping="Wrap" Opacity="0.7">
+                        4. Click "Execute" to run the workflow
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
