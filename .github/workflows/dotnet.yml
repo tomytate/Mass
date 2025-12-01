@@ -1,0 +1,359 @@
+# .github/workflows/dotnet.yml
+name: Mass Suite CI/CD
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    branches: [ "main", "develop" ]
+  release:
+    types: [created]
+  workflow_dispatch: # Manual trigger
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  SOLUTION_FILE: 'Mass.Suite.sln'
+  BUILD_CONFIGURATION: 'Release'
+
+jobs:
+  # ============================================
+  # JOB 1: Build & Test (Multi-Platform)
+  # ============================================
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact-name: linux-x64
+            rid: linux-x64
+          - os: windows-latest
+            artifact-name: win-x64
+            rid: win-x64
+          - os: macos-latest
+            artifact-name: osx-x64
+            rid: osx-x64
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Full history for versioning
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+        cache-dependency-path: '**/packages.lock.json'
+
+    - name: Display .NET info
+      run: dotnet --info
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build solution
+      run: |
+        dotnet build ${{ env.SOLUTION_FILE }} \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-restore \
+          /p:TreatWarningsAsErrors=true \
+          /p:ContinuousIntegrationBuild=true
+
+    # ============================================
+    # TEST PHASE (Conditional - only if tests exist)
+    # ============================================
+    - name: Check for test projects
+      id: check-tests
+      shell: bash
+      run: |
+        if find . -name "*.Tests.csproj" -o -name "*Tests.csproj" | grep -q .; then
+          echo "tests-exist=true" >> $GITHUB_OUTPUT
+        else
+          echo "tests-exist=false" >> $GITHUB_OUTPUT
+          echo "⚠️ No test projects found - skipping tests"
+        fi
+
+    - name: Run tests
+      if: steps.check-tests.outputs.tests-exist == 'true'
+      run: |
+        dotnet test ${{ env.SOLUTION_FILE }} \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=test-results-${{ matrix.artifact-name }}.trx" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults
+
+    - name: Upload test results
+      if: steps.check-tests.outputs.tests-exist == 'true' && always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.artifact-name }}
+        path: TestResults/*.trx
+        retention-days: 30
+
+    - name: Upload code coverage
+      if: steps.check-tests.outputs.tests-exist == 'true' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./TestResults/**/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-${{ matrix.artifact-name }}
+
+    # ============================================
+    # PUBLISH ARTIFACTS (Main build only)
+    # ============================================
+    - name: Publish Mass.CLI
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        dotnet publish src/Mass.CLI/Mass.CLI.csproj \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --runtime ${{ matrix.rid }} \
+          --self-contained true \
+          --output ./artifacts/cli-${{ matrix.rid }} \
+          /p:PublishSingleFile=true \
+          /p:PublishTrimmed=true \
+          /p:EnableCompressionInSingleFile=true
+
+    - name: Publish Mass.Launcher
+      if: matrix.os != 'macos-latest' # Skip macOS for now (needs signing)
+      run: |
+        dotnet publish src/Mass.Launcher/Mass.Launcher.csproj \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --runtime ${{ matrix.rid }} \
+          --self-contained true \
+          --output ./artifacts/launcher-${{ matrix.rid }} \
+          /p:PublishSingleFile=false
+
+    - name: Upload CLI artifacts
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: mass-cli-${{ matrix.artifact-name }}
+        path: ./artifacts/cli-${{ matrix.rid }}/*
+        retention-days: 90
+
+    - name: Upload Launcher artifacts
+      if: matrix.os != 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: mass-launcher-${{ matrix.artifact-name }}
+        path: ./artifacts/launcher-${{ matrix.rid }}/*
+        retention-days: 90
+
+  # ============================================
+  # JOB 2: Code Quality & Security (Linux only)
+  # ============================================
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        cache: true
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    # ============================================
+    # CODE FORMATTING CHECK
+    # ============================================
+    - name: Check code formatting
+      run: |
+        dotnet format ${{ env.SOLUTION_FILE }} \
+          --verify-no-changes \
+          --verbosity diagnostic
+
+    # ============================================
+    # SECURITY SCANNING
+    # ============================================
+    - name: Check for vulnerable dependencies
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerable-deps.txt
+        if grep -q "has the following vulnerable packages" vulnerable-deps.txt; then
+          echo "❌ Vulnerable dependencies found!"
+          exit 1
+        fi
+
+    - name: Scan for secrets with Gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # ============================================
+    # STATIC CODE ANALYSIS
+    # ============================================
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+        queries: security-and-quality
+
+    - name: Build for CodeQL
+      run: |
+        dotnet build ${{ env.SOLUTION_FILE }} \
+          --configuration ${{ env.BUILD_CONFIGURATION }} \
+          --no-restore
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+    # ============================================
+    # DEPENDENCY REVIEW (PR only)
+    # ============================================
+    - name: Dependency Review
+      if: github.event_name == 'pull_request'
+      uses: actions/dependency-review-action@v4
+
+  # ============================================
+  # JOB 3: Create Release Assets (Release only)
+  # ============================================
+  release:
+    name: Create Release
+    needs: [build, code-quality]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./release-artifacts
+
+    - name: Create ZIP archives
+      run: |
+        cd release-artifacts
+        for dir in */; do
+          zip -r "${dir%/}.zip" "$dir"
+        done
+
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: release-artifacts/*.zip
+        body: |
+          ## Mass Suite ${{ github.ref_name }}
+          
+          ### 📦 Downloads
+          - **Mass.CLI**: Command-line interface (Windows/Linux/macOS)
+          - **Mass.Launcher**: Desktop GUI (Windows/Linux)
+          
+          ### 🚀 Installation
+          ```
+          # Extract and run
+          unzip mass-cli-linux-x64.zip
+          chmod +x Mass.CLI
+          ./Mass.CLI --version
+          ```
+          
+          ### 📝 Changelog
+          See [CHANGELOG.md](CHANGELOG.md) for full release notes.
+          
+          ### ⚠️ Alpha Software
+          This is pre-1.0 software. APIs may change without notice.
+
+  # ============================================
+  # JOB 4: Performance Benchmarks (Manual/Weekly)
+  # ============================================
+  benchmark:
+    name: Performance Benchmarks
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Run benchmarks
+      run: |
+        if [ -d "benchmarks" ]; then
+          dotnet run --project benchmarks/Mass.Benchmarks/Mass.Benchmarks.csproj \
+            --configuration Release \
+            --framework net10.0 \
+            -- --filter * --exporters json
+        else
+          echo "⚠️ No benchmark projects found"
+        fi
+
+    - name: Upload benchmark results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: BenchmarkDotNet.Artifacts/results/*
+        retention-days: 90
+
+  # ============================================
+  # JOB 5: Docker Build (Future - ProPXEServer)
+  # ============================================
+  docker:
+    name: Build Docker Images
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: [build]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}/propxeserver
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./src/ProPXEServer.API/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+# ============================================
+# END OF WORKFLOW
+# ============================================
