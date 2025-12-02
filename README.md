@@ -7,6 +7,7 @@
 *The ultimate solution for bootable USB creation and network PXE booting*
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com)
 [![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D4)](https://www.microsoft.com/windows)
@@ -267,19 +268,14 @@ Mass Solution
 │   ├── Infrastructure        → Disk management, patching
 │   └── Domain                → Core business logic
 │
-└── ProPXEServer              → PXE boot infrastructure
-    ├── ProPXEServer.API      → ASP.NET Core backend
-    │   ├── Controllers       → REST API endpoints
-    │   ├── Services          → DHCP, TFTP, HTTP Boot
-    │   ├── Data              → EF Core models & DbContext
-    │   ├── Security          → JWT, rate limiting
-    │   └── wwwroot/tftp      → Boot files (netboot.xyz)
-    │
-    ├── ProPXEServer.Client   → Blazor WebAssembly UI
-    │   ├── Pages             → Admin dashboard
-    │   └── Services          → API clients
-    │
-    └── ProPXEServer.Plugin   → Mass.Launcher integration
+├── ProPXEServer              → PXE boot infrastructure
+│   ├── ProPXEServer.API      → ASP.NET Core backend
+│   ├── ProPXEServer.Client   → Blazor WebAssembly UI
+│   └── ProPXEServer.Plugin   → Mass.Launcher integration
+│
+└── tests                     → Unit and Integration Tests
+    ├── Mass.Core.Tests       → Core logic tests
+    └── ProUSB.Tests          → USB engine tests
 ```
 
 ### Solution Projects
@@ -378,7 +374,7 @@ For support, documentation, or contributions:
 
 **Mass** is licensed under the MIT License.
 
-Copyright © 2025
+Copyright © 2025 Mass Suite Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

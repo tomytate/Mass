@@ -49,17 +49,14 @@ dotnet run
 ```
 Mass/
 ├── Mass.sln                    # Main solution file
-├── ProUSB     # USB media creation tool (UI)
+├── Mass.Core/                  # Shared core functionality
+├── Mass.CLI/                   # Command-line interface
+├── Mass.Launcher/              # Main application launcher
+├── ProUSB/                     # USB media creation tool
 ├── ProPXEServer/               # Backend directory
 │   ├── ProPXEServer.API/
-│   │   ├── ProPXEServer.API.csproj
-│   │   ├── Controllers/        # REST API endpoints
-│   │   ├── Services/           # Background services (DHCP, TFTP)
-│   │   ├── Data/               # EF Core models
-│   │   ├── Security/           # Security policies
-│   │   └── wwwroot/pxe/        # Boot files storage
 │   └── ProPXEServer.Client/
-│       └── ProPXEServer.Client.csproj  # Blazor WebAssembly UI
+├── tests/                      # Unit and Integration Tests
 └── README.md
 ```
 
@@ -324,4 +321,4 @@ Logs are stored in:
 This is proprietary software. For support, contact the system administrator.
 
 ## License
-**Mass** is proprietary software. All rights reserved. Unauthorized copying, modification, distribution, or use of this software is strictly prohibited.
+**Mass** is licensed under the MIT License. See [LICENSE](LICENSE) file for details.

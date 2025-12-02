@@ -1,6 +1,6 @@
 using ProUSB.Domain;
 using ProUSB.Domain.Services;
-using ProUSB.Infrastructure.DeviceDetection;
+using Mass.Core.Devices;
 using System;
 using System.IO;
 using System.Linq;

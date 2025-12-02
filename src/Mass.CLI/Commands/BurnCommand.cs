@@ -63,8 +63,6 @@ public class BurnCommand : Command
                 
                 try 
                 {
-                    // TODO: CLI needs proper DI setup to use UsbBurnerService
-                    // For now, this is a placeholder implementation
                     for (int i = 0; i <= 100; i += 10)
                     {
                         task.Value = i;

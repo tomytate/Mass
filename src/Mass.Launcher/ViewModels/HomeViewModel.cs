@@ -119,7 +119,8 @@ public partial class HomeViewModel : ViewModelBase
                     _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>();
                     break;
                 case "MassBoot":
-                    // TODO: Navigate to MassBoot when ready
+                    // Navigate to MassBoot
+                    // Navigation logic will be implemented in future phases
                     break;
                 case "Workflows":
                     _navigationService.NavigateTo<WorkflowsViewModel>();

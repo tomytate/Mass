@@ -1,0 +1,26 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Mass.PowerShell -> C:\Users\Administrator\Desktop\Mass\src\Mass.PowerShell\bin\Debug\net10.0\Mass.PowerShell.dll
+  ProPXEServer.API -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.API\bin\Debug\net10.0\ProPXEServer.API.dll
+  Mass.Core -> C:\Users\Administrator\Desktop\Mass\src\Mass.Core\bin\Debug\net10.0\Mass.Core.dll
+  ProPXEServer.API.Tests -> C:\Users\Administrator\Desktop\Mass\tests\ProPXEServer.API.Tests\bin\Debug\net10.0\ProPXEServer.API.Tests.dll
+  ProUSB -> C:\Users\Administrator\Desktop\Mass\src\ProUSB\bin\Debug\net10.0\ProUSB.dll
+  ProPXEServer.Plugin -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Plugin\bin\Debug\net10.0\ProPXEServer.Plugin.dll
+  Mass.Launcher -> C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\bin\Debug\net10.0\Mass.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(11,11): error CS8954: Source file can only contain one file-scoped namespace declaration. [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(7,12): error CS0234: The type or namespace name 'Core' does not exist in the namespace 'Mass.CLI.Commands.Mass' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(8,12): error CS0234: The type or namespace name 'Core' does not exist in the namespace 'Mass.CLI.Commands.Mass' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(15,22): error CS0246: The type or namespace name 'IConfigurationManager' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+  ProPXEServer.Client -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.dll
+  ProPXEServer.Client (Blazor output) -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot
+
+Build FAILED.
+
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(11,11): error CS8954: Source file can only contain one file-scoped namespace declaration. [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(7,12): error CS0234: The type or namespace name 'Core' does not exist in the namespace 'Mass.CLI.Commands.Mass' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(8,12): error CS0234: The type or namespace name 'Core' does not exist in the namespace 'Mass.CLI.Commands.Mass' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(15,22): error CS0246: The type or namespace name 'IConfigurationManager' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+    0 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:05.36

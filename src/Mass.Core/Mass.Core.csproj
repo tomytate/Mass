@@ -5,6 +5,11 @@
     <LangVersion>14</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.0</Version>
+    <Authors>Mass Suite Team</Authors>
+    <Company>Mass Suite</Company>
+    <Product>Mass Suite Core</Product>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="NLua" Version="1.7.6" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="10.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
   </ItemGroup>
 

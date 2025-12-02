@@ -498,7 +498,7 @@ const bootFiles = await bootFilesResponse.json();
 ---
 
 ## Versioning
-Current API Version: **v1**
+Current API Version: **v1.0.0**
 
 Future versions will be accessible via URL prefix:
 - `/api/v1/auth/login`

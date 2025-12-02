@@ -7,6 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
+    <Version>1.0.0</Version>
+    <Authors>Mass Suite Team</Authors>
+    <Company>Mass Suite</Company>
+    <Product>Mass Launcher</Product>
   </PropertyGroup>
 
   <ItemGroup>

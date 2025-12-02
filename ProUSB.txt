@@ -1,19 +1,620 @@
-================================================================================
-PROUSB SOURCE CODE DOCUMENTATION
-================================================================================
-Created: 2025-12-01
-Purpose: Complete source code documentation for ProUSB project
-================================================================================
+﻿==============================================================================
+File: \src\ProUSB\app.manifest
+==============================================================================
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+    <security>
+      <requestedPrivileges>
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+</assembly>
 
-PROJECT: ProUSB
-DESCRIPTION: Advanced bootable USB creation tool with modern UI
-TECHNOLOGY: .NET 10.0, Avalonia UI, MVVM
-================================================================================
 
-======================================
-FILE: Domain\Services\IsoPatcher.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\plugin.json
+==============================================================================
+{
+  "id": "prousb",
+  "name": "ProUSB",
+  "version": "1.0.0",
+  "description": "USB bootable media creator",
+  "author": "Mass Suite Team",
+  "icon": "ðŸ’¾",
+  "entryAssembly": "ProUSB.dll",
+  "entryType": "ProUSB.ProUsbModule",
+  "dependencies": [],
+  "permissions": ["disk_access", "filesystem"],
+  "enabled": true
+}
+
+
+
+
+==============================================================================
+File: \src\ProUSB\ProUSB.csproj
+==============================================================================
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- Explicitly disable all auto-generated assembly attributes -->
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.9" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.9" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.13" />
+    <PackageReference Include="DiscUtils.Udf" Version="0.16.13" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Resources\os_catalog.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Mass.Core\Mass.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="plugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
+
+
+
+
+==============================================================================
+File: \src\ProUSB\ProUsbModule.cs
+==============================================================================
+using Mass.Core.Abstractions;
+using Mass.Core.Plugins;
+using Microsoft.Extensions.DependencyInjection;
+using ProUSB.Domain.Drivers;
+using ProUSB.Domain.Services;
+using ProUSB.Infrastructure;
+using ProUSB.Infrastructure.Drivers.Windows;
+using ProUSB.Infrastructure.DiskManagement;
+using ProUSB.Services.Burn;
+using ProUSB.Services.Burn.Strategies;
+using ProUSB.Services.Security;
+using ProUSB.Services.Iso;
+using ProUSB.Services.Logging;
+using ProUSB.Services.Verification;
+using ProUSB.Services.Diagnostics;
+using ProUSB.Services.IsoCreation;
+using ProUSB.Services.Profiles;
+using ProUSB.Services.PxeBoot;
+using ProUSB.Services.IsoDownload;
+using ProUSB.UI.ViewModels;
+
+namespace ProUSB;
+
+public class ProUsbModule : IModule
+{
+    public PluginManifest Manifest => new()
+    {
+        Id = "prousb",
+        Name = "ProUSB",
+        Version = "1.0.0",
+        Description = "USB bootable media creator",
+        Author = "Mass Suite Team",
+        Icon = "ðŸ’¾",
+        EntryAssembly = "ProUSB.dll",
+        EntryType = "ProUSB.ProUsbModule",
+        Enabled = true
+    };
+
+    public void RegisterServices(IServiceCollection s)
+    {
+        s.AddSingleton<PortablePathManager>();
+        s.AddSingleton<FileLogger>();
+        s.AddSingleton<IDriverFactory, WindowsDriverFactory>();
+        s.AddSingleton<NativeDiskFormatter>();
+        s.AddSingleton<ISafetyGuard, StandardSafetyGuard>();
+        s.AddSingleton<IsoIntegrityVerifier>();
+        s.AddSingleton<IBurnStrategy, RawPipelinedWriteStrategy>();
+        s.AddSingleton<IBurnStrategy, FileSystemDeploymentStrategy>();
+        s.AddSingleton<ParallelBurnService>();
+        s.AddSingleton<MultiDeviceBurnOrchestrator>();
+        s.AddSingleton<BootVerificationService>();
+        s.AddSingleton<SmartHealthChecker>();
+        s.AddSingleton<IsoCreationService>();
+        s.AddSingleton<ProfileManager>();
+        s.AddSingleton<PxeBootImageService>();
+        s.AddSingleton<OsCatalogService>();
+        s.AddSingleton<IsoDownloadService>();
+        s.AddTransient<MainViewModel>();
+    }
+
+    public Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task ActivateAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task DeactivateAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task UnloadAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\BootEnums.cs
+==============================================================================
+namespace ProUSB.Domain;
+
+public enum BootMode {
+    Unknown,
+    Legacy,
+    UEFI,
+    Hybrid
+}
+
+public enum BootloaderType {
+    None,
+    Unknown,
+    WindowsBoot,
+    GRUB,
+    Syslinux,
+    UEFIGeneric
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\BootVerificationResult.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ProUSB.Domain;
+
+public record BootVerificationResult {
+    private string _deviceName = "Unknown";
+    public required string DeviceName {
+        get => _deviceName;
+        init => _deviceName = value ?? "Unknown";
+    }
+    
+    private string _deviceId = "";
+    public required string DeviceId {
+        get => _deviceId;
+        init => _deviceId = value ?? "";
+    }
+    
+    public bool IsBootable { get; set; }
+    public BootMode BootMode { get; set; }
+    public bool HasValidMBRSignature { get; set; }
+    public bool HasActivePartition { get; set; }
+    public bool IsGPT { get; set; }
+    public bool HasESP { get; set; }
+    public BootloaderType DetectedBootloader { get; set; }
+    
+    public List<string> Warnings { get; init; } = new();
+    public List<string> Details { get; init; } = new();
+    
+    public string GetSummary() {
+        var bootable = IsBootable ? "âœ… Bootable" : "âŒ Not Bootable";
+        var mode = BootMode != BootMode.Unknown ? $"({BootMode})" : "";
+        var loader = DetectedBootloader != BootloaderType.None 
+            ? $" - {DetectedBootloader}" 
+            : "";
+        
+        return $"{bootable} {mode}{loader}".Trim();
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\BurnProfile.cs
+==============================================================================
+using System;
+
+namespace ProUSB.Domain;
+
+public record BurnProfile {
+    private string _name = "";
+    public required string Name {
+        get => _name;
+        init {
+            if(string.IsNullOrWhiteSpace(value)) {
+                throw new ArgumentException("Profile name cannot be empty");
+            }
+            _name = value;
+        }
+    }
+    
+    public string Description { get; init; } = "";
+    
+    private string _partitionScheme = "gpt";
+    public string PartitionScheme {
+        get => _partitionScheme;
+        init => _partitionScheme = value?.ToLowerInvariant() ?? "gpt";
+    }
+    
+    private string _fileSystem = "fat32";
+    public string FileSystem {
+        get => _fileSystem;
+        init => _fileSystem = value?.ToLowerInvariant() ?? "fat32";
+    }
+    
+    private int _clusterSize;
+    public int ClusterSize {
+        get => _clusterSize;
+        init => _clusterSize = Math.Max(0, value);
+    }
+    
+    public bool QuickFormat { get; init; } = true;
+    public bool BypassWin11 { get; init; } = false;
+    public bool IsRaw { get; init; } = false;
+    
+    private int _persistenceSize;
+    public int PersistenceSize {
+        get => _persistenceSize;
+        init => _persistenceSize = Math.Max(0, value);
+    }
+    
+    public DateTime CreatedAt { get; init; } = DateTime.Now;
+    public DateTime LastUsedAt { get; init; } = DateTime.Now;
+    public bool IsDefault { get; init; } = false;
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\Enums.cs
+==============================================================================
+namespace ProUSB.Domain;
+public enum BurnStrategy { RawSectorWrite, FileSystemCopy }
+public enum PartitionStyle { MBR, GPT, Hybrid, SuperFloppy }
+public enum IsoType { Windows, Linux, Hybrid, Unknown }
+public enum DeviceRiskLevel { Safe, Caution, Critical, SystemLockdown }
+public enum DeviceBusType { Unknown, USB, SD, MMC, SCSI, ATA, NVMe, Virtual }
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\Interfaces.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using ProUSB.Domain;
+
+namespace ProUSB.Domain.Drivers {
+    public interface IDiskDriver : IDisposable {
+        string PhysicalId { get; }
+        long Capacity { get; }
+        int SectorSize { get; }
+        DeviceBusType BusType { get; }
+        Task ExclusiveLockAsync(CancellationToken ct);
+        Task UnlockAsync(CancellationToken ct);
+        Task WriteSectorsAsync(long offset, byte[] data, CancellationToken ct);
+        Task<byte[]> ReadSectorsAsync(long offset, int count, CancellationToken ct);
+        Task RefreshPartitionTableAsync(CancellationToken ct);
+    }
+    public interface IDriverFactory {
+        Task<IDiskDriver> OpenDriverAsync(string deviceId, bool writeAccess, CancellationToken ct);
+        Task<IEnumerable<UsbDeviceInfo>> EnumerateDevicesAsync(CancellationToken ct);
+    }
+}
+
+namespace ProUSB.Domain.Services {
+    public interface IBurnStrategy {
+        BurnStrategy StrategyType { get; }
+        Task ExecuteAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct);
+        Task VerifyAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct);
+    }
+    public interface ISafetyGuard {
+        DeviceRiskLevel EvaluateRisk(UsbDeviceInfo device);
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\IsoCreationModels.cs
+==============================================================================
+namespace ProUSB.Domain;
+
+public enum IsoCreationMode {
+    RawCopy,
+    SmartCopy
+}
+
+public record IsoCreationProgress {
+    public double PercentComplete { get; init; }
+    public long BytesCopied { get; init; }
+    public long TotalBytes { get; init; }
+    public double SpeedBytesPerSecond { get; init; }
+    public string Message { get; init; } = "";
+}
+
+public record IsoCreationResult {
+    public bool Success { get; init; }
+    public string OutputPath { get; init; } = "";
+    public long FileSizeBytes { get; init; }
+    public IsoCreationMode CreationMode { get; init; }
+    public TimeSpan Duration { get; init; }
+    public string? ErrorMessage { get; init; }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\IsoDownloadModels.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+
+namespace ProUSB.Domain;
+
+public enum DownloadStatus {
+    Queued,
+    Downloading,
+    Verifying,
+    Complete,
+    Failed,
+    Cancelled
+}
+
+public record OsInfo {
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string Vendor { get; init; }
+    public required string Version { get; init; }
+    public required string Architecture { get; init; }
+    public required string Category { get; init; }
+    public string? DirectDownloadUrl { get; init; }
+    public string? DownloadPageUrl { get; init; }
+    public long? FileSizeBytes { get; init; }
+    public string? Sha256Checksum { get; init; }
+    public DateTime? ReleaseDate { get; init; }
+}
+
+public record DownloadJob {
+    public required OsInfo OS { get; init; }
+    public required string OutputPath { get; init; }
+    public DownloadStatus Status { get; set; }
+    public long BytesDownloaded { get; set; }
+    public long TotalBytes { get; set; }
+    public double SpeedBytesPerSecond { get; set; }
+    public TimeSpan? TimeRemaining { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+public record DownloadProgress {
+    public required double PercentComplete { get; init; }
+    public required long BytesDownloaded { get; init; }
+    public required long TotalBytes { get; init; }
+    public required double SpeedMBps { get; init; }
+    public required TimeSpan TimeRemaining { get; init; }
+    public required string Status { get; init; }
+}
+
+public record OsCatalog {
+    public required List<OsInfo> OperatingSystems { get; init; }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\LogEntry.cs
+==============================================================================
+using System;
+
+namespace ProUSB.Domain;
+
+public record LogEntry {
+    public DateTime Timestamp { get; init; }
+    public LogLevel Level { get; init; }
+    public string Message { get; init; } = "";
+    public string Source { get; init; } = "";
+
+    public string GetFormattedEntry() {
+        return $"[{Timestamp:HH:mm:ss}] [{Level}] {Message}";
+    }
+
+    public string GetCsvEntry() {
+        return $"\"{Timestamp:yyyy-MM-dd HH:mm:ss}\",\"{Level}\",\"{Message.Replace("\"", "\"\"")}\"";
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\LogLevel.cs
+==============================================================================
+namespace ProUSB.Domain;
+
+public enum LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\Models.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+namespace ProUSB.Domain;
+
+public record IsoMetadata {
+    public string FilePath { get; init; } = "";
+    public string FileName { get; init; } = "";
+    public long FileSize { get; init; }
+}
+
+public record UsbDeviceInfo {
+    public string DeviceId { get; init; } = "";
+    public int PhysicalIndex { get; init; }
+    public string FriendlyName { get; init; } = "";
+    public string BusType { get; init; } = "Unknown";
+    public long TotalSize { get; init; }
+    public List<string> MountPoints { get; init; } = new();
+    public ushort VendorId { get; init; }
+    public ushort ProductId { get; init; }
+}
+
+public record PartitionDefinition {
+    public string Label { get; init; } = "New Volume";
+    public string FileSystem { get; init; } = "FAT32"; 
+    public long SizeMB { get; init; } 
+    public bool IsBootable { get; init; }
+}
+
+public record DeploymentConfiguration {
+    public required string JobName { get; init; }
+    public required IsoMetadata SourceIso { get; init; }
+    public required UsbDeviceInfo TargetDevice { get; init; }
+    public BurnStrategy Strategy { get; init; }
+    public string VolumeLabel { get; init; } = "BOOT";
+    public string FileSystem { get; init; } = "fat32";
+    public string PartitionScheme { get; init; } = "gpt";
+    public int ClusterSize { get; init; } = 0;
+    public bool QuickFormat { get; init; } = true;
+    public bool BypassWin11 { get; init; }
+    public int PersistenceSize { get; init; } = 0; 
+    public List<PartitionDefinition>? CustomLayout { get; init; }
+}
+
+public struct WriteStatistics {
+    public long BytesWritten;
+    public double PercentComplete;
+    public string Message;
+    public double SpeedMBps;
+    public TimeSpan TimeElapsed;
+    public TimeSpan TimeRemaining;
+}
+
+public record BurnJob {
+    public required UsbDeviceInfo Device { get; init; }
+    public required string IsoPath { get; init; }
+    public required DeploymentConfiguration Config { get; init; }
+    public string Status { get; set; } = "Pending";
+    public double Progress { get; set; } = 0;
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\PxeBootModels.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+
+namespace ProUSB.Domain;
+
+public enum PxeBootType {
+    Windows,
+    Linux,
+    Generic
+}
+
+public record PxeBootConfiguration {
+    public required string OutputDirectory { get; init; }
+    public required string IsoPath { get; init; }
+    public required PxeBootType BootType { get; init; }
+    public bool GenerateUefiConfig { get; init; } = true;
+    public bool GenerateBiosConfig { get; init; } = true;
+}
+
+public record PxeFileMapping {
+    public required string SourcePath { get; init; }
+    public required string DestinationPath { get; init; }
+    public required string Description { get; init; }
+    public long FileSize { get; init; }
+}
+
+public record PxeBootResult {
+    public required bool Success { get; init; }
+    public required List<PxeFileMapping> FilesCreated { get; init; }
+    public required List<string> Warnings { get; init; }
+    public string? ErrorMessage { get; init; }
+    public TimeSpan Duration { get; init; }
+}
+
+public record PxeCreationProgress {
+    public required double PercentComplete { get; init; }
+    public required string Message { get; init; }
+    public required string CurrentFile { get; init; }
+    public long BytesProcessed { get; init; }
+    public long TotalBytes { get; init; }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Domain\Services\IsoPatcher.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -182,1134 +783,480 @@ public class IsoPatcher {
 
 
 
-======================================
-FILE: Domain\BootEnums.cs
-======================================
 
-namespace ProUSB.Domain;
+==============================================================================
+File: \src\ProUSB\Drivers\DriverSelector.cs
+==============================================================================
+namespace ProUSB.Drivers;
 
-public enum BootMode {
-    Unknown,
-    Legacy,
-    UEFI,
-    Hybrid
-}
+public class DriverSelector
+{
+    private readonly List<IDriverAdapter> _drivers;
 
-public enum BootloaderType {
-    None,
-    Unknown,
-    WindowsBoot,
-    GRUB,
-    Syslinux,
-    UEFIGeneric
-}
-
-
-
-
-======================================
-FILE: Domain\BootVerificationResult.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace ProUSB.Domain;
-
-public record BootVerificationResult {
-    private string _deviceName = "Unknown";
-    public required string DeviceName {
-        get => _deviceName;
-        init => _deviceName = value ?? "Unknown";
+    public DriverSelector(IEnumerable<IDriverAdapter> drivers)
+    {
+        _drivers = drivers.ToList();
     }
-    
-    private string _deviceId = "";
-    public required string DeviceId {
-        get => _deviceId;
-        init => _deviceId = value ?? "";
-    }
-    
-    public bool IsBootable { get; set; }
-    public BootMode BootMode { get; set; }
-    public bool HasValidMBRSignature { get; set; }
-    public bool HasActivePartition { get; set; }
-    public bool IsGPT { get; set; }
-    public bool HasESP { get; set; }
-    public BootloaderType DetectedBootloader { get; set; }
-    
-    public List<string> Warnings { get; init; } = new();
-    public List<string> Details { get; init; } = new();
-    
-    public string GetSummary() {
-        var bootable = IsBootable ? "✅ Bootable" : "❌ Not Bootable";
-        var mode = BootMode != BootMode.Unknown ? $"({BootMode})" : "";
-        var loader = DetectedBootloader != BootloaderType.None 
-            ? $" - {DetectedBootloader}" 
-            : "";
+
+    public IDriverAdapter SelectBestDriver()
+    {
+        var available = _drivers.Where(d => d.IsAvailable).ToList();
         
-        return $"{bootable} {mode}{loader}".Trim();
+        if (available.Count == 0)
+            throw new InvalidOperationException("No disk drivers are available on this system");
+
+        var native = available.FirstOrDefault(d => d.Name.Contains("Native", StringComparison.OrdinalIgnoreCase));
+        if (native != null) return native;
+
+        return available[0];
+    }
+
+    public IEnumerable<IDriverAdapter> GetAvailableDrivers()
+    {
+        return _drivers.Where(d => d.IsAvailable);
     }
 }
 
 
 
 
-======================================
-FILE: Domain\BurnProfile.cs
-======================================
-
-using System;
-
-namespace ProUSB.Domain;
-
-public record BurnProfile {
-    private string _name = "";
-    public required string Name {
-        get => _name;
-        init {
-            if(string.IsNullOrWhiteSpace(value)) {
-                throw new ArgumentException("Profile name cannot be empty");
-            }
-            _name = value;
-        }
-    }
-    
-    public string Description { get; init; } = "";
-    
-    private string _partitionScheme = "gpt";
-    public string PartitionScheme {
-        get => _partitionScheme;
-        init => _partitionScheme = value?.ToLowerInvariant() ?? "gpt";
-    }
-    
-    private string _fileSystem = "fat32";
-    public string FileSystem {
-        get => _fileSystem;
-        init => _fileSystem = value?.ToLowerInvariant() ?? "fat32";
-    }
-    
-    private int _clusterSize;
-    public int ClusterSize {
-        get => _clusterSize;
-        init => _clusterSize = Math.Max(0, value);
-    }
-    
-    public bool QuickFormat { get; init; } = true;
-    public bool BypassWin11 { get; init; } = false;
-    public bool IsRaw { get; init; } = false;
-    
-    private int _persistenceSize;
-    public int PersistenceSize {
-        get => _persistenceSize;
-        init => _persistenceSize = Math.Max(0, value);
-    }
-    
-    public DateTime CreatedAt { get; init; } = DateTime.Now;
-    public DateTime LastUsedAt { get; init; } = DateTime.Now;
-    public bool IsDefault { get; init; } = false;
-}
-
-
-
-
-======================================
-FILE: Domain\Enums.cs
-======================================
-
-namespace ProUSB.Domain;
-public enum BurnStrategy { RawSectorWrite, FileSystemCopy }
-public enum PartitionStyle { MBR, GPT, Hybrid, SuperFloppy }
-public enum IsoType { Windows, Linux, Hybrid, Unknown }
-public enum DeviceRiskLevel { Safe, Caution, Critical, SystemLockdown }
-public enum DeviceBusType { Unknown, USB, SD, MMC, SCSI, ATA, NVMe, Virtual }
-
-
-
-======================================
-FILE: Domain\Interfaces.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+==============================================================================
+File: \src\ProUSB\Drivers\IDriverAdapter.cs
+==============================================================================
 using ProUSB.Domain;
 
-namespace ProUSB.Domain.Drivers {
-    public interface IDiskDriver : IDisposable {
-        string PhysicalId { get; }
-        long Capacity { get; }
-        int SectorSize { get; }
-        DeviceBusType BusType { get; }
-        Task ExclusiveLockAsync(CancellationToken ct);
-        Task UnlockAsync(CancellationToken ct);
-        Task WriteSectorsAsync(long offset, byte[] data, CancellationToken ct);
-        Task<byte[]> ReadSectorsAsync(long offset, int count, CancellationToken ct);
-        Task RefreshPartitionTableAsync(CancellationToken ct);
-    }
-    public interface IDriverFactory {
-        Task<IDiskDriver> OpenDriverAsync(string deviceId, bool writeAccess, CancellationToken ct);
-        Task<IEnumerable<UsbDeviceInfo>> EnumerateDevicesAsync(CancellationToken ct);
-    }
+namespace ProUSB.Drivers;
+
+public interface IDriverAdapter
+{
+    string Name { get; }
+    bool IsAvailable { get; }
+    
+    Task<bool> FormatDiskAsync(
+        int diskIndex, 
+        string label, 
+        string fileSystem, 
+        string partitionScheme, 
+        int allocationUnitSize,
+        bool markActive,
+        CancellationToken ct = default);
+    
+    Task<bool> FormatCustomAsync(
+        int diskIndex,
+        List<PartitionDefinition> partitions,
+        CancellationToken ct = default);
+    
+    Task<string?> MountPartitionAsync(int diskIndex, int partitionIndex, CancellationToken ct = default);
+    
+    Task<bool> UnmountDiskAsync(int diskIndex, CancellationToken ct = default);
+    
+    Task<DiskInfo> GetDiskInfoAsync(int diskIndex, CancellationToken ct = default);
 }
 
-namespace ProUSB.Domain.Services {
-    public interface IBurnStrategy {
-        BurnStrategy StrategyType { get; }
-        Task ExecuteAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct);
-        Task VerifyAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct);
-    }
-    public interface ISafetyGuard {
-        DeviceRiskLevel EvaluateRisk(UsbDeviceInfo device);
-    }
-}
+public record DiskInfo(
+    int DiskIndex,
+    long SizeBytes,
+    string Model,
+    bool IsRemovable,
+    List<PartitionInfo> Partitions
+);
+
+public record PartitionInfo(
+    int Index,
+    long SizeBytes,
+    string FileSystem,
+    string? MountPoint,
+    bool IsActive
+);
 
 
 
 
-======================================
-FILE: Domain\IsoCreationModels.cs
-======================================
+==============================================================================
+File: \src\ProUSB\Drivers\NativeDriver.cs
+==============================================================================
+using ProUSB.Domain;
+using ProUSB.Infrastructure.DiskManagement;
 
-namespace ProUSB.Domain;
+namespace ProUSB.Drivers;
 
-public enum IsoCreationMode {
-    RawCopy,
-    SmartCopy
-}
+public class NativeDriver : IDriverAdapter
+{
+    private readonly NativeDiskFormatter _formatter;
 
-public record IsoCreationProgress {
-    public double PercentComplete { get; init; }
-    public long BytesCopied { get; init; }
-    public long TotalBytes { get; init; }
-    public double SpeedBytesPerSecond { get; init; }
-    public string Message { get; init; } = "";
-}
+    public string Name => "Native Win32 API";
+    public bool IsAvailable => OperatingSystem.IsWindows();
 
-public record IsoCreationResult {
-    public bool Success { get; init; }
-    public string OutputPath { get; init; } = "";
-    public long FileSizeBytes { get; init; }
-    public IsoCreationMode CreationMode { get; init; }
-    public TimeSpan Duration { get; init; }
-    public string? ErrorMessage { get; init; }
-}
-
-
-
-
-======================================
-FILE: Domain\IsoDownloadModels.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-
-namespace ProUSB.Domain;
-
-public enum DownloadStatus {
-    Queued,
-    Downloading,
-    Verifying,
-    Complete,
-    Failed,
-    Cancelled
-}
-
-public record OsInfo {
-    public required string Id { get; init; }
-    public required string Name { get; init; }
-    public required string Vendor { get; init; }
-    public required string Version { get; init; }
-    public required string Architecture { get; init; }
-    public required string Category { get; init; }
-    public string? DirectDownloadUrl { get; init; }
-    public string? DownloadPageUrl { get; init; }
-    public long? FileSizeBytes { get; init; }
-    public string? Sha256Checksum { get; init; }
-    public DateTime? ReleaseDate { get; init; }
-}
-
-public record DownloadJob {
-    public required OsInfo OS { get; init; }
-    public required string OutputPath { get; init; }
-    public DownloadStatus Status { get; set; }
-    public long BytesDownloaded { get; set; }
-    public long TotalBytes { get; set; }
-    public double SpeedBytesPerSecond { get; set; }
-    public TimeSpan? TimeRemaining { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-public record DownloadProgress {
-    public required double PercentComplete { get; init; }
-    public required long BytesDownloaded { get; init; }
-    public required long TotalBytes { get; init; }
-    public required double SpeedMBps { get; init; }
-    public required TimeSpan TimeRemaining { get; init; }
-    public required string Status { get; init; }
-}
-
-public record OsCatalog {
-    public required List<OsInfo> OperatingSystems { get; init; }
-}
-
-
-
-
-======================================
-FILE: Domain\LogEntry.cs
-======================================
-
-using System;
-
-namespace ProUSB.Domain;
-
-public record LogEntry {
-    public DateTime Timestamp { get; init; }
-    public LogLevel Level { get; init; }
-    public string Message { get; init; } = "";
-    public string Source { get; init; } = "";
-
-    public string GetFormattedEntry() {
-        return $"[{Timestamp:HH:mm:ss}] [{Level}] {Message}";
+    public NativeDriver(NativeDiskFormatter formatter)
+    {
+        _formatter = formatter;
     }
 
-    public string GetCsvEntry() {
-        return $"\"{Timestamp:yyyy-MM-dd HH:mm:ss}\",\"{Level}\",\"{Message.Replace("\"", "\"\"")}\"";
-    }
-}
-
-
-
-
-======================================
-FILE: Domain\LogLevel.cs
-======================================
-
-namespace ProUSB.Domain;
-
-public enum LogLevel {
-    Debug,
-    Info,
-    Warn,
-    Error
-}
-
-
-
-
-======================================
-FILE: Domain\Models.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-namespace ProUSB.Domain;
-
-public record IsoMetadata {
-    public string FilePath { get; init; } = "";
-    public string FileName { get; init; } = "";
-    public long FileSize { get; init; }
-}
-
-public record UsbDeviceInfo {
-    public string DeviceId { get; init; } = "";
-    public int PhysicalIndex { get; init; }
-    public string FriendlyName { get; init; } = "";
-    public string BusType { get; init; } = "Unknown";
-    public long TotalSize { get; init; }
-    public List<string> MountPoints { get; init; } = new();
-    public ushort VendorId { get; init; }
-    public ushort ProductId { get; init; }
-}
-
-public record PartitionDefinition {
-    public string Label { get; init; } = "New Volume";
-    public string FileSystem { get; init; } = "FAT32"; 
-    public long SizeMB { get; init; } 
-    public bool IsBootable { get; init; }
-}
-
-public record DeploymentConfiguration {
-    public required string JobName { get; init; }
-    public required IsoMetadata SourceIso { get; init; }
-    public required UsbDeviceInfo TargetDevice { get; init; }
-    public BurnStrategy Strategy { get; init; }
-    public string VolumeLabel { get; init; } = "BOOT";
-    public string FileSystem { get; init; } = "fat32";
-    public string PartitionScheme { get; init; } = "gpt";
-    public int ClusterSize { get; init; } = 0;
-    public bool QuickFormat { get; init; } = true;
-    public bool BypassWin11 { get; init; }
-    public int PersistenceSize { get; init; } = 0; 
-    public List<PartitionDefinition>? CustomLayout { get; init; }
-}
-
-public struct WriteStatistics {
-    public long BytesWritten;
-    public double PercentComplete;
-    public string Message;
-    public double SpeedMBps;
-    public TimeSpan TimeElapsed;
-    public TimeSpan TimeRemaining;
-}
-
-public record BurnJob {
-    public required UsbDeviceInfo Device { get; init; }
-    public required string IsoPath { get; init; }
-    public required DeploymentConfiguration Config { get; init; }
-    public string Status { get; set; } = "Pending";
-    public double Progress { get; set; } = 0;
-}
-
-
-
-
-======================================
-FILE: Domain\PxeBootModels.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-
-namespace ProUSB.Domain;
-
-public enum PxeBootType {
-    Windows,
-    Linux,
-    Generic
-}
-
-public record PxeBootConfiguration {
-    public required string OutputDirectory { get; init; }
-    public required string IsoPath { get; init; }
-    public required PxeBootType BootType { get; init; }
-    public bool GenerateUefiConfig { get; init; } = true;
-    public bool GenerateBiosConfig { get; init; } = true;
-}
-
-public record PxeFileMapping {
-    public required string SourcePath { get; init; }
-    public required string DestinationPath { get; init; }
-    public required string Description { get; init; }
-    public long FileSize { get; init; }
-}
-
-public record PxeBootResult {
-    public required bool Success { get; init; }
-    public required List<PxeFileMapping> FilesCreated { get; init; }
-    public required List<string> Warnings { get; init; }
-    public string? ErrorMessage { get; init; }
-    public TimeSpan Duration { get; init; }
-}
-
-public record PxeCreationProgress {
-    public required double PercentComplete { get; init; }
-    public required string Message { get; init; }
-    public required string CurrentFile { get; init; }
-    public long BytesProcessed { get; init; }
-    public long TotalBytes { get; init; }
-}
-
-
-
-
-======================================
-FILE: Infrastructure\DeviceDetection\DeviceSignatureDatabase.cs
-======================================
-
-using System.Collections.Generic;
-using System.Linq;
-
-namespace ProUSB.Infrastructure.DeviceDetection;
-
-public enum DeviceType {
-    Unknown,
-    UsbFlashDrive,
-    ExternalHdd,
-    CardReader,
-    SdCard,
-    MemoryStick
-}
-
-public record DeviceSignature {
-    public ushort VendorId { get; init; }
-    public ushort ProductId { get; init; }
-    public DeviceType Type { get; init; }
-    public string Description { get; init; } = "";
-}
-
-public static class DeviceSignatureDatabase {
-    private static readonly List<DeviceSignature> Signatures = new() {
-        new() { VendorId = 0x0011, ProductId = 0x7788, Type = DeviceType.CardReader, Description = "SCM Microsystems card reader" },
-        new() { VendorId = 0x03eb, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "Atmel generic UFD" },
-        new() { VendorId = 0x03f0, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "HP external HDD" },
-        new() { VendorId = 0x0402, ProductId = 0x5621, Type = DeviceType.CardReader, Description = "ALi card reader" },
-        new() { VendorId = 0x0409, ProductId = 0x0040, Type = DeviceType.CardReader, Description = "NEC card reader" },
-        new() { VendorId = 0x0411, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "Buffalo external HDD" },
-        new() { VendorId = 0x0424, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "SMSC card reader" },
-        new() { VendorId = 0x0480, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Toshiba card reader" },
-        new() { VendorId = 0x0480, ProductId = 0xa006, Type = DeviceType.ExternalHdd, Description = "Toshiba external HDD" },
-        new() { VendorId = 0x04c5, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Fujitsu card reader" },
-        new() { VendorId = 0x04e8, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "Samsung external HDD" },
-        new() { VendorId = 0x054c, ProductId = 0x0000, Type = DeviceType.MemoryStick, Description = "Sony Memory Stick" },
-        new() { VendorId = 0x058f, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Alcor Micro card reader" },
-        new() { VendorId = 0x059b, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Iomega card reader" },
-        new() { VendorId = 0x059f, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "LaCie card reader" },
-        new() { VendorId = 0x05ac, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "Apple external device" },
-        new() { VendorId = 0x05dc, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Lexar card reader" },
-        new() { VendorId = 0x05e3, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Genesys Logic card reader" },
-        new() { VendorId = 0x0644, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "TEAC card reader" },
-        new() { VendorId = 0x067b, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Prolific card reader" },
-        new() { VendorId = 0x0718, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Imation card reader" },
-        new() { VendorId = 0x0781, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "SanDisk UFD" },
-        new() { VendorId = 0x0781, ProductId = 0x5530, Type = DeviceType.CardReader, Description = "SanDisk card reader" },
-        new() { VendorId = 0x0789, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Logitec card reader" },
-        new() { VendorId = 0x0930, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "Toshiba UFD" },
-        new() { VendorId = 0x0951, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "Kingston UFD" },
-        new() { VendorId = 0x0984, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Apricorn card reader" },
-        new() { VendorId = 0x0a16, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Yakumo card reader" },
-        new() { VendorId = 0x0bc2, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "Seagate external HDD" },
-        new() { VendorId = 0x0bda, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Realtek card reader" },
-        new() { VendorId = 0x0c76, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "JMicron card reader" },
-        new() { VendorId = 0x0d7d, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Phison card reader" },
-        new() { VendorId = 0x0dd8, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Netac card reader" },
-        new() { VendorId = 0x0ea0, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Ours Technology card reader" },
-        new() { VendorId = 0x0f88, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "VTech card reader" },
-        new() { VendorId = 0x1005, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Apacer card reader" },
-        new() { VendorId = 0x1058, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "Western Digital external HDD" },
-        new() { VendorId = 0x1307, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "USBest card reader" },
-        new() { VendorId = 0x13fd, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Initio card reader" },
-        new() { VendorId = 0x1516, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Compro card reader" },
-        new() { VendorId = 0x152d, ProductId = 0x0000, Type = DeviceType.ExternalHdd, Description = "JMicron external HDD" },
-        new() { VendorId = 0x154b, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "PNY UFD" },
-        new() { VendorId = 0x1f75, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Innostor card reader" },
-        new() { VendorId = 0x8564, ProductId = 0x0000, Type = DeviceType.UsbFlashDrive, Description = "Transcend UFD" },
-        new() { VendorId = 0x8644, ProductId = 0x0000, Type = DeviceType.CardReader, Description = "Generic card reader" },
-    };
-
-    public static DeviceType DetectDeviceType(ushort vendorId, ushort productId) {
-        var exactMatch = Signatures.FirstOrDefault(s => s.VendorId == vendorId && s.ProductId == productId);
-        if (exactMatch != null) {
-            return exactMatch.Type;
+    public async Task<bool> FormatDiskAsync(
+        int diskIndex, 
+        string label, 
+        string fileSystem, 
+        string partitionScheme, 
+        int allocationUnitSize, 
+        bool markActive, 
+        CancellationToken ct = default)
+    {
+        try
+        {
+            await _formatter.FormatAsync(
+                diskIndex, 
+                label, 
+                fileSystem, 
+                partitionScheme, 
+                allocationUnitSize, 
+                markActive, 
+                ct);
+            return true;
         }
-
-        var vendorMatch = Signatures.FirstOrDefault(s => s.VendorId == vendorId && s.ProductId == 0x0000);
-        if (vendorMatch != null) {
-            return vendorMatch.Type;
+        catch
+        {
+            return false;
         }
-
-        return DeviceType.Unknown;
     }
 
-    public static string GetDeviceDescription(ushort vendorId, ushort productId) {
-        var exactMatch = Signatures.FirstOrDefault(s => s.VendorId == vendorId && s.ProductId == productId);
-        if (exactMatch != null) {
-            return exactMatch.Description;
+    public async Task<bool> FormatCustomAsync(
+        int diskIndex, 
+        List<PartitionDefinition> partitions, 
+        CancellationToken ct = default)
+    {
+        try
+        {
+            await _formatter.FormatCustomAsync(diskIndex, partitions, ct);
+            return true;
         }
-
-        var vendorMatch = Signatures.FirstOrDefault(s => s.VendorId == vendorId && s.ProductId == 0x0000);
-        return vendorMatch?.Description ?? "Unknown device";
+        catch
+        {
+            return false;
+        }
     }
 
-    public static bool IsKnownSafeUfd(ushort vendorId, ushort productId) {
-        var type = DetectDeviceType(vendorId, productId);
-        return type == DeviceType.UsbFlashDrive;
+    public async Task<string?> MountPartitionAsync(int diskIndex, int partitionIndex, CancellationToken ct = default)
+    {
+        return await Task.Run(() => 
+        {
+            try 
+            {
+                var query = $"ASSOCIATORS OF {{Win32_DiskDrive.DeviceID='\\\\\\\\.\\\\PHYSICALDRIVE{diskIndex}'}} WHERE AssocClass = Win32_DiskDriveToDiskPartition";
+                using var searcher = new System.Management.ManagementObjectSearcher(query);
+                
+                int currentPart = 0;
+                foreach (System.Management.ManagementObject partition in searcher.Get())
+                {
+                    if (currentPart == partitionIndex)
+                    {
+                        var logicalSearcher = new System.Management.ManagementObjectSearcher(
+                            $"ASSOCIATORS OF {{Win32_DiskPartition.DeviceID='{partition["DeviceID"]}'}} WHERE AssocClass = Win32_LogicalDiskToPartition");
+                        
+                        foreach (System.Management.ManagementObject logical in logicalSearcher.Get())
+                        {
+                            return logical["DeviceID"]?.ToString();
+                        }
+                    }
+                    currentPart++;
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }, ct);
     }
 
-    public static bool IsKnownDangerousDevice(ushort vendorId, ushort productId) {
-        var type = DetectDeviceType(vendorId, productId);
-        return type == DeviceType.ExternalHdd || type == DeviceType.CardReader;
+    public async Task<bool> UnmountDiskAsync(int diskIndex, CancellationToken ct = default)
+    {
+        await Task.CompletedTask;
+        return false;
     }
-}
 
+    public async Task<DiskInfo> GetDiskInfoAsync(int diskIndex, CancellationToken ct = default)
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                using var searcher = new System.Management.ManagementObjectSearcher(
+                    $"SELECT * FROM Win32_DiskDrive WHERE Index = {diskIndex}");
+                
+                foreach (System.Management.ManagementObject drive in searcher.Get())
+                {
+                    var model = drive["Model"]?.ToString() ?? "Unknown";
+                    var size = Convert.ToInt64(drive["Size"]);
+                    var mediaType = drive["MediaType"]?.ToString() ?? "Unknown";
+                    var isRemovable = mediaType.Contains("Removable", StringComparison.OrdinalIgnoreCase) || 
+                                      drive["InterfaceType"]?.ToString() == "USB";
 
-
-
-======================================
-FILE: Infrastructure\DiskManagement\Native\Crc32.cs
-======================================
-
-using System;
-
-namespace ProUSB.Infrastructure.DiskManagement.Native;
-
-public static class Crc32 {
-    private static readonly uint[] Table;
-
-    static Crc32() {
-        uint poly = 0xedb88320;
-        Table = new uint[256];
-        for (uint i = 0; i < 256; i++) {
-            uint temp = i;
-            for (int j = 8; j > 0; j--) {
-                if ((temp & 1) == 1) {
-                    temp = (uint)((temp >> 1) ^ poly);
-                } else {
-                    temp >>= 1;
+                    return new DiskInfo(diskIndex, size, model, isRemovable, new List<PartitionInfo>());
                 }
             }
-            Table[i] = temp;
-        }
-    }
-
-    public static uint Compute(byte[] bytes) {
-        uint crc = 0xffffffff;
-        for (int i = 0; i < bytes.Length; i++) {
-            byte index = (byte)((crc & 0xff) ^ bytes[i]);
-            crc = (uint)((crc >> 8) ^ Table[index]);
-        }
-        return ~crc;
+            catch { }
+            
+            return new DiskInfo(diskIndex, 0, "Unknown", false, new List<PartitionInfo>());
+        }, ct);
     }
 }
 
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\Native\NativeMethods.cs
-======================================
+==============================================================================
+File: \src\ProUSB\Engine\BurnEngine.cs
+==============================================================================
+using Mass.Core.Devices;
+using ProUSB.Drivers;
+using ProUSB.Services.Logging;
+using DiscUtils.Iso9660;
+using System.Management;
 
-using System;
-using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
+namespace ProUSB.Engine;
 
-namespace ProUSB.Infrastructure.DiskManagement.Native;
+public class BurnEngine : IUsbBurner
+{
+    private readonly IDriverAdapter _driver;
+    private readonly FileLogger _logger;
+    private CancellationTokenSource? _cts;
 
-internal static class NativeMethods {
-    public const uint GENERIC_READ = 0x80000000;
-    public const uint GENERIC_WRITE = 0x40000000;
-    public const uint FILE_SHARE_READ = 0x00000001;
-    public const uint FILE_SHARE_WRITE = 0x00000002;
-    public const uint OPEN_EXISTING = 3;
-    public const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
-    public const uint FILE_FLAG_NO_BUFFERING = 0x20000000;
-    public const uint FILE_FLAG_WRITE_THROUGH = 0x80000000;
-    public const uint FILE_FLAG_OVERLAPPED = 0x40000000;
-
-    public const uint IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00074050;
-    public const uint IOCTL_DISK_SET_DRIVE_LAYOUT_EX = 0x0007C054;
-    public const uint IOCTL_DISK_CREATE_DISK = 0x0007C058;
-    public const uint IOCTL_DISK_DELETE_DRIVE_LAYOUT = 0x0007C0E0;
-    public const uint IOCTL_DISK_UPDATE_PROPERTIES = 0x00070024;
-    public const uint IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 0x000700A0;
-    public const uint IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = 0x00560000;
-    public const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400;
-    public const uint FSCTL_LOCK_VOLUME = 0x00090018;
-    public const uint FSCTL_UNLOCK_VOLUME = 0x0009001C;
-    public const uint FSCTL_DISMOUNT_VOLUME = 0x00090020;
-    public const uint FSCTL_ALLOW_EXTENDED_DASD_IO = 0x00090083;
-
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern SafeFileHandle CreateFile(
-        string lpFileName,
-        uint dwDesiredAccess,
-        uint dwShareMode,
-        IntPtr lpSecurityAttributes,
-        uint dwCreationDisposition,
-        uint dwFlagsAndAttributes,
-        IntPtr hTemplateFile);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool DeviceIoControl(
-        SafeFileHandle hDevice,
-        uint dwIoControlCode,
-        IntPtr lpInBuffer,
-        uint nInBufferSize,
-        IntPtr lpOutBuffer,
-        uint nOutBufferSize,
-        out uint lpBytesReturned,
-        IntPtr lpOverlapped);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool WriteFile(
-        SafeFileHandle hFile,
-        IntPtr lpBuffer,
-        uint nNumberOfBytesToWrite,
-        out uint lpNumberOfBytesWritten,
-        IntPtr lpOverlapped);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool ReadFile(
-        SafeFileHandle hFile,
-        IntPtr lpBuffer,
-        uint nNumberOfBytesToRead,
-        out uint lpNumberOfBytesRead,
-        IntPtr lpOverlapped);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool CloseHandle(IntPtr hObject);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    public static extern bool SetFilePointerEx(
-        SafeFileHandle hFile,
-        long liDistanceToMove,
-        IntPtr lpNewFilePointer,
-        uint dwMoveMethod);
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CREATE_DISK {
-        public int PartitionStyle;
-        public CREATE_DISK_UNION Union;
+    public BurnEngine(IDriverAdapter driver, FileLogger logger)
+    {
+        _driver = driver;
+        _logger = logger;
     }
 
-    [StructLayout(LayoutKind.Explicit)]
-    public struct CREATE_DISK_UNION {
-        [FieldOffset(0)] public CREATE_DISK_MBR Mbr;
-        [FieldOffset(0)] public CREATE_DISK_GPT Gpt;
-    }
+    public async Task<BurnResult> BurnIsoAsync(
+        BurnRequest request, 
+        IProgress<BurnProgress> progress, 
+        CancellationToken ct = default)
+    {
+        var startTime = DateTime.UtcNow;
+        _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CREATE_DISK_MBR {
-        public uint Signature;
-    }
+        try
+        {
+            _logger.Info($"Starting burn: {request.IsoPath} -> {request.TargetDeviceId}");
+            
+            if (!File.Exists(request.IsoPath))
+                throw new FileNotFoundException($"ISO file not found: {request.IsoPath}");
 
-    [StructLayout(LayoutKind.Sequential)]
-    public struct CREATE_DISK_GPT {
-        public Guid DiskId;
-        public uint MaxPartitionCount;
-    }
-    
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DRIVE_LAYOUT_INFORMATION_EX {
-        public uint PartitionStyle;
-        public uint PartitionCount;
-        public DRIVE_LAYOUT_INFORMATION_UNION Union;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
-        public PARTITION_INFORMATION_EX[] PartitionEntry;
-    }
+            progress.Report(new BurnProgress(0, "Formatting disk...", 0, 100));
+            
+            var diskIndex = ParseDiskIndex(request.TargetDeviceId);
+            bool formatSuccess;
 
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
-    public struct DRIVE_LAYOUT_INFORMATION_UNION {
-        [FieldOffset(0)] public DRIVE_LAYOUT_INFORMATION_MBR Mbr;
-        [FieldOffset(0)] public DRIVE_LAYOUT_INFORMATION_GPT Gpt;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DRIVE_LAYOUT_INFORMATION_MBR {
-        public uint Signature;
-        public uint CheckSum;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DRIVE_LAYOUT_INFORMATION_GPT {
-        public Guid DiskId;
-        public long StartingUsableOffset;
-        public long UsableLength;
-        public uint MaxPartitionCount;
-    }
-    
-    [StructLayout(LayoutKind.Sequential)]
-    public struct PARTITION_INFORMATION_EX {
-        public uint PartitionStyle;
-        public long StartingOffset;
-        public long PartitionLength;
-        public uint PartitionNumber;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool RewritePartition;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool IsServicePartition;
-        public PARTITION_INFORMATION_UNION Union;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 112)]
-    public unsafe struct PARTITION_INFORMATION_UNION {
-        [FieldOffset(0)] public PARTITION_INFORMATION_MBR Mbr;
-        [FieldOffset(0)] public PARTITION_INFORMATION_GPT Gpt;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct PARTITION_INFORMATION_MBR {
-        public byte PartitionType;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool BootIndicator;
-        [MarshalAs(UnmanagedType.U1)]
-        public bool RecognizedPartition;
-        public byte Padding1;
-        public uint HiddenSectors;
-        public Guid PartitionId;
-        public fixed byte Padding2[88];
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public unsafe struct PARTITION_INFORMATION_GPT {
-        public Guid PartitionType;
-        public Guid PartitionId;
-        public ulong Attributes;
-        public fixed byte NameBytes[72];
-        
-        public void SetName(string value) {
-            fixed (byte* pName = NameBytes) {
-                for (int i = 0; i < 72; i++) {
-                    pName[i] = 0;
-                }
+            if (request.PersistenceSizeMB > 0)
+            {
+                var partitions = new List<ProUSB.Domain.PartitionDefinition>
+                {
+                    new() { 
+                        Label = "casper-rw", 
+                        FileSystem = "ext4", 
+                        SizeMB = request.PersistenceSizeMB,
+                        IsBootable = false
+                    },
+                    new() { 
+                        Label = "BOOT", 
+                        FileSystem = request.FileSystem, 
+                        SizeMB = 0,
+                        IsBootable = true
+                    }
+                };
                 
-                if (!string.IsNullOrEmpty(value)) {
-                    byte[] bytes = System.Text.Encoding.Unicode.GetBytes(value);
-                    int copyLen = Math.Min(bytes.Length, 72);
-                    for (int i = 0; i < copyLen; i++) {
-                        pName[i] = bytes[i];
+                formatSuccess = await _driver.FormatCustomAsync(diskIndex, partitions, _cts.Token);
+            }
+            else
+            {
+                formatSuccess = await _driver.FormatDiskAsync(
+                    diskIndex,
+                    "BOOT",
+                    request.FileSystem,
+                    request.PartitionScheme,
+                    4096,
+                    true,
+                    _cts.Token);
+            }
+
+            if (!formatSuccess)
+                throw new InvalidOperationException("Disk formatting failed");
+
+            progress.Report(new BurnProgress(40, "Format complete. Copying files...", 40, 100));
+
+            var mountPoint = await _driver.MountPartitionAsync(diskIndex, 0, _cts.Token) 
+                ?? throw new InvalidOperationException("Failed to mount formatted disk");
+
+            await ExtractIsoAsync(request.IsoPath, mountPoint, progress, _cts.Token);
+
+            progress.Report(new BurnProgress(100, "Burn complete!", 100, 100));
+
+            var duration = DateTime.UtcNow - startTime;
+            _logger.Info($"Burn completed successfully in {duration.TotalSeconds:F1}s");
+
+            return new BurnResult(true, "Burn successful", duration);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.Info("Burn cancelled by user");
+            return new BurnResult(false, "Cancelled", DateTime.UtcNow - startTime);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"Burn failed: {ex.Message}", ex);
+            return new BurnResult(false, ex.Message, DateTime.UtcNow - startTime);
+        }
+        finally
+        {
+            _cts?.Dispose();
+            _cts = null;
+        }
+    }
+
+    public async Task<VerifyResult> VerifyAsync(string devicePath, CancellationToken ct = default)
+    {
+        var errors = new List<string>();
+        
+        try
+        {
+            if (!Directory.Exists(devicePath))
+            {
+                errors.Add($"Device path not found: {devicePath}");
+                return new VerifyResult(false, "Device not accessible", errors);
+            }
+
+            var files = Directory.GetFiles(devicePath, "*", SearchOption.AllDirectories);
+            if (files.Length == 0)
+            {
+                errors.Add("No files found on device");
+                return new VerifyResult(false, "Empty device", errors);
+            }
+
+            await Task.CompletedTask;
+            return new VerifyResult(true, $"Verified {files.Length} files", errors);
+        }
+        catch (Exception ex)
+        {
+            errors.Add(ex.Message);
+            return new VerifyResult(false, "Verification failed", errors);
+        }
+    }
+
+    public async Task<bool> CancelAsync()
+    {
+        _cts?.Cancel();
+        await Task.CompletedTask;
+        return true;
+    }
+
+    private int ParseDiskIndex(string deviceId)
+    {
+        if (deviceId.Contains("PhysicalDrive", StringComparison.OrdinalIgnoreCase))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(deviceId, @"\d+");
+            if (match.Success) return int.Parse(match.Value);
+        }
+        
+        if (deviceId.Length == 2 && deviceId[1] == ':')
+        {
+            return MapDriveLetterToDiskIndex(deviceId[0]);
+        }
+        
+        throw new ArgumentException($"Invalid device ID format: {deviceId}");
+    }
+
+    private int MapDriveLetterToDiskIndex(char driveLetter)
+    {
+        using var searcher = new ManagementObjectSearcher(
+            $"SELECT * FROM Win32_LogicalDisk WHERE DeviceID = '{driveLetter}:'");
+        
+        foreach (ManagementObject disk in searcher.Get())
+        {
+            var deviceId = disk["DeviceID"]?.ToString();
+            if (deviceId != null)
+            {
+                using var partitionSearcher = new ManagementObjectSearcher(
+                    $"ASSOCIATORS OF {{Win32_LogicalDisk.DeviceID='{deviceId}'}} WHERE AssocClass = Win32_LogicalDiskToPartition");
+                
+                foreach (ManagementObject partition in partitionSearcher.Get())
+                {
+                    using var diskSearcher = new ManagementObjectSearcher(
+                        $"ASSOCIATORS OF {{Win32_DiskPartition.DeviceID='{partition["DeviceID"]}'}} WHERE AssocClass = Win32_DiskDriveToDiskPartition");
+                    
+                    foreach (ManagementObject drive in diskSearcher.Get())
+                    {
+                        var driveDeviceId = drive["DeviceID"]?.ToString();
+                        if (driveDeviceId != null)
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(driveDeviceId, @"\d+");
+                            if (match.Success) return int.Parse(match.Value);
+                        }
                     }
                 }
             }
         }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DISK_GEOMETRY {
-        public long Cylinders;
-        public uint MediaType;
-        public uint TracksPerCylinder;
-        public uint SectorsPerTrack;
-        public uint BytesPerSector;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DISK_GEOMETRY_EX {
-        public DISK_GEOMETRY Geometry;
-        public long DiskSize;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
-        public byte[] Data;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct DISK_EXTENT {
-        public int DiskNumber;
-        public long StartingOffset;
-        public long ExtentLength;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct VOLUME_DISK_EXTENTS {
-        public int NumberOfDiskExtents;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
-        public DISK_EXTENT[] Extents;
-    }
-
-    public enum PARTITION_STYLE : int {
-        MBR = 0,
-        GPT = 1,
-        RAW = 2
-    }
-
-    public const ulong GPT_ATTRIBUTE_PLATFORM_REQUIRED = 0x0000000000000001;
-    public const ulong GPT_ATTRIBUTE_NO_BLOCK_IO_PROTOCOL = 0x0000000000000002;
-    public const ulong GPT_ATTRIBUTE_LEGACY_BIOS_BOOTABLE = 0x0000000000000004;
-    public const ulong GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER = 0x8000000000000000;
-    public const ulong GPT_BASIC_DATA_ATTRIBUTE_HIDDEN = 0x4000000000000000;
-    public const ulong GPT_BASIC_DATA_ATTRIBUTE_SHADOW_COPY = 0x2000000000000000;
-    public const ulong GPT_BASIC_DATA_ATTRIBUTE_READ_ONLY = 0x1000000000000000;
-    
-    [DllImport("fmifs.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern void FormatEx(
-        string DriveRoot,
-        int MediaFlag,
-        string FileSystem,
-        string Label,
-        bool QuickFormat,
-        int ClusterSize,
-        FormatCallback Callback);
-
-    public delegate bool FormatCallback(
-        int Command,
-        int SubAction,
-        IntPtr ActionInfo);
-
-    public enum FMIFS_PACKET_TYPE {
-        FmIfsPercentCompleted = 0,
-        FmIfsFormatReport = 1,
-        FmIfsInsertDisk = 2,
-        FmIfsIncompatibleFileSystem = 3,
-        FmIfsFormattingDestination = 4,
-        FmIfsIncompatibleMedia = 5,
-        FmIfsAccessDenied = 6,
-        FmIfsMediaWriteProtected = 7,
-        FmIfsCantLock = 8,
-        FmIfsCantQuickFormat = 9,
-        FmIfsIoError = 10,
-        FmIfsFinished = 11,
-        FmIfsBadLabel = 12
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct STORAGE_PROPERTY_QUERY {
-        public uint PropertyId;
-        public uint QueryType;
-        public byte AdditionalParameters;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct STORAGE_DEVICE_DESCRIPTOR_HEADER {
-        public uint Version;
-        public uint Size;
-        public byte DeviceType;
-        public byte DeviceTypeModifier;
-        [MarshalAs(UnmanagedType.U1)] public bool RemovableMedia;
-        [MarshalAs(UnmanagedType.U1)] public bool CommandQueueing;
-        public uint VendorIdOffset;
-        public uint ProductIdOffset;
-        public uint ProductRevisionOffset;
-        public uint SerialNumberOffset;
-        public uint BusType;
-        public uint RawPropertiesLength;
-    }
-}
-
-
-
-
-======================================
-FILE: Infrastructure\DiskManagement\Vds\IVdsInterfaces.cs
-======================================
-
-using System;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
-
-namespace ProUSB.Infrastructure.DiskManagement.Vds;
-
-[ComImport]
-[Guid("B6B22DA8-F903-4BE7-B492-C09D875AC9DA")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IVdsServiceLoader {
-    [PreserveSig]
-    int LoadService([In, MarshalAs(UnmanagedType.LPWStr)] string machineName, out IVdsService service);
-}
-
-[ComImport]
-[Guid("0818A8EF-9BA9-40D8-A6F9-E22833CC771E")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IVdsService {
-    [PreserveSig]
-    int IsServiceReady();
-
-    [PreserveSig]
-    int WaitForServiceReady();
-
-    [PreserveSig]
-    int GetProperties(out VDS_SERVICE_PROP properties);
-
-    [PreserveSig]
-    int QueryProviders(uint masks, out IEnumVdsObject enumObject);
-
-    [PreserveSig]
-    int QueryMaskedDisks(out IEnumVdsObject enumObject);
-
-    [PreserveSig]
-    int QueryUnallocatedDisks(out IEnumVdsObject enumObject);
-
-    [PreserveSig]
-    int GetObject([In, MarshalAs(UnmanagedType.Struct)] Guid objectId, VDS_OBJECT_TYPE type, out object obj);
-
-    [PreserveSig]
-    int QueryDriveLetters(byte wcFirstLetter, uint count, out VDS_DRIVE_LETTER_PROP driveLetterPropArray);
-
-    [PreserveSig]
-    int QueryFileSystemTypes(out IntPtr ppFileSystemTypeProps, out int plNumberOfFileSystems);
-
-    [PreserveSig]
-    int Reenumerate();
-
-    [PreserveSig]
-    int Refresh();
-
-    [PreserveSig]
-    int CleanupObsoleteMountPoints();
-}
-
-[ComImport]
-[Guid("118610B7-8D94-4030-B5B8-500889788E4E")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IEnumVdsObject {
-    [PreserveSig]
-    int Next(uint celt, [Out, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.IUnknown)] object[] ppObjectArray, out uint pcFetched);
-
-    [PreserveSig]
-    int Skip(uint celt);
-
-    [PreserveSig]
-    int Reset();
-
-    [PreserveSig]
-    int Clone([MarshalAs(UnmanagedType.Interface)] out IEnumVdsObject ppEnum);
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct VDS_SERVICE_PROP {
-    [MarshalAs(UnmanagedType.LPWStr)]
-    public string pwszVersion;
-    public uint ulFlags;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct VDS_DRIVE_LETTER_PROP {
-    public byte wcLetter;
-    public Guid volumeId;
-    public uint ulFlags;
-    [MarshalAs(UnmanagedType.Bool)]
-    public bool bUsed;
-}
-
-public enum VDS_OBJECT_TYPE {
-    VDS_OT_UNKNOWN = 0,
-    VDS_OT_PROVIDER = 1,
-    VDS_OT_PACK = 10,
-    VDS_OT_VOLUME = 11,
-    VDS_OT_VOLUME_PLEX = 12,
-    VDS_OT_DISK = 13
-}
-
-[ComImport]
-[Guid("9AA58360-CE33-4F92-B658-ED24B14425B8")]
-public class VdsServiceLoader { }
-
-
-
-
-======================================
-FILE: Infrastructure\DiskManagement\Vds\VdsPartitionRefresher.cs
-======================================
-
-using System;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
-using ProUSB.Services.Logging;
-
-namespace ProUSB.Infrastructure.DiskManagement.Vds;
-
-public class VdsPartitionRefresher {
-    private readonly FileLogger _log;
-
-    public VdsPartitionRefresher(FileLogger log) {
-        _log = log;
-    }
-
-    public async Task<bool> RefreshPartitionsAsync(CancellationToken ct) {
-        return await Task.Run(() => RefreshPartitions(), ct);
-    }
-
-    private bool RefreshPartitions() {
-        if (!OperatingSystem.IsWindows()) {
-            _log.Debug("VDS is only available on Windows");
-            return false;
-        }
-
-        IVdsServiceLoader? loader = null;
-        IVdsService? service = null;
-
-        try {
-            _log.Info("Attempting VDS partition refresh...");
-            
-            var vdsLoaderType = Type.GetTypeFromCLSID(new Guid("9C38ED61-D565-4728-AEEE-C80952F0ECDE"));
-            if (vdsLoaderType == null) {
-                _log.Warn("VDS Loader type not found");
-                return false;
-            }
-            
-            var vdsLoaderObj = Activator.CreateInstance(vdsLoaderType);
-            if (vdsLoaderObj == null) {
-                _log.Warn("Failed to create VDS Loader instance");
-                return false;
-            }
-
-            loader = vdsLoaderObj as IVdsServiceLoader;
-            if (loader == null) {
-                _log.Warn("VDS Loader instance is not of expected type");
-                return false;
-            }
-
-            int hr = loader.LoadService(null!, out service);
-            if (hr != 0 || service == null) {
-                _log.Warn($"VDS LoadService failed: 0x{hr:X8}");
-                return false;
-            }
-
-            hr = service.WaitForServiceReady();
-            if (hr != 0) {
-                _log.Warn($"VDS WaitForServiceReady failed: 0x{hr:X8}");
-                return false;
-            }
-
-            _log.Info("VDS service ready, calling Reenumerate...");
-            hr = service.Reenumerate();
-            if (hr != 0) {
-                _log.Warn($"VDS Reenumerate failed: 0x{hr:X8}");
-                return false;
-            }
-
-            _log.Info("Calling VDS Refresh...");
-            hr = service.Refresh();
-            if (hr != 0) {
-                _log.Warn($"VDS Refresh failed: 0x{hr:X8}");
-                return false;
-            }
-
-            _log.Info("VDS partition refresh successful");
-            return true;
-
-        } catch (Exception ex) {
-            _log.Warn($"VDS refresh exception: {ex.Message}");
-            return false;
-        } finally {
-            if (OperatingSystem.IsWindows()) {
-                if (service != null) {
-                    try { Marshal.ReleaseComObject(service); } catch { }
-                }
-                if (loader != null) {
-                    try {  Marshal.ReleaseComObject(loader); } catch { }
-                }
-            }
-        }
-    }
-}
-
-
-
-
-
-======================================
-FILE: Infrastructure\DiskManagement\Vds\VdsRescanService.cs
-======================================
-
-using System;
-using System.Runtime.InteropServices;
-using ProUSB.Services.Logging;
-
-namespace ProUSB.Infrastructure.DiskManagement.Vds;
-
-public class VdsRescanService {
-    private readonly FileLogger _log;
-
-    [Flags]
-    public enum RescanType {
-        Refresh = 1,      
-        Reenumerate = 2   
-    }
-
-    public VdsRescanService(FileLogger log) {
-        _log = log;
-    }
-
-    public async System.Threading.Tasks.Task<bool> RescanAsync(RescanType rescanType, int sleepAfterMs = 0) {
-        _log.Info("Forcing VDS rescan to prevent Windows from 'losing' the disk...");
         
-        try {
-            var refresher = new VdsPartitionRefresher(_log);
-            await refresher.RefreshPartitionsAsync(System.Threading.CancellationToken.None);
+        throw new InvalidOperationException($"Could not map drive {driveLetter}: to disk index");
+    }
+
+    private async Task ExtractIsoAsync(
+        string isoPath, 
+        string targetPath, 
+        IProgress<BurnProgress> progress, 
+        CancellationToken ct)
+    {
+        using var isoStream = File.OpenRead(isoPath);
+        using var cd = new CDReader(isoStream, true);
+
+        await CopyDirectoryAsync(cd.Root, targetPath, progress, 40, 95, ct);
+    }
+
+    private async Task CopyDirectoryAsync(
+        DiscUtils.DiscDirectoryInfo sourceDir, 
+        string destPath, 
+        IProgress<BurnProgress> progress, 
+        int startPct, 
+        int endPct, 
+        CancellationToken ct)
+    {
+        if (!Directory.Exists(destPath)) 
+            Directory.CreateDirectory(destPath);
+
+        var files = sourceDir.GetFiles();
+        var subDirs = sourceDir.GetDirectories();
+        int totalItems = files.Length + subDirs.Length;
+        int currentItem = 0;
+
+        foreach (var file in files)
+        {
+            ct.ThrowIfCancellationRequested();
             
-            if (sleepAfterMs > 0) {
-                _log.Info($"Waiting {sleepAfterMs}ms for rescan to complete...");
-                await System.Threading.Tasks.Task.Delay(sleepAfterMs);
+            string destFile = Path.Combine(destPath, file.Name);
+            
+            using var sourceStream = file.OpenRead();
+            using var destStream = File.Create(destFile);
+            
+            Span<byte> buffer = stackalloc byte[81920];
+            int bytesRead;
+            while ((bytesRead = sourceStream.Read(buffer)) > 0)
+            {
+                destStream.Write(buffer[..bytesRead]);
             }
             
-            _log.Info("VDS rescan completed successfully");
-            return true;
-        } catch (Exception ex) {
-            _log.Warn($"VDS rescan failed: {ex.Message}");
-            return false;
+            currentItem++;
+            var pct = startPct + (int)((currentItem / (double)totalItems) * (endPct - startPct));
+            progress.Report(new BurnProgress(pct, $"Copying {file.Name}...", currentItem, totalItems));
+        }
+
+        foreach (var subDir in subDirs)
+        {
+            await CopyDirectoryAsync(
+                subDir, 
+                Path.Combine(destPath, subDir.Name), 
+                progress, 
+                startPct, 
+                endPct, 
+                ct);
         }
     }
 }
@@ -1317,12 +1264,111 @@ public class VdsRescanService {
 
 
 
+==============================================================================
+File: \src\ProUSB\Engine\PxeGenerator.cs
+==============================================================================
+using Mass.Core.Devices;
+
+namespace ProUSB.Engine;
+
+public class PxeGenerator : IPxeGenerator
+{
+    public async Task<string> GeneratePxeBootAsync(PxeConfig config, CancellationToken ct = default)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("#!ipxe");
+        sb.AppendLine($"# Generated by Mass Suite for {config.ServerUrl}");
+        sb.AppendLine($"set server_url {config.ServerUrl}");
+        sb.AppendLine($"set boot_menu {config.BootMenuPath}");
+        sb.AppendLine("chain ${server_url}/${boot_menu}");
+        
+        await Task.CompletedTask;
+        return sb.ToString();
+    }
+
+    public async Task<bool> ValidateConfigAsync(PxeConfig config)
+    {
+        await Task.CompletedTask;
+        
+        if (string.IsNullOrEmpty(config.ServerUrl))
+            return false;
+
+        if (string.IsNullOrEmpty(config.BootMenuPath))
+            return false;
+
+        return true;
+    }
+}
 
 
-======================================
-FILE: Infrastructure\DiskManagement\AdvancedVolumeMounter.cs
-======================================
 
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\PortablePathManager.cs
+==============================================================================
+using System;
+using System.IO;
+using System.Reflection;
+
+namespace ProUSB.Infrastructure;
+
+public class PortablePathManager {
+    private readonly bool _isPortableMode;
+    private readonly string _baseDataDirectory;
+
+    public PortablePathManager() {
+        _isPortableMode = DetectPortableMode();
+        _baseDataDirectory = _isPortableMode ? GetPortableDataDirectory() : GetInstalledDataDirectory();
+    }
+
+    public bool IsPortableMode() => _isPortableMode;
+
+    public string GetDataDirectory() => _baseDataDirectory;
+
+    public string GetLogsDirectory() => Path.Combine(_baseDataDirectory, "Logs");
+
+    public string GetProfilesDirectory() => Path.Combine(_baseDataDirectory, "Profiles");
+
+    public string GetConfigDirectory() => Path.Combine(_baseDataDirectory, "Config");
+
+    public void EnsureDirectoriesExist() {
+        Directory.CreateDirectory(GetLogsDirectory());
+        Directory.CreateDirectory(GetProfilesDirectory());
+        Directory.CreateDirectory(GetConfigDirectory());
+    }
+
+    private bool DetectPortableMode() {
+        try {
+            string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            if (string.IsNullOrEmpty(exeDir)) {
+                return false;
+            }
+
+            string portableMarker = Path.Combine(exeDir, "portable.txt");
+            return File.Exists(portableMarker);
+        } catch {
+            return false;
+        }
+    }
+
+    private string GetPortableDataDirectory() {
+        string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        return Path.Combine(exeDir ?? Environment.CurrentDirectory, "Data");
+    }
+
+    private string GetInstalledDataDirectory() {
+        string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        return Path.Combine(appDataPath, "ProUSBMediaSuite");
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\AdvancedVolumeMounter.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Linq;
@@ -1675,10 +1721,10 @@ public class AdvancedVolumeMounter {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\AutoMountManager.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\AutoMountManager.cs
+==============================================================================
 using System;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -1822,10 +1868,10 @@ public class AutoMountManager {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\DiskConstants.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\DiskConstants.cs
+==============================================================================
 namespace ProUSB.Infrastructure.DiskManagement;
 
 public static class DiskConstants {
@@ -1839,10 +1885,10 @@ public static class DiskConstants {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\DiskHelper.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\DiskHelper.cs
+==============================================================================
 using System;
 
 namespace ProUSB.Infrastructure.DiskManagement;
@@ -1868,10 +1914,10 @@ public static class DiskHelper
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\DriveLockingService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\DriveLockingService.cs
+==============================================================================
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -1973,10 +2019,10 @@ public class DriveLockingService {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\DriveSafetyValidator.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\DriveSafetyValidator.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Linq;
@@ -2017,17 +2063,17 @@ public class DriveSafetyValidator {
 
         if (IsSystemDrive(deviceInfo)) {
             violations |= SafetyViolation.IsSystemDrive;
-            _log.Warn($"⚠️ CRITICAL: Device {deviceInfo.FriendlyName} is a SYSTEM DRIVE!");
+            _log.Warn($"âš ï¸ CRITICAL: Device {deviceInfo.FriendlyName} is a SYSTEM DRIVE!");
         }
 
         if (!string.IsNullOrEmpty(isoPath) && IsSourceDrive(deviceInfo, isoPath)) {
             violations |= SafetyViolation.IsSourceDrive;
-            _log.Warn($"⚠️ WARNING: Device {deviceInfo.FriendlyName} contains the source ISO!");
+            _log.Warn($"âš ï¸ WARNING: Device {deviceInfo.FriendlyName} contains the source ISO!");
         }
 
         if (deviceInfo.TotalSize < 64 * 1024 * 1024) {
             violations |= SafetyViolation.TooSmall;
-            _log.Warn($"⚠️ WARNING: Device {deviceInfo.FriendlyName} is too small ({deviceInfo.TotalSize} bytes)");
+            _log.Warn($"âš ï¸ WARNING: Device {deviceInfo.FriendlyName} is too small ({deviceInfo.TotalSize} bytes)");
         }
 
         return violations;
@@ -2098,19 +2144,19 @@ public class DriveSafetyValidator {
         var messages = new System.Collections.Generic.List<string>();
 
         if ((violations & SafetyViolation.IsSystemDrive) != 0) {
-            messages.Add("🛑 CRITICAL: This is your SYSTEM DRIVE (contains Windows). Formatting it will destroy your operating system!");
+            messages.Add("ðŸ›‘ CRITICAL: This is your SYSTEM DRIVE (contains Windows). Formatting it will destroy your operating system!");
         }
 
         if ((violations & SafetyViolation.IsSourceDrive) != 0) {
-            messages.Add("⚠️ WARNING: This drive contains the ISO file you're trying to burn. Choose a different target.");
+            messages.Add("âš ï¸ WARNING: This drive contains the ISO file you're trying to burn. Choose a different target.");
         }
 
         if ((violations & SafetyViolation.TooSmall) != 0) {
-            messages.Add("⚠️ WARNING: This drive is unusually small. It may be corrupted.");
+            messages.Add("âš ï¸ WARNING: This drive is unusually small. It may be corrupted.");
         }
 
         if ((violations & SafetyViolation.IsReadOnly) != 0) {
-            messages.Add("⚠️ WARNING: This drive is read-only.");
+            messages.Add("âš ï¸ WARNING: This drive is read-only.");
         }
 
         return string.Join("\n", messages);
@@ -2125,10 +2171,10 @@ public class DriveSafetyValidator {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\FormatFailedException.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\FormatFailedException.cs
+==============================================================================
 using System;
 
 namespace ProUSB.Infrastructure.DiskManagement;
@@ -2142,10 +2188,10 @@ public class FormatFailedException : Exception
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\MountFailedException.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\MountFailedException.cs
+==============================================================================
 using System;
 
 namespace ProUSB.Infrastructure.DiskManagement;
@@ -2159,10 +2205,10 @@ public class MountFailedException : Exception
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\NativeDiskFormatter.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\NativeDiskFormatter.cs
+==============================================================================
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -2746,10 +2792,10 @@ public class NativeDiskFormatter {
 
 
 
-======================================
-FILE: Infrastructure\DiskManagement\VdsErrorTranslator.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\VdsErrorTranslator.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 
@@ -2985,10 +3031,601 @@ public static class VdsErrorTranslator {
 
 
 
-======================================
-FILE: Infrastructure\Drivers\Windows\WindowsDiskDriver.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\Native\Crc32.cs
+==============================================================================
+using System;
+
+namespace ProUSB.Infrastructure.DiskManagement.Native;
+
+public static class Crc32 {
+    private static readonly uint[] Table;
+
+    static Crc32() {
+        uint poly = 0xedb88320;
+        Table = new uint[256];
+        for (uint i = 0; i < 256; i++) {
+            uint temp = i;
+            for (int j = 8; j > 0; j--) {
+                if ((temp & 1) == 1) {
+                    temp = (uint)((temp >> 1) ^ poly);
+                } else {
+                    temp >>= 1;
+                }
+            }
+            Table[i] = temp;
+        }
+    }
+
+    public static uint Compute(byte[] bytes) {
+        uint crc = 0xffffffff;
+        for (int i = 0; i < bytes.Length; i++) {
+            byte index = (byte)((crc & 0xff) ^ bytes[i]);
+            crc = (uint)((crc >> 8) ^ Table[index]);
+        }
+        return ~crc;
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\Native\NativeMethods.cs
+==============================================================================
+using System;
+using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
+
+namespace ProUSB.Infrastructure.DiskManagement.Native;
+
+internal static class NativeMethods {
+    public const uint GENERIC_READ = 0x80000000;
+    public const uint GENERIC_WRITE = 0x40000000;
+    public const uint FILE_SHARE_READ = 0x00000001;
+    public const uint FILE_SHARE_WRITE = 0x00000002;
+    public const uint OPEN_EXISTING = 3;
+    public const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
+    public const uint FILE_FLAG_NO_BUFFERING = 0x20000000;
+    public const uint FILE_FLAG_WRITE_THROUGH = 0x80000000;
+    public const uint FILE_FLAG_OVERLAPPED = 0x40000000;
+
+    public const uint IOCTL_DISK_GET_DRIVE_LAYOUT_EX = 0x00074050;
+    public const uint IOCTL_DISK_SET_DRIVE_LAYOUT_EX = 0x0007C054;
+    public const uint IOCTL_DISK_CREATE_DISK = 0x0007C058;
+    public const uint IOCTL_DISK_DELETE_DRIVE_LAYOUT = 0x0007C0E0;
+    public const uint IOCTL_DISK_UPDATE_PROPERTIES = 0x00070024;
+    public const uint IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 0x000700A0;
+    public const uint IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = 0x00560000;
+    public const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400;
+    public const uint FSCTL_LOCK_VOLUME = 0x00090018;
+    public const uint FSCTL_UNLOCK_VOLUME = 0x0009001C;
+    public const uint FSCTL_DISMOUNT_VOLUME = 0x00090020;
+    public const uint FSCTL_ALLOW_EXTENDED_DASD_IO = 0x00090083;
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern SafeFileHandle CreateFile(
+        string lpFileName,
+        uint dwDesiredAccess,
+        uint dwShareMode,
+        IntPtr lpSecurityAttributes,
+        uint dwCreationDisposition,
+        uint dwFlagsAndAttributes,
+        IntPtr hTemplateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool DeviceIoControl(
+        SafeFileHandle hDevice,
+        uint dwIoControlCode,
+        IntPtr lpInBuffer,
+        uint nInBufferSize,
+        IntPtr lpOutBuffer,
+        uint nOutBufferSize,
+        out uint lpBytesReturned,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool WriteFile(
+        SafeFileHandle hFile,
+        IntPtr lpBuffer,
+        uint nNumberOfBytesToWrite,
+        out uint lpNumberOfBytesWritten,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool ReadFile(
+        SafeFileHandle hFile,
+        IntPtr lpBuffer,
+        uint nNumberOfBytesToRead,
+        out uint lpNumberOfBytesRead,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetFilePointerEx(
+        SafeFileHandle hFile,
+        long liDistanceToMove,
+        IntPtr lpNewFilePointer,
+        uint dwMoveMethod);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CREATE_DISK {
+        public int PartitionStyle;
+        public CREATE_DISK_UNION Union;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    public struct CREATE_DISK_UNION {
+        [FieldOffset(0)] public CREATE_DISK_MBR Mbr;
+        [FieldOffset(0)] public CREATE_DISK_GPT Gpt;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CREATE_DISK_MBR {
+        public uint Signature;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CREATE_DISK_GPT {
+        public Guid DiskId;
+        public uint MaxPartitionCount;
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DRIVE_LAYOUT_INFORMATION_EX {
+        public uint PartitionStyle;
+        public uint PartitionCount;
+        public DRIVE_LAYOUT_INFORMATION_UNION Union;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+        public PARTITION_INFORMATION_EX[] PartitionEntry;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    public struct DRIVE_LAYOUT_INFORMATION_UNION {
+        [FieldOffset(0)] public DRIVE_LAYOUT_INFORMATION_MBR Mbr;
+        [FieldOffset(0)] public DRIVE_LAYOUT_INFORMATION_GPT Gpt;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DRIVE_LAYOUT_INFORMATION_MBR {
+        public uint Signature;
+        public uint CheckSum;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DRIVE_LAYOUT_INFORMATION_GPT {
+        public Guid DiskId;
+        public long StartingUsableOffset;
+        public long UsableLength;
+        public uint MaxPartitionCount;
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PARTITION_INFORMATION_EX {
+        public uint PartitionStyle;
+        public long StartingOffset;
+        public long PartitionLength;
+        public uint PartitionNumber;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool RewritePartition;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool IsServicePartition;
+        public PARTITION_INFORMATION_UNION Union;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
+    public unsafe struct PARTITION_INFORMATION_UNION {
+        [FieldOffset(0)] public PARTITION_INFORMATION_MBR Mbr;
+        [FieldOffset(0)] public PARTITION_INFORMATION_GPT Gpt;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct PARTITION_INFORMATION_MBR {
+        public byte PartitionType;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool BootIndicator;
+        [MarshalAs(UnmanagedType.U1)]
+        public bool RecognizedPartition;
+        public byte Padding1;
+        public uint HiddenSectors;
+        public Guid PartitionId;
+        public fixed byte Padding2[88];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct PARTITION_INFORMATION_GPT {
+        public Guid PartitionType;
+        public Guid PartitionId;
+        public ulong Attributes;
+        public fixed byte NameBytes[72];
+        
+        public void SetName(string value) {
+            fixed (byte* pName = NameBytes) {
+                for (int i = 0; i < 72; i++) {
+                    pName[i] = 0;
+                }
+                
+                if (!string.IsNullOrEmpty(value)) {
+                    byte[] bytes = System.Text.Encoding.Unicode.GetBytes(value);
+                    int copyLen = Math.Min(bytes.Length, 72);
+                    for (int i = 0; i < copyLen; i++) {
+                        pName[i] = bytes[i];
+                    }
+                }
+            }
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DISK_GEOMETRY {
+        public long Cylinders;
+        public uint MediaType;
+        public uint TracksPerCylinder;
+        public uint SectorsPerTrack;
+        public uint BytesPerSector;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DISK_GEOMETRY_EX {
+        public DISK_GEOMETRY Geometry;
+        public long DiskSize;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+        public byte[] Data;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DISK_EXTENT {
+        public int DiskNumber;
+        public long StartingOffset;
+        public long ExtentLength;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct VOLUME_DISK_EXTENTS {
+        public int NumberOfDiskExtents;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+        public DISK_EXTENT[] Extents;
+    }
+
+    public enum PARTITION_STYLE : int {
+        MBR = 0,
+        GPT = 1,
+        RAW = 2
+    }
+
+    public const ulong GPT_ATTRIBUTE_PLATFORM_REQUIRED = 0x0000000000000001;
+    public const ulong GPT_ATTRIBUTE_NO_BLOCK_IO_PROTOCOL = 0x0000000000000002;
+    public const ulong GPT_ATTRIBUTE_LEGACY_BIOS_BOOTABLE = 0x0000000000000004;
+    public const ulong GPT_BASIC_DATA_ATTRIBUTE_NO_DRIVE_LETTER = 0x8000000000000000;
+    public const ulong GPT_BASIC_DATA_ATTRIBUTE_HIDDEN = 0x4000000000000000;
+    public const ulong GPT_BASIC_DATA_ATTRIBUTE_SHADOW_COPY = 0x2000000000000000;
+    public const ulong GPT_BASIC_DATA_ATTRIBUTE_READ_ONLY = 0x1000000000000000;
+    
+    [DllImport("fmifs.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern void FormatEx(
+        string DriveRoot,
+        int MediaFlag,
+        string FileSystem,
+        string Label,
+        bool QuickFormat,
+        int ClusterSize,
+        FormatCallback Callback);
+
+    public delegate bool FormatCallback(
+        int Command,
+        int SubAction,
+        IntPtr ActionInfo);
+
+    public enum FMIFS_PACKET_TYPE {
+        FmIfsPercentCompleted = 0,
+        FmIfsFormatReport = 1,
+        FmIfsInsertDisk = 2,
+        FmIfsIncompatibleFileSystem = 3,
+        FmIfsFormattingDestination = 4,
+        FmIfsIncompatibleMedia = 5,
+        FmIfsAccessDenied = 6,
+        FmIfsMediaWriteProtected = 7,
+        FmIfsCantLock = 8,
+        FmIfsCantQuickFormat = 9,
+        FmIfsIoError = 10,
+        FmIfsFinished = 11,
+        FmIfsBadLabel = 12
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct STORAGE_PROPERTY_QUERY {
+        public uint PropertyId;
+        public uint QueryType;
+        public byte AdditionalParameters;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct STORAGE_DEVICE_DESCRIPTOR_HEADER {
+        public uint Version;
+        public uint Size;
+        public byte DeviceType;
+        public byte DeviceTypeModifier;
+        [MarshalAs(UnmanagedType.U1)] public bool RemovableMedia;
+        [MarshalAs(UnmanagedType.U1)] public bool CommandQueueing;
+        public uint VendorIdOffset;
+        public uint ProductIdOffset;
+        public uint ProductRevisionOffset;
+        public uint SerialNumberOffset;
+        public uint BusType;
+        public uint RawPropertiesLength;
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\Vds\IVdsInterfaces.cs
+==============================================================================
+using System;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
+
+namespace ProUSB.Infrastructure.DiskManagement.Vds;
+
+[ComImport]
+[Guid("B6B22DA8-F903-4BE7-B492-C09D875AC9DA")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IVdsServiceLoader {
+    [PreserveSig]
+    int LoadService([In, MarshalAs(UnmanagedType.LPWStr)] string machineName, out IVdsService service);
+}
+
+[ComImport]
+[Guid("0818A8EF-9BA9-40D8-A6F9-E22833CC771E")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IVdsService {
+    [PreserveSig]
+    int IsServiceReady();
+
+    [PreserveSig]
+    int WaitForServiceReady();
+
+    [PreserveSig]
+    int GetProperties(out VDS_SERVICE_PROP properties);
+
+    [PreserveSig]
+    int QueryProviders(uint masks, out IEnumVdsObject enumObject);
+
+    [PreserveSig]
+    int QueryMaskedDisks(out IEnumVdsObject enumObject);
+
+    [PreserveSig]
+    int QueryUnallocatedDisks(out IEnumVdsObject enumObject);
+
+    [PreserveSig]
+    int GetObject([In, MarshalAs(UnmanagedType.Struct)] Guid objectId, VDS_OBJECT_TYPE type, out object obj);
+
+    [PreserveSig]
+    int QueryDriveLetters(byte wcFirstLetter, uint count, out VDS_DRIVE_LETTER_PROP driveLetterPropArray);
+
+    [PreserveSig]
+    int QueryFileSystemTypes(out IntPtr ppFileSystemTypeProps, out int plNumberOfFileSystems);
+
+    [PreserveSig]
+    int Reenumerate();
+
+    [PreserveSig]
+    int Refresh();
+
+    [PreserveSig]
+    int CleanupObsoleteMountPoints();
+}
+
+[ComImport]
+[Guid("118610B7-8D94-4030-B5B8-500889788E4E")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IEnumVdsObject {
+    [PreserveSig]
+    int Next(uint celt, [Out, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.IUnknown)] object[] ppObjectArray, out uint pcFetched);
+
+    [PreserveSig]
+    int Skip(uint celt);
+
+    [PreserveSig]
+    int Reset();
+
+    [PreserveSig]
+    int Clone([MarshalAs(UnmanagedType.Interface)] out IEnumVdsObject ppEnum);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VDS_SERVICE_PROP {
+    [MarshalAs(UnmanagedType.LPWStr)]
+    public string pwszVersion;
+    public uint ulFlags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct VDS_DRIVE_LETTER_PROP {
+    public byte wcLetter;
+    public Guid volumeId;
+    public uint ulFlags;
+    [MarshalAs(UnmanagedType.Bool)]
+    public bool bUsed;
+}
+
+public enum VDS_OBJECT_TYPE {
+    VDS_OT_UNKNOWN = 0,
+    VDS_OT_PROVIDER = 1,
+    VDS_OT_PACK = 10,
+    VDS_OT_VOLUME = 11,
+    VDS_OT_VOLUME_PLEX = 12,
+    VDS_OT_DISK = 13
+}
+
+[ComImport]
+[Guid("9AA58360-CE33-4F92-B658-ED24B14425B8")]
+public class VdsServiceLoader { }
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\Vds\VdsPartitionRefresher.cs
+==============================================================================
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using ProUSB.Services.Logging;
+
+namespace ProUSB.Infrastructure.DiskManagement.Vds;
+
+public class VdsPartitionRefresher {
+    private readonly FileLogger _log;
+
+    public VdsPartitionRefresher(FileLogger log) {
+        _log = log;
+    }
+
+    public async Task<bool> RefreshPartitionsAsync(CancellationToken ct) {
+        return await Task.Run(() => RefreshPartitions(), ct);
+    }
+
+    private bool RefreshPartitions() {
+        if (!OperatingSystem.IsWindows()) {
+            _log.Debug("VDS is only available on Windows");
+            return false;
+        }
+
+        IVdsServiceLoader? loader = null;
+        IVdsService? service = null;
+
+        try {
+            _log.Info("Attempting VDS partition refresh...");
+            
+            var vdsLoaderType = Type.GetTypeFromCLSID(new Guid("9C38ED61-D565-4728-AEEE-C80952F0ECDE"));
+            if (vdsLoaderType == null) {
+                _log.Warn("VDS Loader type not found");
+                return false;
+            }
+            
+            var vdsLoaderObj = Activator.CreateInstance(vdsLoaderType);
+            if (vdsLoaderObj == null) {
+                _log.Warn("Failed to create VDS Loader instance");
+                return false;
+            }
+
+            loader = vdsLoaderObj as IVdsServiceLoader;
+            if (loader == null) {
+                _log.Warn("VDS Loader instance is not of expected type");
+                return false;
+            }
+
+            int hr = loader.LoadService(null!, out service);
+            if (hr != 0 || service == null) {
+                _log.Warn($"VDS LoadService failed: 0x{hr:X8}");
+                return false;
+            }
+
+            hr = service.WaitForServiceReady();
+            if (hr != 0) {
+                _log.Warn($"VDS WaitForServiceReady failed: 0x{hr:X8}");
+                return false;
+            }
+
+            _log.Info("VDS service ready, calling Reenumerate...");
+            hr = service.Reenumerate();
+            if (hr != 0) {
+                _log.Warn($"VDS Reenumerate failed: 0x{hr:X8}");
+                return false;
+            }
+
+            _log.Info("Calling VDS Refresh...");
+            hr = service.Refresh();
+            if (hr != 0) {
+                _log.Warn($"VDS Refresh failed: 0x{hr:X8}");
+                return false;
+            }
+
+            _log.Info("VDS partition refresh successful");
+            return true;
+
+        } catch (Exception ex) {
+            _log.Warn($"VDS refresh exception: {ex.Message}");
+            return false;
+        } finally {
+            if (OperatingSystem.IsWindows()) {
+                if (service != null) {
+                    try { Marshal.ReleaseComObject(service); } catch { }
+                }
+                if (loader != null) {
+                    try {  Marshal.ReleaseComObject(loader); } catch { }
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\DiskManagement\Vds\VdsRescanService.cs
+==============================================================================
+using System;
+using System.Runtime.InteropServices;
+using ProUSB.Services.Logging;
+
+namespace ProUSB.Infrastructure.DiskManagement.Vds;
+
+public class VdsRescanService {
+    private readonly FileLogger _log;
+
+    [Flags]
+    public enum RescanType {
+        Refresh = 1,      
+        Reenumerate = 2   
+    }
+
+    public VdsRescanService(FileLogger log) {
+        _log = log;
+    }
+
+    public async System.Threading.Tasks.Task<bool> RescanAsync(RescanType rescanType, int sleepAfterMs = 0) {
+        _log.Info("Forcing VDS rescan to prevent Windows from 'losing' the disk...");
+        
+        try {
+            var refresher = new VdsPartitionRefresher(_log);
+            await refresher.RefreshPartitionsAsync(System.Threading.CancellationToken.None);
+            
+            if (sleepAfterMs > 0) {
+                _log.Info($"Waiting {sleepAfterMs}ms for rescan to complete...");
+                await System.Threading.Tasks.Task.Delay(sleepAfterMs);
+            }
+            
+            _log.Info("VDS rescan completed successfully");
+            return true;
+        } catch (Exception ex) {
+            _log.Warn($"VDS rescan failed: {ex.Message}");
+            return false;
+        }
+    }
+}
+
+
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Infrastructure\Drivers\Windows\WindowsDiskDriver.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -3077,10 +3714,10 @@ public sealed class WindowsDiskDriver : IDiskDriver {
 
 
 
-======================================
-FILE: Infrastructure\Drivers\Windows\WindowsDriverFactory.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Infrastructure\Drivers\Windows\WindowsDriverFactory.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.Management;
@@ -3156,73 +3793,174 @@ public class WindowsDriverFactory : IDriverFactory {
 
 
 
-======================================
-FILE: Infrastructure\PortablePathManager.cs
-======================================
 
-using System;
-using System.IO;
-using System.Reflection;
+==============================================================================
+File: \src\ProUSB\Patching\IsoPatchEngine.cs
+==============================================================================
+using Mass.Core.Devices;
+using ProUSB.Services.Logging;
+using DiscUtils.Iso9660;
 
-namespace ProUSB.Infrastructure;
+namespace ProUSB.Patching;
 
-public class PortablePathManager {
-    private readonly bool _isPortableMode;
-    private readonly string _baseDataDirectory;
+public class IsoPatchEngine : IIsoPatcher
+{
+    private readonly FileLogger _logger;
 
-    public PortablePathManager() {
-        _isPortableMode = DetectPortableMode();
-        _baseDataDirectory = _isPortableMode ? GetPortableDataDirectory() : GetInstalledDataDirectory();
+    public IsoPatchEngine(FileLogger logger)
+    {
+        _logger = logger;
     }
 
-    public bool IsPortableMode() => _isPortableMode;
+    public async Task<PatchResult> PatchIsoAsync(PatchRequest request, CancellationToken ct = default)
+    {
+        var changes = new List<string>();
 
-    public string GetDataDirectory() => _baseDataDirectory;
+        try
+        {
+            _logger.Info($"Patching ISO: {request.SourceIsoPath}");
 
-    public string GetLogsDirectory() => Path.Combine(_baseDataDirectory, "Logs");
+            // For now, we'll implement live patching (patch files on mounted volume)
+            // Future enhancement: Extract ISO, patch, rebuild ISO
 
-    public string GetProfilesDirectory() => Path.Combine(_baseDataDirectory, "Profiles");
+            foreach (var operation in request.Operations)
+            {
+                switch (operation.Type.ToLowerInvariant())
+                {
+                    case "persistence":
+                        // This is handled during burn, not ISO modification
+                        changes.Add("Persistence configuration set");
+                        break;
 
-    public string GetConfigDirectory() => Path.Combine(_baseDataDirectory, "Config");
+                    case "bootloader":
+                        // Patch bootloader config files
+                        var result = await PatchBootloaderAsync(
+                            operation.Parameters.GetValueOrDefault("targetPath")?.ToString() ?? "",
+                            ct);
+                        changes.AddRange(result);
+                        break;
 
-    public void EnsureDirectoriesExist() {
-        Directory.CreateDirectory(GetLogsDirectory());
-        Directory.CreateDirectory(GetProfilesDirectory());
-        Directory.CreateDirectory(GetConfigDirectory());
-    }
-
-    private bool DetectPortableMode() {
-        try {
-            string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (string.IsNullOrEmpty(exeDir)) {
-                return false;
+                    default:
+                        _logger.Warn($"Unknown patch operation: {operation.Type}");
+                        break;
+                }
             }
 
-            string portableMarker = Path.Combine(exeDir, "portable.txt");
-            return File.Exists(portableMarker);
-        } catch {
+            return new PatchResult(true, request.OutputIsoPath, changes);
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"ISO patching failed: {ex.Message}", ex);
+            return new PatchResult(false, "", new List<string> { ex.Message });
+        }
+    }
+
+    public async Task<IsoInfo> InspectIsoAsync(string isoPath, CancellationToken ct = default)
+    {
+        try
+        {
+            using var isoStream = File.OpenRead(isoPath);
+            using var cd = new CDReader(isoStream, true);
+
+            var fileInfo = new FileInfo(isoPath);
+            var label = cd.VolumeLabel ?? "Unknown";
+            
+            // Check for bootability by looking for EFI or boot directories
+            var isBootable = DirectoryContainsEfi(cd.Root) || DirectoryContainsBoot(cd.Root);
+            var bootMethods = new List<string>();
+
+            if (isBootable)
+            {
+                if (DirectoryContainsEfi(cd.Root))
+                    bootMethods.Add("UEFI");
+                if (DirectoryContainsBoot(cd.Root))
+                    bootMethods.Add("BIOS/Legacy");
+            }
+
+            await Task.CompletedTask; // Placeholder for async consistency
+
+            return new IsoInfo(
+                label,
+                fileInfo.Length,
+                "ISO9660",
+                isBootable,
+                bootMethods
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.Error($"ISO inspection failed: {ex.Message}", ex);
+            return new IsoInfo("Error", 0, "Unknown", false, new List<string>());
+        }
+    }
+
+    private async Task<List<string>> PatchBootloaderAsync(string volumePath, CancellationToken ct)
+    {
+        var changes = new List<string>();
+
+        // Reuse logic from original IsoPatcher
+        var patcher = new Domain.Services.IsoPatcher(_logger);
+        await patcher.PatchAsync(volumePath, ct);
+
+        changes.Add("Bootloader configuration patched for persistence");
+        return changes;
+    }
+
+    private bool DirectoryContainsEfi(DiscUtils.DiscDirectoryInfo dir)
+    {
+        try
+        {
+            // Look for EFI directory or boot files
+            foreach (var subDir in dir.GetDirectories())
+            {
+                if (subDir.Name.Equals("EFI", StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+                if (DirectoryContainsEfi(subDir))
+                    return true;
+            }
+
+            foreach (var file in dir.GetFiles())
+            {
+                if (file.Name.EndsWith(".efi", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+
+            return false;
+        }
+        catch
+        {
             return false;
         }
     }
 
-    private string GetPortableDataDirectory() {
-        string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        return Path.Combine(exeDir ?? Environment.CurrentDirectory, "Data");
-    }
+    private bool DirectoryContainsBoot(DiscUtils.DiscDirectoryInfo dir)
+    {
+        try
+        {
+            // Look for common boot directories or files
+            foreach (var subDir in dir.GetDirectories())
+            {
+                var name = subDir.Name.ToLowerInvariant();
+                if (name == "boot" || name == "isolinux" || name == "syslinux" || name == "grub")
+                    return true;
+            }
 
-    private string GetInstalledDataDirectory() {
-        string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        return Path.Combine(appDataPath, "ProUSBMediaSuite");
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
 
 
 
 
-======================================
-FILE: Resources\os_catalog.json
-======================================
-
+==============================================================================
+File: \src\ProUSB\Resources\os_catalog.json
+==============================================================================
 {
   "operatingSystems": [
     {
@@ -3642,10 +4380,261 @@ FILE: Resources\os_catalog.json
 }
 
 
-======================================
-FILE: Services\Burn\Strategies\FileSystemDeploymentStrategy.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Burn\MultiDeviceBurnOrchestrator.cs
+==============================================================================
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ProUSB.Domain;
+using ProUSB.Services.Logging;
+
+namespace ProUSB.Services.Burn;
+
+public class MultiDeviceBurnOrchestrator {
+    private readonly ParallelBurnService _burnService;
+    private readonly FileLogger _logger;
+    private const int MaxConcurrentBurns = 3;
+    
+    public MultiDeviceBurnOrchestrator(ParallelBurnService burnService, FileLogger logger) {
+        _burnService = burnService;
+        _logger = logger;
+    }
+    
+    public async Task BurnMultipleAsync(
+        List<UsbDeviceInfo> devices,
+        string isoPath,
+        DeploymentConfiguration baseConfig,
+        Action<string, double, string> progressCallback,
+        CancellationToken ct
+    ) {
+        if(devices.Count == 0) {
+            throw new ArgumentException("No devices provided", nameof(devices));
+        }
+        
+        _logger.Info($"Starting multi-device burn for {devices.Count} device(s)");
+        
+        var results = new ConcurrentBag<BurnResult>();
+        var semaphore = new SemaphoreSlim(MaxConcurrentBurns);
+        
+        var tasks = devices.Select(async device => {
+            await semaphore.WaitAsync(ct);
+            try {
+                _logger.Info($"Starting burn for {device.FriendlyName}");
+                progressCallback(device.DeviceId, 0, "Starting...");
+                
+                var config = new DeploymentConfiguration {
+                    JobName = $"Burn-{device.DeviceId}",
+                    TargetDevice = device,
+                    SourceIso = baseConfig.SourceIso,
+                    Strategy = baseConfig.Strategy,
+                    PartitionScheme = baseConfig.PartitionScheme,
+                    FileSystem = baseConfig.FileSystem,
+                    ClusterSize = baseConfig.ClusterSize,
+                    QuickFormat = baseConfig.QuickFormat,
+                    BypassWin11 = baseConfig.BypassWin11,
+                    PersistenceSize = baseConfig.PersistenceSize
+                };
+                
+                var progress = new Progress<WriteStatistics>(stats => {
+                    progressCallback(device.DeviceId, stats.PercentComplete, stats.Message);
+                });
+                
+                await _burnService.BurnAsync(config, progress, ct);
+                
+                results.Add(new BurnResult {
+                    Device = device,
+                    Success = true,
+                    Message = "Completed successfully"
+                });
+                
+                progressCallback(device.DeviceId, 100, "âœ… Complete");
+                _logger.Info($"Burn completed successfully for {device.FriendlyName}");
+            }
+            catch(OperationCanceledException) {
+                results.Add(new BurnResult {
+                    Device = device,
+                    Success = false,
+                    Message = "Cancelled by user"
+                });
+                progressCallback(device.DeviceId, 0, "âš ï¸ Cancelled");
+                _logger.Warn($"Burn cancelled for {device.FriendlyName}");
+            }
+            catch(Exception ex) {
+                results.Add(new BurnResult {
+                    Device = device,
+                    Success = false,
+                    Message = ex.Message
+                });
+                
+                progressCallback(device.DeviceId, 0, $"âŒ Failed");
+                _logger.Error($"Burn failed for {device.FriendlyName}: {ex.Message}");
+            }
+            finally {
+                semaphore.Release();
+            }
+        });
+        
+        await Task.WhenAll(tasks);
+        
+        LogSummary(results.ToList());
+    }
+    
+    public async Task BurnBatchAsync(
+        List<BurnJob> jobs,
+        Action<string, double, string> progressCallback,
+        CancellationToken ct
+    ) {
+        if(jobs.Count == 0) throw new ArgumentException("No jobs provided", nameof(jobs));
+
+        _logger.Info($"Starting batch burn for {jobs.Count} job(s)");
+        
+        var results = new ConcurrentBag<BurnResult>();
+        var semaphore = new SemaphoreSlim(MaxConcurrentBurns);
+
+        var tasks = jobs.Select(async job => {
+            await semaphore.WaitAsync(ct);
+            try {
+                _logger.Info($"Starting batch job for {job.Device.FriendlyName} with ISO {Path.GetFileName(job.IsoPath)}");
+                progressCallback(job.Device.DeviceId, 0, "Starting...");
+
+                var progress = new Progress<WriteStatistics>(stats => {
+                    progressCallback(job.Device.DeviceId, stats.PercentComplete, stats.Message);
+                });
+
+                await _burnService.BurnAsync(job.Config, progress, ct);
+
+                results.Add(new BurnResult {
+                    Device = job.Device,
+                    Success = true,
+                    Message = "Completed successfully"
+                });
+
+                progressCallback(job.Device.DeviceId, 100, "âœ… Complete");
+                _logger.Info($"Batch job completed for {job.Device.FriendlyName}");
+            }
+            catch(OperationCanceledException) {
+                results.Add(new BurnResult {
+                    Device = job.Device,
+                    Success = false,
+                    Message = "Cancelled by user"
+                });
+                progressCallback(job.Device.DeviceId, 0, "âš ï¸ Cancelled");
+            }
+            catch(Exception ex) {
+                results.Add(new BurnResult {
+                    Device = job.Device,
+                    Success = false,
+                    Message = ex.Message
+                });
+                progressCallback(job.Device.DeviceId, 0, "âŒ Failed");
+                _logger.Error($"Batch job failed for {job.Device.FriendlyName}: {ex.Message}");
+            }
+            finally {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
+        LogSummary(results.ToList());
+    }
+
+    private void LogSummary(List<BurnResult> results) {
+        var successful = results.Count(r => r.Success);
+        var failed = results.Count(r => !r.Success);
+        
+        _logger.Info($"=== Burn Summary ===");
+        _logger.Info($"Total: {results.Count} | Success: {successful} | Failed: {failed}");
+        
+        if(failed > 0) {
+            _logger.Info("Failed devices:");
+            foreach(var result in results.Where(r => !r.Success)) {
+                _logger.Error($"  â€¢ {result.Device.FriendlyName}: {result.Message}");
+            }
+        }
+    }
+    
+    public record BurnResult {
+        public required UsbDeviceInfo Device { get; init; }
+        public required bool Success { get; init; }
+        public required string Message { get; init; }
+    }
+}
+
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Services\Burn\ParallelBurnService.cs
+==============================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using ProUSB.Domain;
+using ProUSB.Domain.Services;
+using ProUSB.Domain.Drivers;
+using ProUSB.Infrastructure.DiskManagement;
+using ProUSB.Services.Logging;
+
+namespace ProUSB.Services.Burn;
+
+public class ParallelBurnService {
+    private readonly IEnumerable<IBurnStrategy> _s;
+    private readonly ISafetyGuard _g;
+    private readonly IDriverFactory _f;
+    private readonly DriveSafetyValidator _safetyValidator;
+    private readonly FileLogger _log;
+    
+    public ParallelBurnService(IEnumerable<IBurnStrategy> s, ISafetyGuard g, IDriverFactory f, FileLogger log) {
+        _s = s;
+        _g = g;
+        _f = f;
+        _log = log;
+        _safetyValidator = new DriveSafetyValidator(log);
+    }
+    
+    public async Task BurnAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct) {
+        var list = await _f.EnumerateDevicesAsync(ct);
+        var fresh = list.FirstOrDefault(x => x.DeviceId == c.TargetDevice.DeviceId) 
+            ?? throw new Exception("Missing Device");
+
+        var safetyViolations = _safetyValidator.ValidateDrive(fresh, c.SourceIso.FilePath);
+        if (safetyViolations != DriveSafetyValidator.SafetyViolation.None) {
+            string message = _safetyValidator.GetViolationMessage(safetyViolations);
+            _log.Error(message);
+            
+            if (_safetyValidator.IsCritical(safetyViolations)) {
+                throw new InvalidOperationException($"SAFETY VIOLATION: Cannot proceed.\n{message}");
+            }
+        }
+
+        var r = _g.EvaluateRisk(fresh);
+        if (r == DeviceRiskLevel.Critical || r == DeviceRiskLevel.SystemLockdown) 
+            throw new Exception($"Risk Block: {r}");
+        
+        var e = _s.FirstOrDefault(x => x.StrategyType == c.Strategy) 
+            ?? throw new Exception("Missing Engine");
+        
+        await e.ExecuteAsync(c, p, ct);
+        await e.VerifyAsync(c, p, ct);
+    }
+}
+
+
+
+
+
+==============================================================================
+File: \src\ProUSB\Services\Burn\Strategies\FileSystemDeploymentStrategy.cs
+==============================================================================
 using System;
 using System.Security.Cryptography;
 using System.IO;
@@ -4087,10 +5076,10 @@ public class FileSystemDeploymentStrategy : IBurnStrategy {
 
 
 
-======================================
-FILE: Services\Burn\Strategies\RawPipelinedWriteStrategy.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Burn\Strategies\RawPipelinedWriteStrategy.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Threading.Channels;
@@ -4169,10 +5158,10 @@ public class RawPipelinedWriteStrategy : IBurnStrategy {
 
 
 
-======================================
-FILE: Services\Burn\Strategies\Windows11BypassInjector.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Burn\Strategies\Windows11BypassInjector.cs
+==============================================================================
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
@@ -4198,261 +5187,10 @@ public class Windows11BypassInjector {
 
 
 
-======================================
-FILE: Services\Burn\MultiDeviceBurnOrchestrator.cs
-======================================
 
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ProUSB.Domain;
-using ProUSB.Services.Logging;
-
-namespace ProUSB.Services.Burn;
-
-public class MultiDeviceBurnOrchestrator {
-    private readonly ParallelBurnService _burnService;
-    private readonly FileLogger _logger;
-    private const int MaxConcurrentBurns = 3;
-    
-    public MultiDeviceBurnOrchestrator(ParallelBurnService burnService, FileLogger logger) {
-        _burnService = burnService;
-        _logger = logger;
-    }
-    
-    public async Task BurnMultipleAsync(
-        List<UsbDeviceInfo> devices,
-        string isoPath,
-        DeploymentConfiguration baseConfig,
-        Action<string, double, string> progressCallback,
-        CancellationToken ct
-    ) {
-        if(devices.Count == 0) {
-            throw new ArgumentException("No devices provided", nameof(devices));
-        }
-        
-        _logger.Info($"Starting multi-device burn for {devices.Count} device(s)");
-        
-        var results = new ConcurrentBag<BurnResult>();
-        var semaphore = new SemaphoreSlim(MaxConcurrentBurns);
-        
-        var tasks = devices.Select(async device => {
-            await semaphore.WaitAsync(ct);
-            try {
-                _logger.Info($"Starting burn for {device.FriendlyName}");
-                progressCallback(device.DeviceId, 0, "Starting...");
-                
-                var config = new DeploymentConfiguration {
-                    JobName = $"Burn-{device.DeviceId}",
-                    TargetDevice = device,
-                    SourceIso = baseConfig.SourceIso,
-                    Strategy = baseConfig.Strategy,
-                    PartitionScheme = baseConfig.PartitionScheme,
-                    FileSystem = baseConfig.FileSystem,
-                    ClusterSize = baseConfig.ClusterSize,
-                    QuickFormat = baseConfig.QuickFormat,
-                    BypassWin11 = baseConfig.BypassWin11,
-                    PersistenceSize = baseConfig.PersistenceSize
-                };
-                
-                var progress = new Progress<WriteStatistics>(stats => {
-                    progressCallback(device.DeviceId, stats.PercentComplete, stats.Message);
-                });
-                
-                await _burnService.BurnAsync(config, progress, ct);
-                
-                results.Add(new BurnResult {
-                    Device = device,
-                    Success = true,
-                    Message = "Completed successfully"
-                });
-                
-                progressCallback(device.DeviceId, 100, "✅ Complete");
-                _logger.Info($"Burn completed successfully for {device.FriendlyName}");
-            }
-            catch(OperationCanceledException) {
-                results.Add(new BurnResult {
-                    Device = device,
-                    Success = false,
-                    Message = "Cancelled by user"
-                });
-                progressCallback(device.DeviceId, 0, "⚠️ Cancelled");
-                _logger.Warn($"Burn cancelled for {device.FriendlyName}");
-            }
-            catch(Exception ex) {
-                results.Add(new BurnResult {
-                    Device = device,
-                    Success = false,
-                    Message = ex.Message
-                });
-                
-                progressCallback(device.DeviceId, 0, $"❌ Failed");
-                _logger.Error($"Burn failed for {device.FriendlyName}: {ex.Message}");
-            }
-            finally {
-                semaphore.Release();
-            }
-        });
-        
-        await Task.WhenAll(tasks);
-        
-        LogSummary(results.ToList());
-    }
-    
-    public async Task BurnBatchAsync(
-        List<BurnJob> jobs,
-        Action<string, double, string> progressCallback,
-        CancellationToken ct
-    ) {
-        if(jobs.Count == 0) throw new ArgumentException("No jobs provided", nameof(jobs));
-
-        _logger.Info($"Starting batch burn for {jobs.Count} job(s)");
-        
-        var results = new ConcurrentBag<BurnResult>();
-        var semaphore = new SemaphoreSlim(MaxConcurrentBurns);
-
-        var tasks = jobs.Select(async job => {
-            await semaphore.WaitAsync(ct);
-            try {
-                _logger.Info($"Starting batch job for {job.Device.FriendlyName} with ISO {Path.GetFileName(job.IsoPath)}");
-                progressCallback(job.Device.DeviceId, 0, "Starting...");
-
-                var progress = new Progress<WriteStatistics>(stats => {
-                    progressCallback(job.Device.DeviceId, stats.PercentComplete, stats.Message);
-                });
-
-                await _burnService.BurnAsync(job.Config, progress, ct);
-
-                results.Add(new BurnResult {
-                    Device = job.Device,
-                    Success = true,
-                    Message = "Completed successfully"
-                });
-
-                progressCallback(job.Device.DeviceId, 100, "✅ Complete");
-                _logger.Info($"Batch job completed for {job.Device.FriendlyName}");
-            }
-            catch(OperationCanceledException) {
-                results.Add(new BurnResult {
-                    Device = job.Device,
-                    Success = false,
-                    Message = "Cancelled by user"
-                });
-                progressCallback(job.Device.DeviceId, 0, "⚠️ Cancelled");
-            }
-            catch(Exception ex) {
-                results.Add(new BurnResult {
-                    Device = job.Device,
-                    Success = false,
-                    Message = ex.Message
-                });
-                progressCallback(job.Device.DeviceId, 0, "❌ Failed");
-                _logger.Error($"Batch job failed for {job.Device.FriendlyName}: {ex.Message}");
-            }
-            finally {
-                semaphore.Release();
-            }
-        });
-
-        await Task.WhenAll(tasks);
-        LogSummary(results.ToList());
-    }
-
-    private void LogSummary(List<BurnResult> results) {
-        var successful = results.Count(r => r.Success);
-        var failed = results.Count(r => !r.Success);
-        
-        _logger.Info($"=== Burn Summary ===");
-        _logger.Info($"Total: {results.Count} | Success: {successful} | Failed: {failed}");
-        
-        if(failed > 0) {
-            _logger.Info("Failed devices:");
-            foreach(var result in results.Where(r => !r.Success)) {
-                _logger.Error($"  • {result.Device.FriendlyName}: {result.Message}");
-            }
-        }
-    }
-    
-    public record BurnResult {
-        public required UsbDeviceInfo Device { get; init; }
-        public required bool Success { get; init; }
-        public required string Message { get; init; }
-    }
-}
-
-
-
-
-
-======================================
-FILE: Services\Burn\ParallelBurnService.cs
-======================================
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ProUSB.Domain;
-using ProUSB.Domain.Services;
-using ProUSB.Domain.Drivers;
-using ProUSB.Infrastructure.DiskManagement;
-using ProUSB.Services.Logging;
-
-namespace ProUSB.Services.Burn;
-
-public class ParallelBurnService {
-    private readonly IEnumerable<IBurnStrategy> _s;
-    private readonly ISafetyGuard _g;
-    private readonly IDriverFactory _f;
-    private readonly DriveSafetyValidator _safetyValidator;
-    private readonly FileLogger _log;
-    
-    public ParallelBurnService(IEnumerable<IBurnStrategy> s, ISafetyGuard g, IDriverFactory f, FileLogger log) {
-        _s = s;
-        _g = g;
-        _f = f;
-        _log = log;
-        _safetyValidator = new DriveSafetyValidator(log);
-    }
-    
-    public async Task BurnAsync(DeploymentConfiguration c, IProgress<WriteStatistics> p, CancellationToken ct) {
-        var list = await _f.EnumerateDevicesAsync(ct);
-        var fresh = list.FirstOrDefault(x => x.DeviceId == c.TargetDevice.DeviceId) 
-            ?? throw new Exception("Missing Device");
-
-        var safetyViolations = _safetyValidator.ValidateDrive(fresh, c.SourceIso.FilePath);
-        if (safetyViolations != DriveSafetyValidator.SafetyViolation.None) {
-            string message = _safetyValidator.GetViolationMessage(safetyViolations);
-            _log.Error(message);
-            
-            if (_safetyValidator.IsCritical(safetyViolations)) {
-                throw new InvalidOperationException($"SAFETY VIOLATION: Cannot proceed.\n{message}");
-            }
-        }
-
-        var r = _g.EvaluateRisk(fresh);
-        if (r == DeviceRiskLevel.Critical || r == DeviceRiskLevel.SystemLockdown) 
-            throw new Exception($"Risk Block: {r}");
-        
-        var e = _s.FirstOrDefault(x => x.StrategyType == c.Strategy) 
-            ?? throw new Exception("Missing Engine");
-        
-        await e.ExecuteAsync(c, p, ct);
-        await e.VerifyAsync(c, p, ct);
-    }
-}
-
-
-
-
-======================================
-FILE: Services\Crypto\ChecksumCalculator.cs
-======================================
-
+==============================================================================
+File: \src\ProUSB\Services\Crypto\ChecksumCalculator.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Security.Cryptography;
@@ -4559,10 +5297,10 @@ public class ChecksumCalculator {
 
 
 
-======================================
-FILE: Services\DeviceManagement\DeviceNamingService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\DeviceManagement\DeviceNamingService.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -4649,10 +5387,10 @@ public class DeviceNamingService {
 
 
 
-======================================
-FILE: Services\Diagnostics\BadBlockChecker.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Diagnostics\BadBlockChecker.cs
+==============================================================================
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -4757,10 +5495,10 @@ public class BadBlockChecker {
 
 
 
-======================================
-FILE: Services\Diagnostics\SmartHealthChecker.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Diagnostics\SmartHealthChecker.cs
+==============================================================================
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Runtime.InteropServices;
@@ -4945,7 +5683,7 @@ public class SmartHealthChecker {
             healthScore -= (temperature - 60) * 2;
             if (status == DriveHealthStatus.Healthy) {
                 status = DriveHealthStatus.Warning;
-                message = $"Drive temperature high: {temperature}°C";
+                message = $"Drive temperature high: {temperature}Â°C";
             }
         }
 
@@ -5014,10 +5752,10 @@ public class SmartHealthChecker {
 
 
 
-======================================
-FILE: Services\Diagnostics\SmartHealthException.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Diagnostics\SmartHealthException.cs
+==============================================================================
 using System;
 
 namespace ProUSB.Services.Diagnostics;
@@ -5031,10 +5769,10 @@ public class SmartHealthException : Exception
 
 
 
-======================================
-FILE: Services\History\BurnHistoryService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\History\BurnHistoryService.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5161,10 +5899,10 @@ public class BurnHistoryService {
 
 
 
-======================================
-FILE: Services\Iso\IsoAnalyzer.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Iso\IsoAnalyzer.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Linq;
@@ -5354,10 +6092,10 @@ public class IsoAnalyzer {
 
 
 
-======================================
-FILE: Services\Iso\IsoIntegrityVerifier.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Iso\IsoIntegrityVerifier.cs
+==============================================================================
 using System.IO;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
@@ -5396,10 +6134,10 @@ public class IsoIntegrityVerifier {
 
 
 
-======================================
-FILE: Services\IsoCreation\IsoCreationService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\IsoCreation\IsoCreationService.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Threading;
@@ -5563,10 +6301,10 @@ public class IsoCreationService {
 
 
 
-======================================
-FILE: Services\IsoDownload\IsoDownloadService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\IsoDownload\IsoDownloadService.cs
+==============================================================================
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -5739,10 +6477,10 @@ public class IsoDownloadService {
 
 
 
-======================================
-FILE: Services\IsoDownload\OsCatalogService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\IsoDownload\OsCatalogService.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -5833,10 +6571,10 @@ public class OsCatalogService {
 
 
 
-======================================
-FILE: Services\IsoManagement\IsoLibraryService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\IsoManagement\IsoLibraryService.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6065,10 +6803,10 @@ public class IsoLibraryService {
 
 
 
-======================================
-FILE: Services\Logging\FileLogger.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Logging\FileLogger.cs
+==============================================================================
 using System;
 using System.Threading;
 using System.Collections.ObjectModel;
@@ -6210,10 +6948,10 @@ public class FileLogger {
 
 
 
-======================================
-FILE: Services\Profiles\ProfileManager.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Profiles\ProfileManager.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6400,10 +7138,10 @@ public class ProfileManager {
 
 
 
-======================================
-FILE: Services\Progress\ProgressTracker.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Progress\ProgressTracker.cs
+==============================================================================
 using System;
 using System.Diagnostics;
 using ProUSB.Domain;
@@ -6492,10 +7230,10 @@ public class RollingAverage {
 
 
 
-======================================
-FILE: Services\PxeBoot\PxeBootImageService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\PxeBoot\PxeBootImageService.cs
+==============================================================================
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6899,13 +7637,13 @@ menuentry ""Boot Linux (UEFI)"" {
 
 
 
-======================================
-FILE: Services\Security\StandardSafetyGuard.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Security\StandardSafetyGuard.cs
+==============================================================================
 using ProUSB.Domain;
 using ProUSB.Domain.Services;
-using ProUSB.Infrastructure.DeviceDetection;
+using Mass.Core.Devices;
 using System;
 using System.IO;
 using System.Linq;
@@ -6954,10 +7692,10 @@ public class StandardSafetyGuard : ISafetyGuard {
 
 
 
-======================================
-FILE: Services\Verification\BootVerificationService.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\Services\Verification\BootVerificationService.cs
+==============================================================================
 using System;
 using System.IO;
 using System.Linq;
@@ -7217,238 +7955,30 @@ public class BootVerificationService {
 
 
 
-======================================
-FILE: Services\IUsbBurnerService.cs
-======================================
 
-namespace ProUSB.Services;
-
-public interface IUsbBurnerService
-{
-    Task BurnIsoAsync(string isoPath, string driveLetter, string fileSystem, string partitionScheme, int persistenceSizeMB, IProgress<double> progress, CancellationToken cancellationToken = default);
+==============================================================================
+File: \src\ProUSB\UI\ViewLocator.cs
+==============================================================================
+using System;
+using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using CommunityToolkit.Mvvm.ComponentModel;
+namespace ProUSB.UI;
+public class ViewLocator : IDataTemplate {
+    public Control? Build(object? d) {
+        if (d is null) return null;
+        var t = Type.GetType(d.GetType().FullName!.Replace("ViewModel", "View"));
+        return t!=null ? (Control)Activator.CreateInstance(t)! : new TextBlock { Text="Missing View" };
+    }
+    public bool Match(object? d) => d is ObservableObject;
 }
 
 
 
-======================================
-FILE: Services\UsbBurnerService.cs
-======================================
 
-using System.Diagnostics;
-using ProUSB.Infrastructure.DiskManagement;
-using ProUSB.Services.Logging;
-using ProUSB.Domain;
-
-namespace ProUSB.Services;
-
-public class UsbBurnerService : IUsbBurnerService
-{
-    private readonly NativeDiskFormatter _formatter;
-    private readonly FileLogger _logger;
-
-    public UsbBurnerService(NativeDiskFormatter formatter, FileLogger logger)
-    {
-        _formatter = formatter;
-        _logger = logger;
-    }
-
-    public async Task BurnIsoAsync(string isoPath, string driveLetter, string fileSystem, string partitionScheme, int persistenceSizeMB, IProgress<double> progress, CancellationToken cancellationToken = default)
-    {
-        if (!File.Exists(isoPath))
-            throw new FileNotFoundException($"ISO file not found: {isoPath}");
-
-        int diskIndex = GetDiskIndexFromDriveLetter(driveLetter);
-        _logger.Info($"Starting burn process for {isoPath} to Disk {diskIndex} (Persistence: {persistenceSizeMB} MB)");
-
-        try
-        {
-            if (persistenceSizeMB > 0)
-            {
-                // Custom layout with Persistence
-                var partitions = new List<PartitionDefinition>();
-                
-                // Boot Partition (FAT32) - Takes remaining space
-                // We put Persistence at the end usually, but NativeDiskFormatter expects ordered list.
-                // Let's put Boot first, Persistence second.
-                
-                // Calculate sizes
-                // NativeDiskFormatter handles SizeMB=0 as "Rest of disk"
-                // So Partition 1 (Boot) should be 0? No, usually Persistence is fixed size.
-                // So Partition 1 (Boot) = 0 (Rest), Partition 2 (Persistence) = Fixed?
-                // NativeDiskFormatter logic:
-                // if (def.SizeMB == 0 || i == partitions.Count - 1 && def.SizeMB == 0) -> Rest of disk.
-                
-                // If we want Persistence at the end, we should define Boot first.
-                // But if Boot is "Rest", it takes everything.
-                // So we must define Boot size? No, ISO size varies.
-                // Better: Partition 1 (Persistence) = Fixed, Partition 2 (Boot) = Rest?
-                // But Boot partition usually needs to be first for compatibility.
-                
-                // So: Partition 1 (Boot) = Total - Persistence.
-                // But we don't know Total easily here without querying.
-                // NativeDiskFormatter queries it.
-                
-                // Let's rely on NativeDiskFormatter to handle "Rest".
-                // If we define Partition 1 as Size=0, it takes all.
-                // We need to change NativeDiskFormatter to support "Rest" for non-last partition?
-                // Or just define Persistence first?
-                // Windows only mounts the first partition on removable drives (historically).
-                // Modern Windows mounts all.
-                // Linux looks for casper-rw label.
-                
-                // Let's try: Partition 1 (Boot) = 0 (Rest - Persistence)?
-                // NativeDiskFormatter logic is simple loop.
-                
-                // Let's assume we can put Persistence first? No, Boot should be first.
-                
-                // I'll modify NativeDiskFormatter logic later if needed, but for now let's assume we can't easily do "Rest" for first partition.
-                // So I will query disk size here? No, I don't have the handle.
-                
-                // Let's just use a fixed size for Boot if possible? No.
-                
-                // Wait, NativeDiskFormatter.CreateCustomPartitionLayout:
-                // if (def.SizeMB == 0 || i == partitions.Count - 1 && def.SizeMB == 0) sizeBytes = diskSize - currentOffset ...
-                
-                // So if I have 2 partitions:
-                // 1. Boot (Size=0) -> Takes everything.
-                // 2. Persistence -> No space left.
-                
-                // So I MUST specify size for Partition 1 if I want Partition 2.
-                // But I don't know the disk size.
-                
-                // Workaround: Put Persistence FIRST?
-                // 1. Persistence (Ext4, Fixed Size)
-                // 2. Boot (FAT32, Rest)
-                // This works for Linux (it searches all partitions).
-                // Does it work for BIOS/UEFI?
-                // UEFI looks for EFI System Partition.
-                // If Partition 1 is Ext4, UEFI might skip it?
-                // Usually UEFI scans all FAT partitions.
-                // So if Partition 2 is FAT32, it should work.
-                
-                partitions.Add(new PartitionDefinition 
-                { 
-                    Label = "casper-rw", 
-                    FileSystem = "ext4", 
-                    SizeMB = persistenceSizeMB,
-                    IsBootable = false
-                });
-                
-                partitions.Add(new PartitionDefinition 
-                { 
-                    Label = "BOOT", 
-                    FileSystem = "FAT32", 
-                    SizeMB = 0, // Rest of disk
-                    IsBootable = true
-                });
-
-                await _formatter.FormatCustomAsync(diskIndex, partitions, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                // Standard single partition
-                await _formatter.FormatAsync(diskIndex, "BOOT", "FAT32", partitionScheme, 4096, true, cancellationToken).ConfigureAwait(false);
-            }
-
-            // Copy ISO content
-            progress.Report(50);
-            await ExtractIsoAsync(isoPath, driveLetter, progress, cancellationToken).ConfigureAwait(false);
-            
-            progress.Report(100);
-        }
-        catch (Exception ex)
-        {
-            _logger.Error($"Burn failed: {ex.Message}", ex);
-            throw;
-        }
-    }
-
-    private int GetDiskIndexFromDriveLetter(string driveLetter)
-    {
-        // Simple heuristic or WMI query
-        // For now, assuming driveLetter is like "E:\"
-        // We can use WMI to get DiskIndex.
-        // Or just parse if it was passed as "PhysicalDriveX" (but signature says driveLetter).
-        // The UI passes "E:\".
-        
-        // Using WMI to map DriveLetter to DiskIndex
-        try 
-        {
-            var drive = driveLetter.TrimEnd('\\');
-            using var searcher = new System.Management.ManagementObjectSearcher($"SELECT Index FROM Win32_DiskPartition WHERE DeviceID IN (SELECT Dependent FROM Win32_LogicalDiskToPartition WHERE Antecedent = (SELECT Name FROM Win32_LogicalDisk WHERE DeviceID = '{drive}'))");
-            foreach (var mo in searcher.Get())
-            {
-                // This returns DiskIndex but partition specific?
-                // Win32_DiskPartition.Index is Partition index? No, DiskIndex is in Win32_DiskDrive.
-                // Wait, Win32_DiskPartition has DiskIndex property.
-                return Convert.ToInt32(mo["DiskIndex"]);
-            }
-        }
-        catch 
-        {
-            // Fallback or error
-        }
-        // If failed, maybe it's a test? Return 1?
-        // Throwing is safer.
-        throw new InvalidOperationException($"Could not determine Disk Index for {driveLetter}");
-    }
-
-    private async Task ExtractIsoAsync(string isoPath, string driveLetter, IProgress<double> progress, CancellationToken ct)
-    {
-        using var isoStream = File.OpenRead(isoPath);
-        using var cd = new DiscUtils.Iso9660.CDReader(isoStream, true);
-        
-        var files = cd.GetFiles("").ToList();
-        int totalFiles = files.Count; // This is only root files? No, recursive?
-        // GetFiles("") returns all files recursively if search pattern is empty? No.
-        // We need recursive.
-        
-        // Helper to copy directory
-        await CopyDirectoryAsync(cd.Root, driveLetter, progress, 0, 100, ct).ConfigureAwait(false);
-    }
-
-    private async Task CopyDirectoryAsync(DiscUtils.DiscDirectoryInfo dir, string destPath, IProgress<double> progress, double startPct, double endPct, CancellationToken ct)
-    {
-        if (!Directory.Exists(destPath)) Directory.CreateDirectory(destPath);
-
-        var files = dir.GetFiles();
-        var subDirs = dir.GetDirectories();
-        int totalItems = files.Length + subDirs.Length;
-        int currentItem = 0;
-
-        foreach (var file in files)
-        {
-            ct.ThrowIfCancellationRequested();
-            string destFile = Path.Combine(destPath, file.Name);
-            
-            using var sourceStream = file.OpenRead();
-            using var destStream = File.Create(destFile);
-            
-            // Use stack allocation for buffer (81920 bytes = 80KB is reasonable for stack)
-            Span<byte> buffer = stackalloc byte[81920];
-            int bytesRead;
-            while ((bytesRead = sourceStream.Read(buffer)) > 0)
-            {
-                destStream.Write(buffer.Slice(0, bytesRead));
-            }
-            
-            currentItem++;
-            // Update progress... (simplified)
-        }
-
-        foreach (var subDir in subDirs)
-        {
-            await CopyDirectoryAsync(subDir, Path.Combine(destPath, subDir.Name), progress, startPct, endPct, ct).ConfigureAwait(false);
-        }
-    }
-}
-
-
-
-======================================
-FILE: UI\ViewModels\BurnSummaryHelper.cs
-======================================
-
+==============================================================================
+File: \src\ProUSB\UI\ViewModels\BurnSummaryHelper.cs
+==============================================================================
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using ProUSB.UI.Views;
@@ -7475,7 +8005,7 @@ public static class BurnSummaryHelper {
         var panel = new StackPanel { Margin = new Avalonia.Thickness(24) };
 
         panel.Children.Add(new TextBlock {
-            Text = "✅ Burn Operation Complete!",
+            Text = "âœ… Burn Operation Complete!",
             FontSize = 20,
             FontWeight = Avalonia.Media.FontWeight.SemiBold,
             Foreground = Avalonia.Media.Brushes.LightGreen,
@@ -7556,10 +8086,10 @@ public static class BurnSummaryHelper {
 
 
 
-======================================
-FILE: UI\ViewModels\DeviceBurnProgress.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\ViewModels\DeviceBurnProgress.cs
+==============================================================================
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ProUSB.UI.ViewModels;
@@ -7576,10 +8106,10 @@ public partial class DeviceBurnProgress : ObservableObject {
 
 
 
-======================================
-FILE: UI\ViewModels\MainViewModel.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\ViewModels\MainViewModel.cs
+==============================================================================
 using System;
 using System.Collections.ObjectModel;
 using System.Threading;
@@ -7807,10 +8337,10 @@ public partial class MainViewModel : ViewModelBase {
                     break;
             }
 
-            Status = $"✅ Logs exported to {Path.GetFileName(path)}";
+            Status = $"âœ… Logs exported to {Path.GetFileName(path)}";
             Log($"Logs exported: {path}");
         } catch(Exception ex) {
-            Status = $"❌ Export failed: {ex.Message}";
+            Status = $"âŒ Export failed: {ex.Message}";
             Log($"Export error: {ex.Message}");
         }
     }
@@ -7911,7 +8441,7 @@ public partial class MainViewModel : ViewModelBase {
         var confirmMsg = SelectedDevices.Count == 1
             ? $"{SelectedDevices[0].FriendlyName} ({SelectedDevices[0].DeviceId})"
             : $"{SelectedDevices.Count} devices:\n" +
-              string.Join("\n", SelectedDevices.Select(d => $"  • {d.FriendlyName}"));
+              string.Join("\n", SelectedDevices.Select(d => $"  â€¢ {d.FriendlyName}"));
 
         CancelCommand.NotifyCanExecuteChanged();
         _cts = new();
@@ -7985,8 +8515,8 @@ public partial class MainViewModel : ViewModelBase {
             var failed = DeviceProgress.Count(d => d.Status.Contains("Failed"));
 
             Status = succeeded == SelectedDevices.Count
-                ? "✅ ALL DONE - All devices ready to boot!"
-                : $"⚠️ Completed: {succeeded} succeeded, {failed} failed";
+                ? "âœ… ALL DONE - All devices ready to boot!"
+                : $"âš ï¸ Completed: {succeeded} succeeded, {failed} failed";
 
             Prog = 100;
             Log("Multi-device burn completed");
@@ -8006,11 +8536,11 @@ public partial class MainViewModel : ViewModelBase {
                 }
             }
         } catch(OperationCanceledException) {
-            Status = "⚠️ Operation cancelled by user";
+            Status = "âš ï¸ Operation cancelled by user";
             Log("User cancelled multi-device burn");
             Prog = 0;
         } catch(Exception ex) {
-            Status = $"❌ Error: {ex.Message}";
+            Status = $"âŒ Error: {ex.Message}";
             Prog = 0;
             Log($"Multi-device burn error: {ex.Message}");
         } finally {
@@ -8058,13 +8588,13 @@ public partial class MainViewModel : ViewModelBase {
             }
 
             foreach(var warning in result.Warnings) {
-                Log($"  ⚠️ {warning}");
+                Log($"  âš ï¸ {warning}");
             }
 
-            Status = result.IsBootable ? "✅ Drive is bootable" : "❌ Drive is NOT bootable";
+            Status = result.IsBootable ? "âœ… Drive is bootable" : "âŒ Drive is NOT bootable";
         } catch(Exception ex) {
             Log($"Verification error: {ex.Message}");
-            VerificationResult = $"❌ Verification failed: {ex.Message}";
+            VerificationResult = $"âŒ Verification failed: {ex.Message}";
             Status = "Verification failed";
         } finally {
             IsVerifying = false;
@@ -8153,22 +8683,22 @@ public partial class MainViewModel : ViewModelBase {
             );
 
             if(createResult.Success) {
-                Status = $"✅ ISO created successfully";
+                Status = $"âœ… ISO created successfully";
                 Log($"ISO created: {outputPath}");
                 Log($"File size: {FormatFileSize(createResult.FileSizeBytes)}");
                 Log($"Creation time: {createResult.Duration.TotalSeconds:F1}s");
                 Prog = 100;
             } else {
-                Status = $"❌ ISO creation failed: {createResult.ErrorMessage}";
+                Status = $"âŒ ISO creation failed: {createResult.ErrorMessage}";
                 Log($"ISO creation failed: {createResult.ErrorMessage}");
                 Prog = 0;
             }
         } catch(OperationCanceledException) {
-            Status = "⚠️ ISO creation cancelled";
+            Status = "âš ï¸ ISO creation cancelled";
             Log("User cancelled ISO creation");
             Prog = 0;
         } catch(Exception ex) {
-            Status = $"❌ Error: {ex.Message}";
+            Status = $"âŒ Error: {ex.Message}";
             Log($"ISO creation error: {ex.Message}");
             Prog = 0;
         } finally {
@@ -8301,15 +8831,15 @@ public partial class MainViewModel : ViewModelBase {
 
 
 
-======================================
-FILE: UI\Views\ConfirmationDialog.axaml
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\ConfirmationDialog.axaml
+==============================================================================
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="ProUSB.UI.Views.ConfirmationDialog" Width="400" Height="220" SystemDecorations="BorderOnly" WindowStartupLocation="CenterOwner" Background="Transparent" TransparencyLevelHint="Mica">
     <Border Background="#1E1E1E" BorderBrush="#333333" BorderThickness="1" CornerRadius="8" Padding="24" BoxShadow="0 8 24 0 #66000000">
         <StackPanel Spacing="20">
             <StackPanel Spacing="8">
-                <TextBlock Text="⚠️ WARNING" Foreground="#FF453A" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock Text="âš ï¸ WARNING" Foreground="#FF453A" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                 <TextBlock Text="ALL DATA WILL BE ERASED" Foreground="#E0E0E0" FontSize="14" HorizontalAlignment="Center"/>
             </StackPanel>
             
@@ -8333,10 +8863,10 @@ FILE: UI\Views\ConfirmationDialog.axaml
 </Window>
 
 
-======================================
-FILE: UI\Views\ConfirmationDialog.axaml.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\ConfirmationDialog.axaml.cs
+==============================================================================
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Avalonia.Interactivity;
@@ -8356,10 +8886,10 @@ public partial class ConfirmationDialog : Window {
 
 
 
-======================================
-FILE: UI\Views\MainView.axaml
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\MainView.axaml
+==============================================================================
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ProUSB.UI.ViewModels"
@@ -8482,20 +9012,20 @@ FILE: UI\Views\MainView.axaml
         <!-- Title Bar -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Background="Transparent">
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="16,0">
-                <TextBlock Text="⚡" VerticalAlignment="Center"/>
+                <TextBlock Text="âš¡" VerticalAlignment="Center"/>
                 <TextBlock Text="ProUSB Media Suite" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="14"/>
             </StackPanel>
             
             <!-- Theme Toggle -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="0,0,120,0" IsHitTestVisible="True">
                 <Button Command="{Binding ToggleThemeCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="Toggle Dark/Light Mode">
-                    <TextBlock Text="🌙"/>
+                    <TextBlock Text="ðŸŒ™"/>
                 </Button>
                 <Button Command="{Binding ShowHistoryCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="View Burn History">
-                    <TextBlock Text="📊"/>
+                    <TextBlock Text="ðŸ“Š"/>
                 </Button>
                 <Button Command="{Binding ShowLibraryCommand}" Classes="secondary" Padding="8,4" ToolTip.Tip="ISO Library">
-                    <TextBlock Text="📚"/>
+                    <TextBlock Text="ðŸ“š"/>
                 </Button>
             </StackPanel>
         </Grid>
@@ -8523,14 +9053,14 @@ FILE: UI\Views\MainView.axaml
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <Button Grid.Column="2" Command="{Binding RefreshCommand}" Classes="secondary" ToolTip.Tip="Refresh Devices">
-                                        <TextBlock Text="⟳"/>
+                                        <TextBlock Text="âŸ³"/>
                                     </Button>
                                     <Button Grid.Column="4" 
                                             Command="{Binding EjectDeviceCommand}" 
                                             Classes="eject" 
                                             ToolTip.Tip="Safely Eject Device"
                                             IsEnabled="{Binding SelDev, Converter={x:Static cv:ObjectConverters.IsNotNull}}">
-                                        <TextBlock Text="⏏"/>
+                                        <TextBlock Text="â"/>
                                     </Button>
                                 </Grid>
                             </StackPanel>
@@ -8545,11 +9075,11 @@ FILE: UI\Views\MainView.axaml
                                         </Button>
                                     </Grid>
                                 </Border>
-                                <TextBlock Text="💡 Tip: Drag and drop ISO files directly here!" FontSize="10" Foreground="#808080" Margin="0,4,0,0"/>
+                                <TextBlock Text="ðŸ’¡ Tip: Drag and drop ISO files directly here!" FontSize="10" Foreground="#808080" Margin="0,4,0,0"/>
                             </StackPanel>
                             
                             <StackPanel IsVisible="{Binding SelDev, Converter={x:Static cv:ObjectConverters.IsNotNull}}">
-                                <TextBlock Text="⚠️ Warning: All data on device will be destroyed." Foreground="#FF453A" FontSize="11"/>
+                                <TextBlock Text="âš ï¸ Warning: All data on device will be destroyed." Foreground="#FF453A" FontSize="11"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -8596,7 +9126,7 @@ FILE: UI\Views\MainView.axaml
                                                      FontSize="10" 
                                                      Foreground="#808080"/>
                                         </Grid>
-                                        <TextBlock Text="💡 Creates casper-rw file for persistent storage on Ubuntu/Mint Live USBs" 
+                                        <TextBlock Text="ðŸ’¡ Creates casper-rw file for persistent storage on Ubuntu/Mint Live USBs" 
                                                  FontSize="10" 
                                                  Foreground="#808080" 
                                                  TextWrapping="Wrap"/>
@@ -8662,7 +9192,7 @@ FILE: UI\Views\MainView.axaml
         <Border Grid.Row="2" Background="{DynamicResource CardBackground}" Padding="12,4">
             <Grid ColumnDefinitions="Auto,*,Auto,8,Auto">
                 <TextBlock Text="Ready" FontSize="11" Foreground="#808080"/>
-                <TextBlock Grid.Column="2" Text="✅ System Drive Protection Active" FontSize="11" Foreground="#10B981"/>
+                <TextBlock Grid.Column="2" Text="âœ… System Drive Protection Active" FontSize="11" Foreground="#10B981"/>
                 <TextBlock Grid.Column="4" Text="{Binding VersionText}" FontSize="11" Foreground="#808080"/>
             </Grid>
         </Border>
@@ -8671,10 +9201,10 @@ FILE: UI\Views\MainView.axaml
 
 
 
-======================================
-FILE: UI\Views\MainView.axaml.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\MainView.axaml.cs
+==============================================================================
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
@@ -8696,10 +9226,10 @@ public partial class MainView : UserControl
 
 
 
-======================================
-FILE: UI\Views\MainWindow.axaml
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\MainWindow.axaml
+==============================================================================
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ProUSB.UI.ViewModels"
@@ -8722,203 +9252,14 @@ FILE: UI\Views\MainWindow.axaml
 
 
 
-======================================
-FILE: UI\Views\MainWindow.axaml.cs
-======================================
 
+==============================================================================
+File: \src\ProUSB\UI\Views\MainWindow.axaml.cs
+==============================================================================
 using Avalonia.Controls;
 namespace ProUSB.UI.Views;
 public partial class MainWindow : Window { public MainWindow() { InitializeComponent(); } }
 
 
 
-======================================
-FILE: UI\ViewLocator.cs
-======================================
-
-using System;
-using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using CommunityToolkit.Mvvm.ComponentModel;
-namespace ProUSB.UI;
-public class ViewLocator : IDataTemplate {
-    public Control? Build(object? d) {
-        if (d is null) return null;
-        var t = Type.GetType(d.GetType().FullName!.Replace("ViewModel", "View"));
-        return t!=null ? (Control)Activator.CreateInstance(t)! : new TextBlock { Text="Missing View" };
-    }
-    public bool Match(object? d) => d is ObservableObject;
-}
-
-
-
-======================================
-FILE: plugin.json
-======================================
-
-{
-  "id": "prousb",
-  "name": "ProUSB",
-  "version": "1.0.0",
-  "description": "USB bootable media creator",
-  "author": "Mass Suite Team",
-  "icon": "💾",
-  "entryAssembly": "ProUSB.dll",
-  "entryType": "ProUSB.ProUsbModule",
-  "dependencies": [],
-  "permissions": ["disk_access", "filesystem"],
-  "enabled": true
-}
-
-
-
-======================================
-FILE: ProUSB.csproj
-======================================
-
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>14</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    
-    <!-- Explicitly disable all auto-generated assembly attributes -->
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.9" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="DiscUtils.Iso9660" Version="0.16.13" />
-    <PackageReference Include="DiscUtils.Udf" Version="0.16.13" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
-    <PackageReference Include="System.Management" Version="10.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AvaloniaResource Include="Resources\os_catalog.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Mass.Core\Mass.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="plugin.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-</Project>
-
-
-
-======================================
-FILE: ProUsbModule.cs
-======================================
-
-using Mass.Core.Abstractions;
-using Mass.Core.Plugins;
-using Microsoft.Extensions.DependencyInjection;
-using ProUSB.Domain.Drivers;
-using ProUSB.Domain.Services;
-using ProUSB.Infrastructure;
-using ProUSB.Infrastructure.Drivers.Windows;
-using ProUSB.Infrastructure.DiskManagement;
-using ProUSB.Services.Burn;
-using ProUSB.Services.Burn.Strategies;
-using ProUSB.Services.Security;
-using ProUSB.Services.Iso;
-using ProUSB.Services.Logging;
-using ProUSB.Services.Verification;
-using ProUSB.Services.Diagnostics;
-using ProUSB.Services.IsoCreation;
-using ProUSB.Services.Profiles;
-using ProUSB.Services.PxeBoot;
-using ProUSB.Services.IsoDownload;
-using ProUSB.UI.ViewModels;
-
-namespace ProUSB;
-
-public class ProUsbModule : IModule
-{
-    public PluginManifest Manifest => new()
-    {
-        Id = "prousb",
-        Name = "ProUSB",
-        Version = "1.0.0",
-        Description = "USB bootable media creator",
-        Author = "Mass Suite Team",
-        Icon = "💾",
-        EntryAssembly = "ProUSB.dll",
-        EntryType = "ProUSB.ProUsbModule",
-        Enabled = true
-    };
-
-    public void RegisterServices(IServiceCollection s)
-    {
-        s.AddSingleton<PortablePathManager>();
-        s.AddSingleton<FileLogger>();
-        s.AddSingleton<IDriverFactory, WindowsDriverFactory>();
-        s.AddSingleton<NativeDiskFormatter>();
-        s.AddSingleton<ISafetyGuard, StandardSafetyGuard>();
-        s.AddSingleton<IsoIntegrityVerifier>();
-        s.AddSingleton<IBurnStrategy, RawPipelinedWriteStrategy>();
-        s.AddSingleton<IBurnStrategy, FileSystemDeploymentStrategy>();
-        s.AddSingleton<ParallelBurnService>();
-        s.AddSingleton<MultiDeviceBurnOrchestrator>();
-        s.AddSingleton<BootVerificationService>();
-        s.AddSingleton<SmartHealthChecker>();
-        s.AddSingleton<IsoCreationService>();
-        s.AddSingleton<ProfileManager>();
-        s.AddSingleton<PxeBootImageService>();
-        s.AddSingleton<OsCatalogService>();
-        s.AddSingleton<IsoDownloadService>();
-        s.AddSingleton<Services.IUsbBurnerService, Services.UsbBurnerService>();
-        s.AddTransient<MainViewModel>();
-    }
-
-    public Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task ActivateAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task DeactivateAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task UnloadAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-}
-
-
-
-
-
-================================================================================
-END OF PROUSB DOCUMENTATION
-================================================================================
 

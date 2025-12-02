@@ -21,11 +21,6 @@ public class IpcService : IIpcService
             if (_serverProcess != null && !_serverProcess.HasExited)
                 return true;
 
-            // Locate the server executable
-            // Assuming it's in a relative path or known location
-            // For dev: src/ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe
-            // For prod: ./ProPXEServer.API.exe
-            
             string serverPath = FindServerExecutable();
             if (string.IsNullOrEmpty(serverPath))
                 return false;
@@ -55,7 +50,7 @@ public class IpcService : IIpcService
             if (_serverProcess == null || _serverProcess.HasExited)
                 return true;
 
-            _serverProcess.Kill(); // Simple kill for now, graceful shutdown via IPC later
+            _serverProcess.Kill();
             await _serverProcess.WaitForExitAsync(ct);
             _serverProcess = null;
             return true;
@@ -76,13 +71,11 @@ public class IpcService : IIpcService
 
     private string FindServerExecutable()
     {
-        // Simple search logic
         string current = AppDomain.CurrentDomain.BaseDirectory;
         string devPath = Path.GetFullPath(Path.Combine(current, "../../../../src/ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe"));
         
         if (File.Exists(devPath)) return devPath;
         
-        // Prod path
         string prodPath = Path.Combine(current, "ProPXEServer.API.exe");
         if (File.Exists(prodPath)) return prodPath;
 

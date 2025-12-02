@@ -1,19 +1,211 @@
-================================================================================
-PROPXESERVER SOURCE CODE DOCUMENTATION
-================================================================================
-Created: 2025-12-01
-Purpose: Complete source code documentation for ProPXEServer project
-================================================================================
+﻿==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\appsettings.Development.json
+==============================================================================
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  }
+}
 
-PROJECT: ProPXEServer
-DESCRIPTION: Network PXE boot infrastructure with web management
-TECHNOLOGY: .NET 10.0, ASP.NET Core, Blazor WebAssembly, Entity Framework Core
-================================================================================
 
-======================================
-FILE: ProPXEServer.API\Controllers\AuthController.cs
-======================================
 
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\appsettings.json
+==============================================================================
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=massbootserver.db"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "MassBootServer": {
+    "AdvertisedIP": "192.168.1.100",
+    "BootFilesDirectory": "BootFiles",
+    "DhcpListenPort": 67,
+    "ProxyDhcpListenPort": 4011,
+    "TftpListenPort": 69
+  },
+  "TftpSettings": {
+    "RootPath": "wwwroot/pxe",
+    "Port": 69,
+    "BlockSize": 512,
+    "MaxRetries": 5
+  },
+  "Stripe": {
+    "SecretKey": "sk_test_YOUR_KEY_HERE",
+    "WebhookSecret": "whsec_YOUR_SECRET_HERE",
+    "MonthlyPriceId": "price_YOUR_PRICE_ID_HERE",
+    "MonthlyAmount": 2000,
+    "SuccessUrl": "http://localhost:5173/subscription/success",
+    "CancelUrl": "http://localhost:5173/subscription/cancel"
+  },
+  "JwtSettings": {
+    "SecretKey": "your-256-bit-secret-key-change-this-in-production",
+    "Issuer": "MassBootServer",
+    "Audience": "MassBootClient",
+    "ExpiryMinutes": 60
+  },
+  "Security": {
+    "IpWhitelist": [],
+    "IpBlacklist": [],
+    "EnableRateLimiting": true,
+    "MaxRequestsPerMinute": 100
+  }
+}
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Program.cs
+==============================================================================
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using ProPXEServer.API.Data;
+using ProPXEServer.API.Services;
+using ProPXEServer.API.Security;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Data Source=ProPXEServer.db"));
+
+builder.Services.AddIdentityCore<ApplicationUser>()
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
+
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddAuthentication(options => {
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options => {
+    options.TokenValidationParameters = new TokenValidationParameters {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT secret not configured")))
+    };
+});
+
+builder.Services.AddAuthorization();
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+builder.Services.AddCors();
+
+builder.Services.AddSingleton<HttpBootService>();
+builder.Services.AddHostedService<DhcpService>();
+builder.Services.AddHostedService<TftpServerService>();
+builder.Services.AddPxeSecurityPolicies(builder.Configuration);
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope()) {
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (app.Environment.IsDevelopment()) {
+        await db.Database.MigrateAsync();
+    }
+}
+
+if (app.Environment.IsDevelopment()) {
+    app.MapOpenApi();
+}
+
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
+
+app.UseRateLimiter();
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.MapGet("/boot/{**fileName}", async (string fileName, HttpBootService bootService, HttpContext context) => {
+    return await bootService.ServeBootFile(fileName, context);
+});
+
+app.MapGet("/api/pxe/events", async (ApplicationDbContext db) => {
+    return await db.PxeEvents
+        .OrderByDescending(e => e.Timestamp)
+        .Take(100)
+        .ToListAsync();
+}).RequireAuthorization();
+
+app.Run();
+
+
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\ProPXEServer.API.csproj
+==============================================================================
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Stripe.net" Version="47.0.0" />
+  </ItemGroup>
+
+</Project>
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\ProPXEServer.API.http
+==============================================================================
+@ProPXEServer.API_HostAddress = http://localhost:5054
+
+GET {{ProPXEServer.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Controllers\AuthController.cs
+==============================================================================
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -175,10 +367,10 @@ public record LoginRequest(string Email, string Password);
 
 
 
-======================================
-FILE: ProPXEServer.API\Controllers\BootFilesController.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Controllers\BootFilesController.cs
+==============================================================================
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -349,10 +541,10 @@ public class BootFilesController : ControllerBase {
 
 
 
-======================================
-FILE: ProPXEServer.API\Controllers\ImagesController.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Controllers\ImagesController.cs
+==============================================================================
 using Microsoft.AspNetCore.Mvc;
 
 namespace ProPXEServer.API.Controllers;
@@ -472,10 +664,10 @@ public class ImagesController : ControllerBase
 
 
 
-======================================
-FILE: ProPXEServer.API\Controllers\SubscriptionController.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Controllers\SubscriptionController.cs
+==============================================================================
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -742,10 +934,10 @@ public class SubscriptionController(
 
 
 
-======================================
-FILE: ProPXEServer.API\Data\ApplicationDbContext.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\ApplicationDbContext.cs
+==============================================================================
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -783,10 +975,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser> {
 
 
 
-======================================
-FILE: ProPXEServer.API\Data\ApplicationUser.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\ApplicationUser.cs
+==============================================================================
 using Microsoft.AspNetCore.Identity;
 
 namespace ProPXEServer.API.Data;
@@ -803,10 +995,10 @@ public class ApplicationUser : IdentityUser {
 
 
 
-======================================
-FILE: ProPXEServer.API\Data\BootConfiguration.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\BootConfiguration.cs
+==============================================================================
 using System.ComponentModel.DataAnnotations;
 
 namespace ProPXEServer.API.Data;
@@ -840,10 +1032,10 @@ public class BootConfiguration {
 
 
 
-======================================
-FILE: ProPXEServer.API\Data\BootFile.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\BootFile.cs
+==============================================================================
 namespace ProPXEServer.API.Data;
 
 public class BootFile {
@@ -861,10 +1053,1606 @@ public class BootFile {
 
 
 
-======================================
-FILE: ProPXEServer.API\Data\PxeEvent.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\endpoints.yml
+==============================================================================
+endpoints:
+  kali-xfce-squash:
+    path: /debian-squash/releases/download/2025.3-8e024a88/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: kali
+    version: '2025.3'
+    flavor: xfce
+    kernel: kali-xfce-squash
+  kde-neon-user:
+    path: /ubuntu-squash/releases/download/20251030-0745-9b372e2a/
+    files:
+    - vmlinuz
+    - filesystem.squashfs
+    - initrd.lz
+    os: neon
+    version: 20251030-0745
+    flavor: user
+    kernel: kde-neon-user
+  regolith-current:
+    path: /ubuntu-squash/releases/download/1.2-e7db33e3/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: regolith
+    version: current
+    flavor: ubuntu
+    kernel: regolith-current
+  breakin:
+    path: /asset-mirror/releases/download/4.26.1-f22abf78/
+    files:
+    - vmlinuz
+    - initrd
+    os: breakin
+    version: 4.26.1
+  dban:
+    path: /asset-mirror/releases/download/2.3.0-a5b9d879/
+    files:
+    - DBAN.BZI
+    os: dban
+    version: 2.3.0
+  sparky-stable-mingui:
+    path: /debian-squash/releases/download/8.0.1-6c87e83c/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: stable
+    flavor: xfce-min
+    kernel: sparky-stable-mingui
+  sparky-stable-gui:
+    path: /debian-squash/releases/download/8.0.1-d38c17d0/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: stable
+    flavor: xfce
+    kernel: sparky-stable-gui
+  sparky-stable-lxqt:
+    path: /debian-squash/releases/download/8.0.1-f9c9e1f1/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: stable
+    flavor: lxqt
+    kernel: sparky-stable-lxqt
+  sparky-rolling-mingui:
+    path: /debian-squash/releases/download/2025.09-db19bb55/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: rolling
+    flavor: xfce-min
+    kernel: sparky-rolling-mingui
+  sparky-rolling-gui:
+    path: /debian-squash/releases/download/2025.09-66a56f08/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: rolling
+    flavor: xfce
+    kernel: sparky-rolling-gui
+  sparky-rolling-lxqt:
+    path: /debian-squash/releases/download/2025.09-2b965fd7/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: sparky
+    version: rolling
+    flavor: lxqt
+    kernel: sparky-rolling-lxqt
+  oracle-8:
+    path: /asset-mirror/releases/download/6-1525fd25/
+    files:
+    - vmlinuz
+    - initrd
+    - squashfs.img
+    os: oracle
+    version: '8'
+    arch: x86_64
+  kodachi-6:
+    path: /ubuntu-squash/releases/download/6.2-2a23039c/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: kodachi
+    version: '6'
+  devuan-ascii:
+    path: /debian-squash/releases/download/2.1-c1f637a9/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: devuan
+    version: '2'
+    flavor: ascii
+  gparted-stable:
+    path: /debian-squash/releases/download/1.7.0-8-bca5f701/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: gparted
+    version: stable
+  rescatux:
+    path: /debian-squash/releases/download/0.72-beta8-55ca0efd/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: rescatux
+    version: current
+  caine:
+    path: /ubuntu-squash/releases/download/13.0-68785ee5/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: caine
+    version: '13.0'
+  dts:
+    path: /dts/v2.7.1
+    files:
+    - initrd
+    - vmlinuz
+    os: dts
+    version: 2.7.1
+  bootrepair:
+    path: /ubuntu-squash/releases/download/current-e035b00c/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: bootrepair
+    version: current
+  blackarch-installer:
+    path: /asset-mirror/releases/download/2023.04.01-d7a6ad88/
+    files:
+    - initrd
+    - vmlinuz
+    - airootfs.sfs
+    os: blackarch
+    version: current
+  bluestar:
+    path: /asset-mirror/releases/download/6.7.8-2024.03.04-d4e083fc/
+    files:
+    - initrd
+    - vmlinuz
+    - airootfs.sfs
+    os: bluestar
+    version: current
+  zeninstall:
+    path: /asset-mirror/releases/download/2020.05.27-a5eae279/
+    files:
+    - initrd
+    - vmlinuz
+    - airootfs.sfs
+    os: zeninstall
+    version: current
+  lxle:
+    path: /ubuntu-squash/releases/download/18.04.3-83291c4b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: lxle
+    version: current
+  kaspersky-rescue:
+    path: /asset-mirror/releases/download/18-7f6056db/
+    files:
+    - initrd.xz
+    - initrd
+    - vmlinuz
+    - kernel.dat
+    - 000-core.srm
+    - 001-xorg.srm
+    - 002-xfce.srm
+    - 003-kl.srm
+    - 004-krt.srm
+    - 005-bases.srm
+    - 008-firefox.srm
+    os: kaspersky
+    version: '18'
+  septor:
+    path: /debian-squash/releases/download/2022-4bfba007/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: septor
+    version: current
+  manjaro-xfce-current:
+    path: /manjaro-squash/releases/download/24.2.1-241216-linux612-58470e08/
+    files:
+    - livefs.sfs
+    - rootfs.sfs
+    - mhwdfs.sfs
+    - desktopfs.sfs
+    - initrd
+    - vmlinuz
+    os: manjaro
+    version: current
+    flavor: xfce
+    kernel: manjaro-xfce-current
+  manjaro-gnome-current:
+    path: /manjaro-squash/releases/download/24.2.1-241216-linux612-e001c928/
+    files:
+    - livefs.sfs
+    - rootfs.sfs
+    - mhwdfs.sfs
+    - desktopfs.sfs
+    - initrd
+    - vmlinuz
+    os: manjaro
+    version: current
+    flavor: gnome
+    kernel: manjaro-gnome-current
+  manjaro-kde-current:
+    path: /manjaro-squash/releases/download/24.2.1-241216-linux612-41601e40/
+    files:
+    - livefs.sfs
+    - rootfs.sfs
+    - mhwdfs.sfs
+    - desktopfs.sfs
+    - initrd
+    - vmlinuz
+    os: manjaro
+    version: current
+    flavor: kde
+    kernel: manjaro-kde-current
+  fatdog:
+    path: /asset-mirror/releases/download/903-ddcb82ff/
+    files:
+    - vmlinuz
+    - initrd
+    os: fatdog
+    version: current
+  raizo:
+    path: /debian-squash/releases/download/v16.25.04.12i-cdb1c06f/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: raizo
+    version: current
+  4mlinux:
+    path: /asset-mirror/releases/download/49.0-c292230f/
+    files:
+    - initrd
+    - vmlinuz
+    os: 4mlinux
+    version: current
+    flavor: full
+  4mlinux-thesss:
+    path: /asset-mirror/releases/download/50.0-4aab1393/
+    files:
+    - initrd
+    - vmlinuz
+    os: 4mlinux
+    version: current
+    flavor: TheSSS
+  4mlinux-bakandimg:
+    path: /asset-mirror/releases/download/48.0-d0598ee4/
+    files:
+    - initrd
+    - vmlinuz
+    os: 4mlinux
+    version: current
+    flavor: BakAndImg
+  4mlinux-antivirus:
+    path: /asset-mirror/releases/download/50.0-1.4.3-43b0f75b/
+    files:
+    - initrd
+    - vmlinuz
+    os: 4mlinux
+    version: current
+    flavor: AntivirusLiveCD
+  ubuntu-20.04-default-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-c92baa25/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: GNOME
+    kernel: ubuntu-20.04-default-squash
+  ubuntu-20.04-KDE-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-c08faa24/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: KDE
+    kernel: ubuntu-20.04-KDE-squash
+  ubuntu-20.04-XFCE-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-ad603665/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: XFCE
+    kernel: ubuntu-20.04-XFCE-squash
+  ubuntu-20.04-Budgie-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-a64212f3/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: Budgie
+    kernel: ubuntu-20.04-Budgie-squash
+  ubuntu-20.04-MATE-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-8e277cc9/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: MATE
+    kernel: ubuntu-20.04-MATE-squash
+  ubuntu-20.04-kylin-squash:
+    path: /ubuntu-squash/releases/download/20.04.6-08c13e9b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: kylin
+    kernel: ubuntu-20.04-kylin-squash
+  voyager-focal-squash:
+    path: /ubuntu-squash/releases/download/focal-594b12a7/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: Voyager
+    version: focal
+    flavor: focal
+    kernel: voyager-focal-squash
+  pop-20.04-default-squash:
+    path: /ubuntu-squash/releases/download/5-66b7e861/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: pop
+    version: '20.04'
+    flavor: intel-amd
+    kernel: pop-20.04-default-squash
+  pop-20.04-nvidia-squash:
+    path: /ubuntu-squash/releases/download/5-6efd1d75/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: pop
+    version: '20.04'
+    flavor: nvidia
+    kernel: pop-20.04-nvidia-squash
+  nixos-20.03:
+    path: /asset-mirror/releases/download/124244129-bd20f138/
+    files:
+    - bzImage
+    - initrd
+    - netboot.ipxe
+    os: nixos
+    version: '20.03'
+  kodachi-7:
+    path: /ubuntu-squash/releases/download/7.6-5b1ead62/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: kodachi
+    version: '7'
+  linux-lite-5-squash:
+    path: /ubuntu-squash/releases/download/5.8-75cb937c/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: lite
+    version: 5.8
+    kernel: linux-lite-5-squash
+  vyos-rolling:
+    path: /debian-squash/releases/download/2025.11.04-0019-rolling-0d0f700e/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: vyos
+    version: rolling
+    flavor: rolling
+    kernel: vyos-rolling
+  pureos-gnome:
+    path: /ubuntu-squash/releases/download/2020-08-06-83257efc/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: pureos
+    version: current
+    flavor: gnome
+    kernel: pureos-gnome
+  rescuezilla:
+    path: /asset-mirror/releases/download/2.6.1-2ace42ce/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: rescuezilla
+    version: 2.6.1
+  nitrux-release:
+    path: /ubuntu-squash/releases/download/2022.02.28-e364d0a5/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: nitrux
+    version: 2022.02.28
+  endeavouros:
+    path: /asset-mirror/releases/download/Neo-2025.03.19-aaf870af/
+    files:
+    - airootfs.sfs
+    - initrd
+    - vmlinuz
+    os: endeavouros
+    version: Neo-2025.03.19
+  kodachi-8:
+    path: /ubuntu-squash/releases/download/8.2-625e11fa/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: kodachi
+    version: '8'
+  redorescue:
+    path: /asset-mirror/releases/download/4.0.0-838b6fef/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: redorescue
+    version: 4.0.0
+  elementaryos-6-default-squash:
+    path: /ubuntu-squash/releases/download/6-3e90a5ea/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: elementary-os
+    version: '6'
+    kernel: elementaryos-6-default-squash
+  voyager-bullseye-squash:
+    path: /debian-squash/releases/download/bullseye-f449bf64/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: Voyager
+    version: bullseye
+    flavor: bullseye
+    kernel: voyager-bullseye-squash
+  memtest86:
+    path: /asset-mirror/releases/download/11.5-2ae1d21b/
+    files:
+    - memtest86-usb.img
+    os: memtest86-free
+    version: '11.5'
+  gentoo-x86:
+    path: /asset-mirror/releases/download/20241209T170323Z-5b773f72/
+    files:
+    - image.squashfs
+    - initrd
+    - vmlinuz
+    os: gentoo
+    version: 20241209T170323Z
+    arch: x86
+  gentoo-arm64:
+    path: /asset-mirror/releases/download/20251019T224842Z-d5972d15/
+    files:
+    - image.squashfs
+    - initrd
+    - vmlinuz
+    os: gentoo
+    version: 20251019T224842Z
+    arch: arm64
+  gentoo-amd64:
+    path: /asset-mirror/releases/download/20250608T165347Z-63d6ec39/
+    files:
+    - image.squashfs
+    - initrd
+    - vmlinuz
+    os: gentoo
+    version: 20250608T165347Z
+    arch: amd64
+  tails:
+    path: /asset-mirror/releases/download/7.1-00388326/
+    files:
+    - vmlinuz
+    - initrd.img
+    - 9990-misc-helpers.sh
+    - tails-amd64.iso
+    os: tails
+    version: '7.1'
+    arch: amd64
+  hrmpf:
+    path: /asset-mirror/releases/download/20231124-1008bb6d/
+    files:
+    - vmlinuz
+    - initrd
+    - squashfs.img
+    os: hrmpf
+    version: '20231124'
+  ubuntu-netboot-20.04-arm64:
+    path: /ubuntu-squash/releases/download/20.04.5-3362c70d/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 20.04.5
+    codename: focal
+    flavor: netboot
+    kernel: ubuntu-netboot-20.04-arm64
+    arch: arm64
+  ubuntu-netboot-20.04-amd64:
+    path: /ubuntu-squash/releases/download/20.04.6-6cac7910/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 20.04.6
+    codename: focal
+    flavor: netboot
+    kernel: ubuntu-netboot-20.04-amd64
+    arch: amd64
+  systemrescue-i686:
+    path: /asset-mirror/releases/download/9.03-0f19cc5c/
+    files:
+    - airootfs.sfs
+    - initrd
+    - vmlinuz
+    os: systemrescue
+    version: 9.03
+    arch: i686
+  systemrescue-amd64:
+    path: /asset-mirror/releases/download/12.02-046a7ade/
+    files:
+    - airootfs.sfs
+    - initrd
+    - vmlinuz
+    - archiso_pxe_http
+    os: systemrescue
+    version: 12.02
+    arch: amd64
+  shredos-i686:
+    path: /asset-mirror/releases/download/0.34_32-bit_20221231-3adcc4d0/
+    files:
+    - shredos
+    os: shredos
+    version: 0.34_32-bit_20221231
+    arch: i686
+  shredos-x86_64:
+    path: /asset-mirror/releases/download/2024.11_27_x86-64_0.38-fa89876c/
+    files:
+    - shredos
+    os: shredos
+    version: 2024.11_27_x86-64_0.38
+    arch: x86_64
+  archlinux-32:
+    path: /asset-mirror/releases/download/2024.07.10-1d684723/
+    files:
+    - airootfs.sfs
+    - initramfs-linux.img
+    - vmlinuz-linux
+    os: archlinux
+    version: 2024.07.10
+    arch: i686
+  clonezilla-debian-stable-amd64:
+    path: /debian-squash/releases/download/3.3.0-33-9c8061ac/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: clonezilla
+    version: 3.3.0-33
+    flavor: stable
+    kernel: clonezilla-debian-stable-amd64
+    arch: amd64
+  clonezilla-ubuntu-stable-amd64:
+    path: /ubuntu-squash/releases/download/20251017-questing-c0f6109b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: clonezilla
+    version: 20251017-questing
+    flavor: stable
+    kernel: clonezilla-ubuntu-stable-amd64
+    arch: amd64
+  clonezilla-debian-testing-amd64:
+    path: /debian-squash/releases/download/3.3.0-37-47a038f9/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: clonezilla
+    version: 3.3.0-37
+    flavor: testing
+    kernel: clonezilla-debian-testing-amd64
+    arch: amd64
+  clonezilla-ubuntu-testing-amd64:
+    path: /ubuntu-squash/releases/download/20251101-resolute-0d4c667b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: clonezilla
+    version: 20251101-resolute
+    flavor: testing
+    kernel: clonezilla-ubuntu-testing-amd64
+    arch: amd64
+  garuda-dr460nized-gaming:
+    path: /asset-mirror/releases/download/250801-a96201bb/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: dr460nized-gaming
+    version: 250801
+  garuda-dr460nized:
+    path: /asset-mirror/releases/download/250801-f610be58/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: dr460nized
+    version: 250801
+  garuda-xfce:
+    path: /asset-mirror/releases/download/250801-c866e6bf/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: xfce
+    version: 250801
+  garuda-gnome:
+    path: /asset-mirror/releases/download/250801-c80a21be/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: gnome
+    version: 250801
+  garuda-lxqt-kwin:
+    path: /asset-mirror/releases/download/230501-f13b4b24/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: lxqt-kwin
+    version: 230501
+  garuda-wayfire:
+    path: /asset-mirror/releases/download/230501-61b681d1/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: wayfire
+    version: 230501
+  garuda-qtile:
+    path: /asset-mirror/releases/download/231029-9dfb930b/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: qtile
+    version: 231029
+  garuda-i3wm:
+    path: /asset-mirror/releases/download/250801-d48b8f05/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: i3wm
+    version: 250801
+  garuda-sway:
+    path: /asset-mirror/releases/download/250801-8d451890/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: sway
+    version: 250801
+  garuda-mate:
+    path: /asset-mirror/releases/download/230501-3af08aa6/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: mate
+    version: 230501
+  garuda-kde-barebones:
+    path: /asset-mirror/releases/download/220329-198784ed/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: kde-barebones
+    version: 220329
+  proxmox-backup-server:
+    path: /asset-mirror/releases/download/4.0-1-f308cf4b/
+    files:
+    - initrd
+    - vmlinuz
+    - proxmox.iso
+    os: proxmox-backup-server
+    version: 4.0-1
+  proxmox-ve:
+    path: /asset-mirror/releases/download/9.0-1-613c19ff/
+    files:
+    - initrd
+    - proxmox.iso
+    - vmlinuz
+    os: proxmox-ve
+    version: 9.0-1
+  proxmox-mailgateway:
+    path: /asset-mirror/releases/download/9.0-1-8374c64d/
+    files:
+    - initrd
+    - vmlinuz
+    - proxmox.iso
+    os: proxmox-mailgateway
+    version: 9.0-1
+  ubuntu-netboot-22.04-amd64:
+    path: /ubuntu-squash/releases/download/22.04.5-295657f3/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 22.04.5
+    codename: jammy
+    flavor: netboot
+    kernel: ubuntu-netboot-22.04-amd64
+    arch: amd64
+  ubuntu-netboot-22.04-arm64:
+    path: /ubuntu-squash/releases/download/22.04.5-32a0e326/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 22.04.5
+    codename: jammy
+    flavor: netboot
+    kernel: ubuntu-netboot-22.04-arm64
+    arch: arm64
+  ubuntu-22.04-default-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-b0159fca/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: GNOME
+    kernel: ubuntu-22.04-default-squash
+  ubuntu-22.04-XFCE-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-1a95043e/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: XFCE
+    kernel: ubuntu-22.04-XFCE-squash
+  ubuntu-22.04-MATE-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-e4bfedfe/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: MATE
+    kernel: ubuntu-22.04-MATE-squash
+  ubuntu-22.04-Budgie-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-7f1ad0e4/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: Budgie
+    kernel: ubuntu-22.04-Budgie-squash
+  ubuntu-22.04-KDE-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-36909c4f/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: KDE
+    kernel: ubuntu-22.04-KDE-squash
+  ubuntu-22.04-kylin-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-14797330/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: kylin
+    kernel: ubuntu-22.04-kylin-squash
+  voyager-jammy-squash:
+    path: /ubuntu-squash/releases/download/jammy-d0714f36/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: Voyager
+    version: jammy
+    flavor: jammy
+    kernel: voyager-jammy-squash
+  pop-22.04-default-squash:
+    path: /ubuntu-squash/releases/download/21-3c299ef8/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: pop
+    version: '22.04'
+    flavor: intel-amd
+    kernel: pop-22.04-default-squash
+  vmware-photon-x86_64:
+    path: /asset-mirror/releases/download/4.0-453a4a7b/
+    files:
+    - initrd.img
+    - vmlinuz
+    os: vmware-photon
+    version: '4.0'
+    arch: x86_64
+  vmware-photon-aarch64:
+    path: /asset-mirror/releases/download/4.0-4e0c6bec/
+    files:
+    - initrd.img
+    - vmlinuz
+    os: vmware-photon
+    version: '4.0'
+    arch: aarch64
+  harvester:
+    path: /asset-mirror/releases/download/v1.6.1-c82c6d22/
+    files:
+    - harvester-vmlinuz-amd64
+    - harvester-initrd-amd64
+    - harvester-rootfs-amd64.squashfs
+    - harvester-amd64.sha512
+    - version.yaml
+    os: harvester
+    version: v1.6.1
+  linux-lite-6-squash:
+    path: /ubuntu-squash/releases/download/6.4-2550834c/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: lite
+    version: 6.4
+    kernel: linux-lite-6-squash
+  mint-21-cinnamon-squash:
+    path: /ubuntu-squash/releases/download/21-1ff19e78/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '21'
+    flavor: Cinnamon
+    kernel: mint-21-cinnamon-squash
+  mint-21-mate-squash:
+    path: /ubuntu-squash/releases/download/21-b57bf769/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '21'
+    flavor: mate
+    kernel: mint-21-mate-squash
+  mint-21-xfce-squash:
+    path: /ubuntu-squash/releases/download/21-41ed8540/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '21'
+    flavor: xfce
+    kernel: mint-21-xfce-squash
+  oracle-9-x86_64:
+    path: /asset-mirror/releases/download/U0-5d86c3df/
+    files:
+    - vmlinuz
+    - initrd
+    - squashfs.img
+    os: oracle
+    version: '9'
+    arch: x86_64
+  oracle-9-aarch64:
+    path: /asset-mirror/releases/download/U0-f2411221/
+    files:
+    - vmlinuz
+    - initrd
+    - squashfs.img
+    os: oracle
+    version: '9'
+    arch: aarch64
+  parrot-home:
+    path: /debian-squash/releases/download/6.3.2-37ae0f27/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: parrot
+    version: 6.3.2
+    flavor: home
+  parrot-security:
+    path: /debian-squash/releases/download/6.3.2-999ed7ad/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: parrot
+    version: 6.3.2
+    flavor: security
+  xcp-ng:
+    path: /asset-mirror/releases/download/8.3-55521b28/
+    files:
+    - xen.gz
+    - vmlinuz
+    - install.img
+    os: xcp-ng
+    version: '8.2'
+  garuda-cinnamon:
+    path: /asset-mirror/releases/download/250801-0b360492/
+    files:
+    - amd_ucode.img
+    - desktopfs.sfs
+    - intel_ucode.img
+    - livefs.sfs
+    - initramfs.img
+    - mhwdfs.sfs
+    - rootfs.sfs
+    - vmlinuz
+    os: garuda
+    flavor: cinnamon
+    version: 250801
+  elementaryos-7-default-squash:
+    path: /ubuntu-squash/releases/download/7-3e6e05f6/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: elementary-os
+    version: '7'
+    kernel: elementaryos-7-default-squash
+  ubuntu-20.04-LXQT-squash:
+    path: /ubuntu-squash/releases/download/20.04.5-95f04bf8/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '20.04'
+    flavor: LXQT
+    kernel: ubuntu-20.04-LXQT-squash
+  debian-12-live-kernel:
+    path: /debian-core-12/releases/download/12.11.0-7dc3f9f3/
+    files:
+    - initrd
+    - vmlinuz
+    os: debian
+    version: '12'
+  debian-12-default-squash:
+    path: /debian-squash/releases/download/12.11.0-b545a82c/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: core
+    kernel: debian-12-live-kernel
+  debian-12-gnome-squash:
+    path: /debian-squash/releases/download/12.11.0-d2c07a8a/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: gnome
+    kernel: debian-12-live-kernel
+  debian-12-cinnamon-squash:
+    path: /debian-squash/releases/download/12.11.0-c84a8c03/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: cinnamon
+    kernel: debian-12-live-kernel
+  debian-12-lxqt-squash:
+    path: /debian-squash/releases/download/12.11.0-43f2cd09/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: lxqt
+    kernel: debian-12-live-kernel
+  debian-12-mate-squash:
+    path: /debian-squash/releases/download/12.11.0-1a8949e5/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: mate
+    kernel: debian-12-live-kernel
+  debian-12-lxde-squash:
+    path: /debian-squash/releases/download/12.11.0-b3449bd8/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: lxde
+    kernel: debian-12-live-kernel
+  debian-12-xfce-squash:
+    path: /debian-squash/releases/download/12.11.0-40a848cc/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: xfce
+    kernel: debian-12-live-kernel
+  debian-12-kde-squash:
+    path: /debian-squash/releases/download/12.11.0-90c96885/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: '12'
+    flavor: kde
+    kernel: debian-12-live-kernel
+  ubuntu-22.04-LXQT-squash:
+    path: /ubuntu-squash/releases/download/22.04.5-e60a4189/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '22.04'
+    flavor: LXQT
+    kernel: ubuntu-22.04-LXQT-squash
+  backbox-default-squash:
+    path: /ubuntu-squash/releases/download/8.1-c2287989/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: BackBox
+    version: '8.1'
+    flavor: desktop
+    kernel: backbox-default-squash
+  bodhi-standard:
+    path: /ubuntu-squash/releases/download/7.0.0-a4394ab0/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: bodhi
+    version: 7.0.0
+    flavor: standard
+  bodhi-apppack:
+    path: /ubuntu-squash/releases/download/7.0.0-c167c30e/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: bodhi
+    version: 7.0.0
+    flavor: apppack
+  mfsbsd-14:
+    path: /asset-mirror/releases/download/14.2-a5094acd/
+    files:
+    - default.img
+    - special-edition.img
+    os: freebsd
+    version: '14'
+  zorin-core-squash:
+    path: /ubuntu-squash/releases/download/17.3-a87e018b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: zorin
+    version: '17.3'
+    flavor: Core
+    kernel: zorin-core-squash
+  q4os-plasma-squash:
+    path: /debian-squash/releases/download/6.2-3af797cd/
+    files:
+    - filesystem.squashfs
+    os: Q4OS
+    version: '6.2'
+    flavor: plasma
+    kernel: q4os-default-squash
+  q4os-default-squash:
+    path: /debian-squash/releases/download/6.2-d1a34866/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: Q4OS
+    version: '6.2'
+    flavor: trinity
+    kernel: q4os-default-squash
+  memtest86plus:
+    path: /asset-mirror/releases/download/7.20-014832f7/
+    files:
+    - memtest32.bin
+    - memtest32.efi
+    - memtest64.bin
+    - memtest64.efi
+    os: memtest86-plus
+    version: '7.20'
+  ubuntu-netboot-24.04-arm64:
+    path: /ubuntu-squash/releases/download/24.04.3-7b71a472/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 24.04.3
+    codename: noble
+    flavor: netboot
+    kernel: ubuntu-netboot-24.04-arm64
+    arch: arm64
+  ubuntu-netboot-24.04-amd64:
+    path: /ubuntu-squash/releases/download/24.04.3-dac09526/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: 24.04.3
+    codename: noble
+    flavor: netboot
+    kernel: ubuntu-netboot-24.04-amd64
+    arch: amd64
+  fedora-40-gnome:
+    path: /fedora-assets/releases/download/1.14-aefc8f89/
+    files:
+    - vmlinuz
+    - initrd
+    - squashfs.img
+    os: fedora
+    version: 40
+    flavor: GNOME
+  ubuntu-24.04-default-squash:
+    path: /ubuntu-squash/releases/download/24.04.3-8efa196d/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    - minimal.standard.live.squashfs
+    - minimal.standard.squashfs
+    - minimal.squashfs
+    os: ubuntu
+    version: '24.04'
+    flavor: GNOME
+    kernel: ubuntu-24.04-default-squash
+  vanilla-os:
+    path: /asset-mirror/releases/download/20240728-32e3ebb7/
+    files:
+    - initrd
+    - filesystem.squashfs
+    - vmlinuz
+    os: vanilla-os
+    version: 2-20240728
+  zfsbootmenu:
+    path: /asset-mirror/releases/download/3.0.1-bfc4188e/
+    files:
+    - zfsbootmenu-recovery-x86_64.efi
+    os: zfsbootmenu
+    version: 3.0.1
+  supergrubdisk:
+    path: /asset-mirror/releases/download/2.06s4-b7b838c6/
+    files:
+    - supergrub2-classic-x86_64.efi
+    os: supergrubdisk
+    version: 2.06s4
+  mint-22-xfce-squash:
+    path: /ubuntu-squash/releases/download/22-42f238bf/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '22'
+    flavor: xfce
+    kernel: mint-22-xfce-squash
+  mint-22-cinnamon-squash:
+    path: /ubuntu-squash/releases/download/22-1431f755/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '22'
+    flavor: Cinnamon
+    kernel: mint-22-cinnamon-squash
+  mint-22-mate-squash:
+    path: /ubuntu-squash/releases/download/22-979f0303/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '22'
+    flavor: mate
+    kernel: mint-22-mate-squash
+  ubuntu-netboot-24.10-amd64:
+    path: /ubuntu-squash/releases/download/24.10-fcf8807c/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '24.10'
+    codename: oracular
+    flavor: netboot
+    kernel: ubuntu-netboot-24.10-amd64
+    arch: amd64
+  ubuntu-netboot-24.10-arm64:
+    path: /ubuntu-squash/releases/download/24.10-f22a7742/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '24.10'
+    codename: oracular
+    flavor: netboot
+    kernel: ubuntu-netboot-24.10-arm64
+    arch: arm64
+  grml-small-amd64:
+    path: /debian-squash/releases/download/2025.08-abcbd950/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: grml
+    version: '2025.08'
+    flavor: small
+    arch: amd64
+  grml-full-amd64:
+    path: /debian-squash/releases/download/2025.08-dae7342d/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: grml
+    version: '2025.08'
+    flavor: full
+    arch: amd64
+  grml-full-arm64:
+    path: /debian-squash/releases/download/2025.08-22de2c47/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: grml
+    version: '2025.08'
+    flavor: full
+    arch: arm64
+  grml-small-arm64:
+    path: /debian-squash/releases/download/2025.08-dd433d05/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: grml
+    version: '2025.08'
+    flavor: small
+    arch: arm64
+  uefishell:
+    path: /asset-mirror/releases/download/edk2-stable202002-046915a7/
+    files:
+    - uefi-shell-x64.efi
+    - uefi-shell-aarch64.efi
+    - uefi-shell-arm.efi
+    os: uefi-shell
+    version: edk2-stable202002
+  uefi-shell-x64:
+    path: /asset-mirror/releases/download/edk2-stable202002-4c8abfeb/
+    files:
+    - uefi-shell-x64.efi
+    os: uefi-shell-x64
+    version: edk2-stable202002
+  ubuntu-netboot-25.04-amd64:
+    path: /ubuntu-squash/releases/download/25.04-8094159e/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '25.04'
+    codename: plucky
+    flavor: netboot
+    kernel: ubuntu-netboot-25.04-amd64
+    arch: amd64
+  ubuntu-netboot-25.04-arm64:
+    path: /ubuntu-squash/releases/download/25.04-e56e947a/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '25.04'
+    codename: plucky
+    flavor: netboot
+    kernel: ubuntu-netboot-25.04-arm64
+    arch: arm64
+  mint-20-xfce-squash:
+    path: /ubuntu-squash/releases/download/20.3-7abfea92/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '20.3'
+    flavor: xfce
+    kernel: mint-20-xfce-squash
+  mint-20-cinnamon-squash:
+    path: /ubuntu-squash/releases/download/20.3-85db6b9f/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '20.3'
+    flavor: Cinnamon
+    kernel: mint-20-cinnamon-squash
+  mint-20-mate-squash:
+    path: /ubuntu-squash/releases/download/20.3-de3a088b/
+    files:
+    - initrd
+    - vmlinuz
+    - filesystem.squashfs
+    os: mint
+    version: '20.3'
+    flavor: mate
+    kernel: mint-20-mate-squash
+  mint-lmde-cinnamon-squash:
+    path: /debian-squash/releases/download/6-1834227b/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: mint
+    version: '6'
+    flavor: Cinnamon
+    kernel: mint-lmde-cinnamon-squash
+  ubuntu-spins:
+    path: /asset-mirror/releases/download/0.0.3-fb924c06/
+    files:
+    - vmlinuz
+    - initrd
+    os: ubuntu-spins
+    version: 0.0.3
+  cachyos:
+    path: /asset-mirror/releases/download/250828-b0e9944d/
+    files:
+    - airootfs.sfs
+    - initrd
+    - vmlinuz
+    - archiso_pxe_http
+    os: cachyos
+    version: '250828'
+  deepin-20-squash:
+    path: /debian-squash/releases/download/20.9-e3a3a399/
+    files:
+    - filesystem.squashfs
+    - initrd
+    - vmlinuz
+    os: Deepin
+    version: '20.9'
+    kernel: deepin-20-squash
+  debian-13-live-kernel:
+    path: /debian-core-13/releases/download/13.1.0-0a426450/
+    files:
+    - initrd
+    - vmlinuz
+    os: debian
+    version: '13'
+  debian-13-default-squash:
+    path: /debian-squash/releases/download/13.1.0-d074da9b/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: core
+    kernel: debian-13-live-kernel
+  debian-13-lxde-squash:
+    path: /debian-squash/releases/download/13.1.0-79e9a15b/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: lxde
+    kernel: debian-13-live-kernel
+  debian-13-kde-squash:
+    path: /debian-squash/releases/download/13.1.0-5ecf4c90/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: kde
+    kernel: debian-13-live-kernel
+  debian-13-gnome-squash:
+    path: /debian-squash/releases/download/13.1.0-2eeea9f9/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: gnome
+    kernel: debian-13-live-kernel
+  debian-13-lxqt-squash:
+    path: /debian-squash/releases/download/13.1.0-6088759b/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: lxqt
+    kernel: debian-13-live-kernel
+  debian-13-mate-squash:
+    path: /debian-squash/releases/download/13.1.0-8a7bb188/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: mate
+    kernel: debian-13-live-kernel
+  ubuntu-netboot-25.10-amd64:
+    path: /ubuntu-squash/releases/download/25.10-5a657310/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '25.10'
+    codename: questing
+    flavor: netboot
+    kernel: ubuntu-netboot-25.10-amd64
+    arch: amd64
+  ubuntu-netboot-25.10-arm64:
+    path: /ubuntu-squash/releases/download/25.10-f8b4d29d/
+    files:
+    - initrd
+    - vmlinuz
+    os: ubuntu
+    version: '25.10'
+    codename: questing
+    flavor: netboot
+    kernel: ubuntu-netboot-25.10-arm64
+    arch: arm64
+  debian-13-cinnamon-squash:
+    path: /debian-squash/releases/download/13.1.0-f213be8c/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: cinnamon
+    kernel: debian-13-live-kernel
+  debian-13-xfce-squash:
+    path: /debian-squash/releases/download/13.1.0-6e8d6d0d/
+    files:
+    - filesystem.squashfs
+    os: debian
+    version: 13.1.0
+    flavor: xfce
+    kernel: debian-13-live-kernel
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Data\PxeEvent.cs
+==============================================================================
 namespace ProPXEServer.API.Data;
 
 public class PxeEvent {
@@ -881,10 +2669,10 @@ public class PxeEvent {
 
 
 
-======================================
-FILE: ProPXEServer.API\Filters\RequireSubscriptionAttribute.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Filters\RequireSubscriptionAttribute.cs
+==============================================================================
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Identity;
@@ -939,10 +2727,10 @@ public class RequireSubscriptionFilter(
 
 
 
-======================================
-FILE: ProPXEServer.API\Migrations\20251201013823_InitialCreate.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Migrations\20251201013823_InitialCreate.cs
+==============================================================================
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
@@ -1265,10 +3053,10 @@ namespace ProPXEServer.API.Migrations
 
 
 
-======================================
-FILE: ProPXEServer.API\Migrations\20251201013823_InitialCreate.Designer.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Migrations\20251201013823_InitialCreate.Designer.cs
+==============================================================================
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -1679,10 +3467,10 @@ namespace ProPXEServer.API.Migrations
 
 
 
-======================================
-FILE: ProPXEServer.API\Migrations\ApplicationDbContextModelSnapshot.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Migrations\ApplicationDbContextModelSnapshot.cs
+==============================================================================
 // <auto-generated />
 using System;
 using Microsoft.EntityFrameworkCore;
@@ -2090,10 +3878,10 @@ namespace ProPXEServer.API.Migrations
 
 
 
-======================================
-FILE: ProPXEServer.API\Properties\launchSettings.json
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Properties\launchSettings.json
+==============================================================================
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
@@ -2120,10 +3908,10 @@ FILE: ProPXEServer.API\Properties\launchSettings.json
 
 
 
-======================================
-FILE: ProPXEServer.API\Security\SecurityConfiguration.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Security\SecurityConfiguration.cs
+==============================================================================
 using Microsoft.AspNetCore.RateLimiting;
 using System.Net;
 using System.Threading.RateLimiting;
@@ -2200,10 +3988,10 @@ public static class SecurityConfiguration {
 
 
 
-======================================
-FILE: ProPXEServer.API\Services\DhcpService.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Services\DhcpService.cs
+==============================================================================
 using System.Net;
 using System.Net.Sockets;
 using ProPXEServer.API.Data;
@@ -2472,10 +4260,10 @@ public class DhcpService(
 
 
 
-======================================
-FILE: ProPXEServer.API\Services\HttpBootService.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Services\HttpBootService.cs
+==============================================================================
 using Microsoft.AspNetCore.StaticFiles;
 using ProPXEServer.API.Data;
 
@@ -2539,10 +4327,10 @@ public class HttpBootService(
 
 
 
-======================================
-FILE: ProPXEServer.API\Services\TftpServerService.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Services\TftpServerService.cs
+==============================================================================
 using ProPXEServer.API.Security;
 using System.Net;
 using System.Net.Sockets;
@@ -2733,10 +4521,10 @@ public class TftpServerService : BackgroundService {
 
 
 
-======================================
-FILE: ProPXEServer.API\Services\TftpService.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.API\Services\TftpService.cs
+==============================================================================
 using System.Net;
 using System.Net.Sockets;
 using ProPXEServer.API.Data;
@@ -2920,202 +4708,127 @@ public class TftpService(
 
 
 
-======================================
-FILE: ProPXEServer.API\appsettings.Development.json
-======================================
 
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  }
-}
-
-
-
-======================================
-FILE: ProPXEServer.API\appsettings.json
-======================================
-
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=massbootserver.db"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "MassBootServer": {
-    "AdvertisedIP": "192.168.1.100",
-    "BootFilesDirectory": "BootFiles",
-    "DhcpListenPort": 67,
-    "ProxyDhcpListenPort": 4011,
-    "TftpListenPort": 69
-  },
-  "TftpSettings": {
-    "RootPath": "wwwroot/pxe",
-    "Port": 69,
-    "BlockSize": 512,
-    "MaxRetries": 5
-  },
-  "Stripe": {
-    "SecretKey": "sk_test_YOUR_KEY_HERE",
-    "WebhookSecret": "whsec_YOUR_SECRET_HERE",
-    "MonthlyPriceId": "price_YOUR_PRICE_ID_HERE",
-    "MonthlyAmount": 2000,
-    "SuccessUrl": "http://localhost:5173/subscription/success",
-    "CancelUrl": "http://localhost:5173/subscription/cancel"
-  },
-  "JwtSettings": {
-    "SecretKey": "your-256-bit-secret-key-change-this-in-production",
-    "Issuer": "MassBootServer",
-    "Audience": "MassBootClient",
-    "ExpiryMinutes": 60
-  },
-  "Security": {
-    "IpWhitelist": [],
-    "IpBlacklist": [],
-    "EnableRateLimiting": true,
-    "MaxRequestsPerMinute": 100
-  }
-}
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\App.razor
+==============================================================================
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <p role="alert">You are not authorized to access this resource.</p>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
 
 
-======================================
-FILE: ProPXEServer.API\Program.cs
-======================================
 
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using ProPXEServer.API.Data;
-using ProPXEServer.API.Services;
-using ProPXEServer.API.Security;
 
-var builder = WebApplication.CreateBuilder(args);
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Program.cs
+==============================================================================
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
+using ProPXEServer.Client;
+using ProPXEServer.Client.Services;
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=ProPXEServer.db"));
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddIdentityCore<ApplicationUser>()
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+builder.Services.AddBlazoredLocalStorage();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-builder.Services.AddAuthentication(options => {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AuthenticationHeaderHandler>();
+builder.Services.AddAuthorizationCore();
+
+builder.Services.AddHttpClient("ProPXEServer.API", client => {
+    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/");
 })
-.AddJwtBearer(options => {
-    options.TokenValidationParameters = new TokenValidationParameters {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT secret not configured")))
-    };
-});
+.AddHttpMessageHandler<AuthenticationHeaderHandler>();
 
-builder.Services.AddAuthorization();
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-builder.Services.AddCors();
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
+    .CreateClient("ProPXEServer.API"));
 
-builder.Services.AddSingleton<HttpBootService>();
-builder.Services.AddHostedService<DhcpService>();
-builder.Services.AddHostedService<TftpServerService>();
-builder.Services.AddPxeSecurityPolicies(builder.Configuration);
-
-var app = builder.Build();
-
-using (var scope = app.Services.CreateScope()) {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    if (app.Environment.IsDevelopment()) {
-        await db.Database.MigrateAsync();
-    }
-}
-
-if (app.Environment.IsDevelopment()) {
-    app.MapOpenApi();
-}
-
-app.UseCors(policy => policy
-    .AllowAnyOrigin()
-    .AllowAnyMethod()
-    .AllowAnyHeader());
-
-app.UseRateLimiter();
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.MapGet("/boot/{**fileName}", async (string fileName, HttpBootService bootService, HttpContext context) => {
-    return await bootService.ServeBootFile(fileName, context);
-});
-
-app.MapGet("/api/pxe/events", async (ApplicationDbContext db) => {
-    return await db.PxeEvents
-        .OrderByDescending(e => e.Timestamp)
-        .Take(100)
-        .ToListAsync();
-}).RequireAuthorization();
-
-app.Run();
+await builder.Build().RunAsync();
 
 
 
 
 
-======================================
-FILE: ProPXEServer.API\ProPXEServer.API.csproj
-======================================
 
-<Project Sdk="Microsoft.NET.Sdk.Web">
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\ProPXEServer.Client.csproj
+==============================================================================
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
-    <PackageReference Include="Stripe.net" Version="47.0.0" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
   </ItemGroup>
 
 </Project>
 
 
 
-======================================
-FILE: ProPXEServer.Client\Layout\MainLayout.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\_Imports.razor
+==============================================================================
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using ProPXEServer.Client
+@using ProPXEServer.Client.Layout
+@using Microsoft.AspNetCore.Components.Authorization
+@using ProPXEServer.Client.Services
+@using ProPXEServer.Client.Shared
+
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Layout\MainLayout.razor
+==============================================================================
 @inherits LayoutComponentBase
 
 <div class="app-container">
@@ -3164,10 +4877,94 @@ FILE: ProPXEServer.Client\Layout\MainLayout.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Layout\NavMenu.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Layout\MainLayout.razor.css
+==============================================================================
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.sidebar {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+.top-row {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        white-space: nowrap;
+        margin-left: 1.5rem;
+        text-decoration: none;
+    }
+
+    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+        text-decoration: underline;
+    }
+
+    .top-row ::deep a:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+@@media (max-width: 640.98px) {
+    .top-row {
+        justify-content: space-between;
+    }
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        margin-left: 0;
+    }
+}
+
+@@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+    }
+
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .top-row.auth ::deep a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
+
+    .top-row, article {
+        padding-left: 2rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Layout\NavMenu.razor
+==============================================================================
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">ProPXE Server</a>
@@ -3210,10 +5007,100 @@ FILE: ProPXEServer.Client\Layout\NavMenu.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Analytics.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Layout\NavMenu.razor.css
+==============================================================================
+.navbar-toggler {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-row {
+    min-height: 3.5rem;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.navbar-brand {
+    font-size: 1.1rem;
+}
+
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    top: -1px;
+    background-size: cover;
+}
+
+.bi-house-door-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+}
+
+.bi-plus-square-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
+}
+
+.bi-list-nested-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item ::deep a {
+        color: #d7d7d7;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+.nav-item ::deep a.active {
+    background-color: rgba(255,255,255,0.37);
+    color: white;
+}
+
+.nav-item ::deep a:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+@@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .collapse {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+    }
+
+    .nav-scrollable {
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+}
+
+
+
+
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Analytics.razor
+==============================================================================
 @page "/analytics"
 @inject HttpClient Http
 @inject AuthService AuthService
@@ -3224,11 +5111,11 @@ FILE: ProPXEServer.Client\Pages\Analytics.razor
 <div class="analytics-container fade-in">
     <header class="page-header">
         <div>
-            <h1>📊 Analytics & Insights</h1>
+            <h1>ðŸ“Š Analytics & Insights</h1>
             <p class="text-muted">Boot history, usage statistics, and performance metrics</p>
         </div>
         <button @onclick="NavigateHome" class="btn">
-            ← Dashboard
+            â† Dashboard
         </button>
     </header>
 
@@ -3264,7 +5151,7 @@ FILE: ProPXEServer.Client\Pages\Analytics.razor
             <div class="card chart-card">
                 <h2>Boot Events Over Time</h2>
                 <div class="chart-placeholder">
-                    <div class="placeholder-icon">📈</div>
+                    <div class="placeholder-icon">ðŸ“ˆ</div>
                     <p>Chart visualization will appear here</p>
                     <p class="text-muted">Showing boot events for the last 30 days</p>
                 </div>
@@ -3358,7 +5245,7 @@ FILE: ProPXEServer.Client\Pages\Analytics.razor
                 <div class="client-list">
                     @foreach (var client in topClients) {
                         <div class="client-item">
-                            <div class="client-icon">💻</div>
+                            <div class="client-icon">ðŸ’»</div>
                             <div class="client-info">
                                 <div class="client-mac">@client.MacAddress</div>
                                 <div class="client-count">@client.BootCount boots</div>
@@ -3665,10 +5552,10 @@ FILE: ProPXEServer.Client\Pages\Analytics.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Endpoints.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Endpoints.razor
+==============================================================================
 @page "/endpoints"
 @inject HttpClient Http
 @inject AuthService AuthService
@@ -3679,11 +5566,11 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
 <div class="endpoints-container fade-in">
     <header class="page-header">
         <div>
-            <h1>📚 OS Endpoints Catalog</h1>
+            <h1>ðŸ“š OS Endpoints Catalog</h1>
             <p class="text-muted">100+ operating systems from netboot.xyz</p>
         </div>
         <button @onclick="NavigateHome" class="btn">
-            ← Dashboard
+            â† Dashboard
         </button>
     </header>
 
@@ -3698,16 +5585,16 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
                 All (@GetFilterCount("All"))
             </button>
             <button class="filter-tag @(selectedFilter == "Linux" ? "active" : "")" @onclick='() => selectedFilter = "Linux"'>
-                🐧 Linux (@GetFilterCount("Linux"))
+                ðŸ§ Linux (@GetFilterCount("Linux"))
             </button>
             <button class="filter-tag @(selectedFilter == "Windows" ? "active" : "")" @onclick='() => selectedFilter = "Windows"'>
-                🪟 Windows (@GetFilterCount("Windows"))
+                ðŸªŸ Windows (@GetFilterCount("Windows"))
             </button>
             <button class="filter-tag @(selectedFilter == "BSD" ? "active" : "")" @onclick='() => selectedFilter = "BSD"'>
-                👹 BSD (@GetFilterCount("BSD"))
+                ðŸ‘¹ BSD (@GetFilterCount("BSD"))
             </button>
             <button class="filter-tag @(selectedFilter == "Other" ? "active" : "")" @onclick='() => selectedFilter = "Other"'>
-                🔧 Other (@GetFilterCount("Other"))
+                ðŸ”§ Other (@GetFilterCount("Other"))
             </button>
         </div>
     </div>
@@ -3740,7 +5627,7 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
                     @if (!string.IsNullOrEmpty(os.Url)) {
                         <div class="detail-item">
                             <button @onclick="() => CopyUrl(os.Url)" class="btn btn-sm copy-btn">
-                                📋 Copy URL
+                                ðŸ“‹ Copy URL
                             </button>
                         </div>
                     }
@@ -3751,7 +5638,7 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
 
     @if (GetFilteredEndpoints().Count == 0) {
         <div class="empty-state card">
-            <div class="empty-icon">🔍</div>
+            <div class="empty-icon">ðŸ”</div>
             <p>No operating systems found</p>
             <p class="text-muted">Try adjusting your search or filter</p>
         </div>
@@ -3996,10 +5883,10 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
     }
 
     private string GetOsIcon(string category) => category switch {
-        "Linux" => "🐧",
-        "Windows" => "🪟",
-        "BSD" => "👹",
-        _ => "🔧"
+        "Linux" => "ðŸ§",
+        "Windows" => "ðŸªŸ",
+        "BSD" => "ðŸ‘¹",
+        _ => "ðŸ”§"
     };
 
     private string GetCategoryBadge(string category) => $"badge-{category.ToLowerInvariant()}";
@@ -4016,10 +5903,10 @@ FILE: ProPXEServer.Client\Pages\Endpoints.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Files.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Files.razor
+==============================================================================
 @page "/files"
 @inject HttpClient Http
 @inject AuthService AuthService
@@ -4030,24 +5917,24 @@ FILE: ProPXEServer.Client\Pages\Files.razor
 <div class="files-container fade-in">
     <header class="page-header">
         <div>
-            <h1>📁 Boot Files Management</h1>
+            <h1>ðŸ“ Boot Files Management</h1>
             <p class="text-muted">Upload and manage network boot files</p>
         </div>
         <button @onclick="NavigateHome" class="btn">
-            ← Dashboard
+            â† Dashboard
         </button>
     </header>
 
     @if (!currentUser?.IsSubscribed ?? true) {
         <div class="subscription-card card">
-            <div class="subscription-icon">🔒</div>
+            <div class="subscription-icon">ðŸ”’</div>
             <h2>Unlock Pro Features</h2>
             <p>Upload custom boot files and manage your PXE environment with a Pro subscription.</p>
             <ul class="features-list">
-                <li>✓ Unlimited file uploads (100GB storage)</li>
-                <li>✓ Custom boot configurations</li>
-                <li>✓ Priority support</li>
-                <li>✓ Advanced analytics</li>
+                <li>âœ“ Unlimited file uploads (100GB storage)</li>
+                <li>âœ“ Custom boot configurations</li>
+                <li>âœ“ Priority support</li>
+                <li>âœ“ Advanced analytics</li>
             </ul>
             <button @onclick="NavigateToSubscription" class="btn btn-primary btn-large">
                 Upgrade to Pro - $20/month
@@ -4064,7 +5951,7 @@ FILE: ProPXEServer.Client\Pages\Files.razor
                  @ondrop:preventDefault>
                 <InputFile OnChange="HandleFileSelected" class="file-input" id="fileInput" />
                 <label for="fileInput" class="drop-zone-label">
-                    <div class="drop-zone-icon">📤</div>
+                    <div class="drop-zone-icon">ðŸ“¤</div>
                     <div class="drop-zone-text">
                         <strong>Drop boot files here</strong> or click to browse
                     </div>
@@ -4074,7 +5961,7 @@ FILE: ProPXEServer.Client\Pages\Files.razor
 
             @if (selectedFile != null) {
                 <div class="file-preview slide-in">
-                    <div class="preview-icon">📄</div>
+                    <div class="preview-icon">ðŸ“„</div>
                     <div class="preview-info">
                         <div class="preview-name">@selectedFile.Name</div>
                         <div class="preview-size">@FormatBytes(selectedFile.Size)</div>
@@ -4115,7 +6002,7 @@ FILE: ProPXEServer.Client\Pages\Files.razor
 
             @if (bootFiles.Count == 0) {
                 <div class="empty-state">
-                    <div class="empty-icon">📦</div>
+                    <div class="empty-icon">ðŸ“¦</div>
                     <p>No boot files uploaded yet.</p>
                     <p class="text-muted">Upload your first boot file to get started!</p>
                 </div>
@@ -4127,10 +6014,10 @@ FILE: ProPXEServer.Client\Pages\Files.razor
                                 <div class="file-icon">@GetFileIcon(file.FileName)</div>
                                 <div class="file-actions">
                                     <button @onclick="() => DownloadFile(file.Id)" class="btn-icon" title="Download">
-                                        ⬇️
+                                        â¬‡ï¸
                                     </button>
                                     <button @onclick="() => DeleteFile(file.Id)" class="btn-icon btn-danger" title="Delete">
-                                        🗑️
+                                        ðŸ—‘ï¸
                                     </button>
                                 </div>
                             </div>
@@ -4547,18 +6434,18 @@ FILE: ProPXEServer.Client\Pages\Files.razor
             
             if (response.IsSuccessStatusCode) {
                 uploadSuccess = true;
-                uploadMessage = "✓ File uploaded successfully!";
+                uploadMessage = "âœ“ File uploaded successfully!";
                 selectedFile = null;
                 uploadProgress = 100;
                 await LoadFiles();
             } else {
                 uploadSuccess = false;
-                uploadMessage = "⚠ Upload failed. Please try again.";
+                uploadMessage = "âš  Upload failed. Please try again.";
             }
         }
         catch (Exception ex) {
             uploadSuccess = false;
-            uploadMessage = $"⚠ Error: {ex.Message}";
+            uploadMessage = $"âš  Error: {ex.Message}";
         }
         finally {
             isUploading = false;
@@ -4588,11 +6475,11 @@ FILE: ProPXEServer.Client\Pages\Files.razor
     private static string GetFileIcon(string fileName) {
         var ext = Path.GetExtension(fileName).ToLowerInvariant();
         return ext switch {
-            ".iso" => "💿",
-            ".efi" => "⚙️",
-            ".kpxe" => "🔧",
-            ".img" => "💾",
-            _ => "📄"
+            ".iso" => "ðŸ’¿",
+            ".efi" => "âš™ï¸",
+            ".kpxe" => "ðŸ”§",
+            ".img" => "ðŸ’¾",
+            _ => "ðŸ“„"
         };
     }
 
@@ -4612,10 +6499,10 @@ FILE: ProPXEServer.Client\Pages\Files.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Home.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Home.razor
+==============================================================================
 @page "/"
 @inject AuthService AuthService
 @inject HttpClient Http
@@ -4632,13 +6519,13 @@ FILE: ProPXEServer.Client\Pages\Home.razor
     } else {
         <header class="dashboard-header">
             <div>
-                <h1>📡 PXE Boot Dashboard</h1>
+                <h1>ðŸ“¡ PXE Boot Dashboard</h1>
                 <p class="text-muted">Network boot monitoring and management</p>
             </div>
             <div class="user-info">
                 <span class="user-email">@currentUser.Email</span>
                 @if (currentUser.IsSubscribed) {
-                    <span class="badge badge-success">✓ Pro</span>
+                    <span class="badge badge-success">âœ“ Pro</span>
                 } else {
                     <button @onclick="NavigateToSubscription" class="btn btn-success">
                         Upgrade to Pro $20/mo
@@ -4650,15 +6537,15 @@ FILE: ProPXEServer.Client\Pages\Home.razor
 
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">📊</div>
+                <div class="stat-icon">ðŸ“Š</div>
                 <div class="stat-content">
                     <div class="stat-value">@bootEvents.Count</div>
                     <div class="stat-label">Total Boot Events</div>
-                    <div class="stat-trend text-success">↑ @GetTodayEvents() today</div>
+                    <div class="stat-trend text-success">â†‘ @GetTodayEvents() today</div>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🖥️</div>
+                <div class="stat-icon">ðŸ–¥ï¸</div>
                 <div class="stat-content">
                     <div class="stat-value">@activeClients</div>
                     <div class="stat-label">Active Clients (24h)</div>
@@ -4666,7 +6553,7 @@ FILE: ProPXEServer.Client\Pages\Home.razor
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">📦</div>
+                <div class="stat-icon">ðŸ“¦</div>
                 <div class="stat-content">
                     <div class="stat-value">11</div>
                     <div class="stat-label">Boot Files Ready</div>
@@ -4674,7 +6561,7 @@ FILE: ProPXEServer.Client\Pages\Home.razor
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">⚡</div>
+                <div class="stat-icon">âš¡</div>
                 <div class="stat-content">
                     <div class="stat-value">@GetSuccessRate()%</div>
                     <div class="stat-label">Success Rate</div>
@@ -4686,9 +6573,9 @@ FILE: ProPXEServer.Client\Pages\Home.razor
         <div class="dashboard-grid">
             <div class="events-section card">
                 <div class="section-header">
-                    <h2>🔌 Recent Boot Events</h2>
+                    <h2>ðŸ”Œ Recent Boot Events</h2>
                     <button @onclick="RefreshData" class="btn btn-sm">
-                        <span class="refresh-icon">⟳</span> Refresh
+                        <span class="refresh-icon">âŸ³</span> Refresh
                     </button>
                 </div>
                 <div class="events-list">
@@ -4704,7 +6591,7 @@ FILE: ProPXEServer.Client\Pages\Home.razor
                                     <div class="event-type">@evt.EventType</div>
                                     <div class="event-info">
                                         <span class="badge badge-info">@evt.MacAddress</span>
-                                        <span class="text-muted">→</span>
+                                        <span class="text-muted">â†’</span>
                                         <span>@evt.IpAddress</span>
                                     </div>
                                 </div>
@@ -4720,33 +6607,33 @@ FILE: ProPXEServer.Client\Pages\Home.razor
 
             <div class="bootfiles-section card">
                 <div class="section-header">
-                    <h2>📁 netboot.xyz Boot Files</h2>
+                    <h2>ðŸ“ netboot.xyz Boot Files</h2>
                     <span class="badge badge-success">Deployed</span>
                 </div>
                 <div class="bootfiles-grid">
                     <div class="bootfile-item">
-                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-icon">ðŸ’¿</div>
                         <div class="bootfile-info">
                             <div class="bootfile-name">netboot.xyz.kpxe</div>
                             <span class="badge badge-info">BIOS</span>
                         </div>
                     </div>
                     <div class="bootfile-item">
-                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-icon">ðŸ’¿</div>
                         <div class="bootfile-info">
                             <div class="bootfile-name">netboot.xyz.efi</div>
                             <span class="badge badge-success">UEFI x64</span>
                         </div>
                     </div>
                     <div class="bootfile-item">
-                        <div class="bootfile-icon">💿</div>
+                        <div class="bootfile-icon">ðŸ’¿</div>
                         <div class="bootfile-info">
                             <div class="bootfile-name">netboot.xyz-arm64.efi</div>
                             <span class="badge badge-warning">ARM64</span>
                         </div>
                     </div>
                     <div class="bootfile-item">
-                        <div class="bootfile-icon">📚</div>
+                        <div class="bootfile-icon">ðŸ“š</div>
                         <div class="bootfile-info">
                             <div class="bootfile-name">100+ OS Options</div>
                             <span class="badge badge-info">Ready</span>
@@ -4754,24 +6641,24 @@ FILE: ProPXEServer.Client\Pages\Home.razor
                     </div>
                 </div>
                 <button @onclick="NavigateToFiles" class="btn btn-primary btn-block">
-                    Manage Boot Files →
+                    Manage Boot Files â†’
                 </button>
             </div>
         </div>
 
         <div class="quick-actions">
             <button @onclick="NavigateToFiles" class="action-card">
-                <span class="action-icon">📁</span>
+                <span class="action-icon">ðŸ“</span>
                 <span class="action-label">Boot Files</span>
                 <span class="action-desc">Upload & manage</span>
             </button>
             <button @onclick="RefreshData" class="action-card">
-                <span class="action-icon">🔄</span>
+                <span class="action-icon">ðŸ”„</span>
                 <span class="action-label">Refresh</span>
                 <span class="action-desc">Update stats</span>
             </button>
             <button @onclick="NavigateToSubscription" class="action-card">
-                <span class="action-icon">⭐</span>
+                <span class="action-icon">â­</span>
                 <span class="action-label">Upgrade</span>
                 <span class="action-desc">Go Pro $20/mo</span>
             </button>
@@ -5134,11 +7021,11 @@ FILE: ProPXEServer.Client\Pages\Home.razor
     }
 
     private string GetEventIcon(string eventType) => eventType switch {
-        var t when t.Contains("DHCP") => "🌐",
-        var t when t.Contains("TFTP") => "📦",
-        var t when t.Contains("HTTP") => "🔗",
-        var t when t.Contains("Boot") => "🚀",
-        _ => "🔌"
+        var t when t.Contains("DHCP") => "ðŸŒ",
+        var t when t.Contains("TFTP") => "ðŸ“¦",
+        var t when t.Contains("HTTP") => "ðŸ”—",
+        var t when t.Contains("Boot") => "ðŸš€",
+        _ => "ðŸ”Œ"
     };
 
     private string GetTimeAgo(DateTime timestamp) {
@@ -5158,17 +7045,17 @@ FILE: ProPXEServer.Client\Pages\Home.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Login.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Login.razor
+==============================================================================
 @page "/login"
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
 <div class="login-container">
     <div class="login-card">
-        <h1>🚀 ProPXE Server</h1>
+        <h1>ðŸš€ ProPXE Server</h1>
         <p class="subtitle">Network Boot Made Simple</p>
 
         @if (!string.IsNullOrEmpty(errorMessage)) {
@@ -5345,10 +7232,10 @@ FILE: ProPXEServer.Client\Pages\Login.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\NotFound.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\NotFound.razor
+==============================================================================
 @page "/not-found"
 @layout MainLayout
 
@@ -5356,10 +7243,10 @@ FILE: ProPXEServer.Client\Pages\NotFound.razor
 <p>Sorry, the content you are looking for does not exist.</p>
 
 
-======================================
-FILE: ProPXEServer.Client\Pages\Subscription.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Pages\Subscription.razor
+==============================================================================
 @page "/subscription"
 @inject HttpClient Http
 @inject AuthService AuthService
@@ -5368,9 +7255,9 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
 
 <div class="subscription-container">
     <header class="page-header">
-        <h1>💳 Subscription</h1>
+        <h1>ðŸ’³ Subscription</h1>
         <button @onclick="NavigateHome" class="btn btn-back">
-            ← Back
+            â† Back
         </button>
     </header>
 
@@ -5379,7 +7266,7 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
     } else if (currentUser.IsSubscribed) {
         <div class="subscription-active">
             <div class="status-card">
-                <div class="status-icon">✓</div>
+                <div class="status-icon">âœ“</div>
                 <h2>Active Subscription</h2>
                 <p class="status-label">Status: <span class="status-active">@currentUser.SubscriptionStatus</span></p>
                 @if (currentUser.SubscriptionExpiry.HasValue) {
@@ -5394,11 +7281,11 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
 
             <div class="features-list">
                 <h3>Your Benefits</h3>
-                <div class="feature">✓ Unlimited boot files</div>
-                <div class="feature">✓ Real-time monitoring</div>
-                <div class="feature">✓ WebDAV access</div>
-                <div class="feature">✓ API access</div>
-                <div class="feature">✓ Priority support</div>
+                <div class="feature">âœ“ Unlimited boot files</div>
+                <div class="feature">âœ“ Real-time monitoring</div>
+                <div class="feature">âœ“ WebDAV access</div>
+                <div class="feature">âœ“ API access</div>
+                <div class="feature">âœ“ Priority support</div>
             </div>
         </div>
     } else {
@@ -5412,12 +7299,12 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
                 </div>
                 
                 <div class="features">
-                    <div class="feature">✓ Unlimited boot files & configurations</div>
-                    <div class="feature">✓ Real-time PXE monitoring & analytics</div>
-                    <div class="feature">✓ WebDAV file management</div>
-                    <div class="feature">✓ REST API access</div>
-                    <div class="feature">✓ Priority email support</div>
-                    <div class="feature">✓ 30-day money-back guarantee</div>
+                    <div class="feature">âœ“ Unlimited boot files & configurations</div>
+                    <div class="feature">âœ“ Real-time PXE monitoring & analytics</div>
+                    <div class="feature">âœ“ WebDAV file management</div>
+                    <div class="feature">âœ“ REST API access</div>
+                    <div class="feature">âœ“ Priority email support</div>
+                    <div class="feature">âœ“ 30-day money-back guarantee</div>
                 </div>
 
                 <button @onclick="StartCheckout" 
@@ -5426,11 +7313,11 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
                     @if (isProcessing) {
                         <span>Processing...</span>
                     } else {
-                        <span>Subscribe Now →</span>
+                        <span>Subscribe Now â†’</span>
                     }
                 </button>
 
-                <p class="secure-note">🔒 Secure payment via Stripe</p>
+                <p class="secure-note">ðŸ”’ Secure payment via Stripe</p>
             </div>
 
             <div class="faq-section">
@@ -5715,10 +7602,10 @@ FILE: ProPXEServer.Client\Pages\Subscription.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Properties\launchSettings.json
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Properties\launchSettings.json
+==============================================================================
 {
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
@@ -5747,10 +7634,10 @@ FILE: ProPXEServer.Client\Properties\launchSettings.json
 
 
 
-======================================
-FILE: ProPXEServer.Client\Services\AuthenticationHeaderHandler.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Services\AuthenticationHeaderHandler.cs
+==============================================================================
 using System.Net.Http.Headers;
 using Blazored.LocalStorage;
 
@@ -5773,10 +7660,10 @@ public class AuthenticationHeaderHandler(ILocalStorageService localStorage) : De
 
 
 
-======================================
-FILE: ProPXEServer.Client\Services\AuthService.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Services\AuthService.cs
+==============================================================================
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -5882,10 +7769,10 @@ public class AuthService(HttpClient httpClient, ILocalStorageService localStorag
 
 
 
-======================================
-FILE: ProPXEServer.Client\Services\CustomAuthStateProvider.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Services\CustomAuthStateProvider.cs
+==============================================================================
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Blazored.LocalStorage;
@@ -5943,10 +7830,10 @@ public class CustomAuthStateProvider(ILocalStorageService localStorage) : Authen
 
 
 
-======================================
-FILE: ProPXEServer.Client\Shared\RedirectToLogin.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Shared\RedirectToLogin.razor
+==============================================================================
 @inject NavigationManager Navigation
 
 @code {
@@ -5958,14 +7845,14 @@ FILE: ProPXEServer.Client\Shared\RedirectToLogin.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\Shared\ThemeToggle.razor
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Client\Shared\ThemeToggle.razor
+==============================================================================
 @inject IJSRuntime JS
 
 <button class="theme-toggle" @onclick="ToggleTheme" title="Toggle Dark/Light Mode">
-    @(isDarkMode ? "🌙" : "☀️")
+    @(isDarkMode ? "ðŸŒ™" : "â˜€ï¸")
 </button>
 
 @code {
@@ -5997,170 +7884,10 @@ FILE: ProPXEServer.Client\Shared\ThemeToggle.razor
 
 
 
-======================================
-FILE: ProPXEServer.Client\wwwroot\sample-data\weather.json
-======================================
 
-[
-  {
-    "date": "2022-01-06",
-    "temperatureC": 1,
-    "summary": "Freezing"
-  },
-  {
-    "date": "2022-01-07",
-    "temperatureC": 14,
-    "summary": "Bracing"
-  },
-  {
-    "date": "2022-01-08",
-    "temperatureC": -13,
-    "summary": "Freezing"
-  },
-  {
-    "date": "2022-01-09",
-    "temperatureC": -16,
-    "summary": "Balmy"
-  },
-  {
-    "date": "2022-01-10",
-    "temperatureC": -2,
-    "summary": "Chilly"
-  }
-]
-
-
-
-======================================
-FILE: ProPXEServer.Client\wwwroot\appsettings.json
-======================================
-
-{
-    "ApiBaseUrl": "https://localhost:7001"
-}
-
-
-======================================
-FILE: ProPXEServer.Client\_Imports.razor
-======================================
-
-@using System.Net.Http
-@using System.Net.Http.Json
-@using Microsoft.AspNetCore.Components.Forms
-@using Microsoft.AspNetCore.Components.Routing
-@using Microsoft.AspNetCore.Components.Web
-@using Microsoft.AspNetCore.Components.Web.Virtualization
-@using Microsoft.AspNetCore.Components.WebAssembly.Http
-@using Microsoft.JSInterop
-@using ProPXEServer.Client
-@using ProPXEServer.Client.Layout
-@using Microsoft.AspNetCore.Components.Authorization
-@using ProPXEServer.Client.Services
-@using ProPXEServer.Client.Shared
-
-
-
-
-======================================
-FILE: ProPXEServer.Client\App.razor
-======================================
-
-<CascadingAuthenticationState>
-    <Router AppAssembly="@typeof(App).Assembly">
-        <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
-                <NotAuthorized>
-                    @if (context.User.Identity?.IsAuthenticated != true)
-                    {
-                        <RedirectToLogin />
-                    }
-                    else
-                    {
-                        <p role="alert">You are not authorized to access this resource.</p>
-                    }
-                </NotAuthorized>
-            </AuthorizeRouteView>
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
-            </LayoutView>
-        </NotFound>
-    </Router>
-</CascadingAuthenticationState>
-
-
-
-======================================
-FILE: ProPXEServer.Client\Program.cs
-======================================
-
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Blazored.LocalStorage;
-using Microsoft.AspNetCore.Components.Authorization;
-using ProPXEServer.Client;
-using ProPXEServer.Client.Services;
-
-var builder = WebAssemblyHostBuilder.CreateDefault(args);
-builder.RootComponents.Add<App>("#app");
-builder.RootComponents.Add<HeadOutlet>("head::after");
-
-builder.Services.AddBlazoredLocalStorage();
-
-builder.Services.AddScoped<CustomAuthStateProvider>();
-builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<AuthenticationHeaderHandler>();
-builder.Services.AddAuthorizationCore();
-
-builder.Services.AddHttpClient("ProPXEServer.API", client => {
-    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/");
-})
-.AddHttpMessageHandler<AuthenticationHeaderHandler>();
-
-builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
-    .CreateClient("ProPXEServer.API"));
-
-await builder.Build().RunAsync();
-
-
-
-
-
-======================================
-FILE: ProPXEServer.Client\ProPXEServer.Client.csproj
-======================================
-
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <LangVersion>14</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
-  </ItemGroup>
-
-</Project>
-
-
-
-======================================
-FILE: ProPXEServer.Plugin\Class1.cs
-======================================
-
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Plugin\Class1.cs
+==============================================================================
 namespace ProPXEServer.Plugin;
 
 public class Class1
@@ -6171,17 +7898,17 @@ public class Class1
 
 
 
-======================================
-FILE: ProPXEServer.Plugin\plugin.json
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Plugin\plugin.json
+==============================================================================
 {
     "id": "propxeserver",
     "name": "ProPXEServer",
     "version": "1.0.0",
     "description": "PXE network boot server",
     "author": "Mass Suite Team",
-    "icon": "🖥️",
+    "icon": "ðŸ–¥ï¸",
     "entryAssembly": "ProPXEServer.Plugin.dll",
     "entryType": "ProPXEServer.Plugin.ProPXEServerPlugin",
     "dependencies": [],
@@ -6193,10 +7920,10 @@ FILE: ProPXEServer.Plugin\plugin.json
 }
 
 
-======================================
-FILE: ProPXEServer.Plugin\ProPXEServer.Plugin.csproj
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Plugin\ProPXEServer.Plugin.csproj
+==============================================================================
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -6224,10 +7951,10 @@ FILE: ProPXEServer.Plugin\ProPXEServer.Plugin.csproj
 
 
 
-======================================
-FILE: ProPXEServer.Plugin\ProPXEServerPlugin.cs
-======================================
 
+==============================================================================
+File: \src\ProPXEServer\ProPXEServer.Plugin\ProPXEServerPlugin.cs
+==============================================================================
 using Mass.Core.Abstractions;
 using Mass.Core.Plugins;
 using Microsoft.Extensions.DependencyInjection;
@@ -6246,7 +7973,7 @@ public class ProPXEServerPlugin : IModule
         Version = "1.0.0",
         Description = "PXE network boot server",
         Author = "Mass Suite Team",
-        Icon = "🖥️",
+        Icon = "ðŸ–¥ï¸",
         EntryAssembly = "ProPXEServer.Plugin.dll",
         EntryType = "ProPXEServer.Plugin.ProPXEServerPlugin",
         Enabled = true,
@@ -6327,8 +8054,4 @@ public class ProPXEServerPlugin : IModule
 
 
 
-
-================================================================================
-END OF PROPXESERVER DOCUMENTATION
-================================================================================
 

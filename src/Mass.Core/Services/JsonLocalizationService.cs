@@ -11,7 +11,7 @@ namespace Mass.Core.Services;
 public class JsonLocalizationService : ILocalizationService
 {
     private readonly string _localesPath;
-    private Dictionary<string, string> _currentStrings = new();
+    private System.Collections.Frozen.FrozenDictionary<string, string> _currentStrings = System.Collections.Frozen.FrozenDictionary<string, string>.Empty;
     private CultureInfo _currentCulture = new("en-US");
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -38,7 +38,7 @@ public class JsonLocalizationService : ILocalizationService
     {
         _localesPath = localesPath;
         LoadAvailableCultures();
-        LoadLanguage("en-US"); // Default
+        LoadLanguage("en-US");
     }
 
     public string GetString(string key)
@@ -67,7 +67,7 @@ public class JsonLocalizationService : ILocalizationService
                     var code = Path.GetFileNameWithoutExtension(file);
                     cultures.Add(new CultureInfo(code));
                 }
-                catch { /* Ignore invalid filenames */ }
+                catch { }
             }
         }
         
@@ -90,21 +90,19 @@ public class JsonLocalizationService : ILocalizationService
                 var strings = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                 if (strings != null)
                 {
-                    _currentStrings = strings;
+                    _currentStrings = System.Collections.Frozen.FrozenDictionary.ToFrozenDictionary(strings);
                     CurrentCulture = new CultureInfo(cultureCode);
                     return;
                 }
             }
             catch
             {
-                // Log error
             }
         }
 
-        // Fallback to empty if not found, or keep previous if failure
         if (_currentStrings.Count == 0)
         {
-             _currentStrings = new Dictionary<string, string>();
+             _currentStrings = System.Collections.Frozen.FrozenDictionary<string, string>.Empty;
              CurrentCulture = new CultureInfo(cultureCode);
         }
     }

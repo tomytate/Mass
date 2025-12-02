@@ -38,6 +38,9 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Coding Standards
 
+- **No Comments**: Code must be self-documenting. Do not leave comments.
+- **Chronological Ordering**: Members must be ordered chronologically (Fields → Constructors → Properties → Methods).
+- **No TODOs**: Complete all tasks before merging.
 - Follow `.editorconfig` conventions
 - Use C# 14 features where appropriate
 - Maintain 80%+ test coverage for new code
@@ -52,11 +55,11 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 src/
 ├── Mass.Launcher/    # Platform launcher
 ├── Mass.Core/        # Core abstractions
-├── ProUSB/          # ProUSB tool
-└── MassBoot/        # MassBoot server
+├── Mass.CLI/         # Command-line interface
+├── ProUSB/           # ProUSB tool
+└── ProPXEServer/     # ProPXEServer
 
-tests/               # Unit & integration tests
-plugins/             # First-party plugins
+tests/                # Unit & integration tests
 ```
 
 ## Building

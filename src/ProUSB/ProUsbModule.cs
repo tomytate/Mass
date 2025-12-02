@@ -55,7 +55,6 @@ public class ProUsbModule : IModule
         s.AddSingleton<PxeBootImageService>();
         s.AddSingleton<OsCatalogService>();
         s.AddSingleton<IsoDownloadService>();
-        s.AddSingleton<Services.IUsbBurnerService, Services.UsbBurnerService>();
         s.AddTransient<MainViewModel>();
     }
 

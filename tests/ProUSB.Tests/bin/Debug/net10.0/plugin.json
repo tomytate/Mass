@@ -1,0 +1,13 @@
+{
+  "id": "prousb",
+  "name": "ProUSB",
+  "version": "1.0.0",
+  "description": "USB bootable media creator",
+  "author": "Mass Suite Team",
+  "icon": "💾",
+  "entryAssembly": "ProUSB.dll",
+  "entryType": "ProUSB.ProUsbModule",
+  "dependencies": [],
+  "permissions": ["disk_access", "filesystem"],
+  "enabled": true
+}
