@@ -139,8 +139,13 @@ public class SubscriptionController(
                 stripeEvent = EventUtility.ConstructEvent(
                     json,
                     Request.Headers["Stripe-Signature"],
-                    webhookSecret
+                    webhookSecret,
+                    throwOnApiVersionMismatch: true
                 );
+            }
+            catch (StripeException ex) {
+                logger.LogWarning(ex, "Invalid Stripe webhook signature from {IP}", HttpContext.Connection.RemoteIpAddress);
+                return Unauthorized("Invalid signature");
             }
             catch (Exception ex) {
                 logger.LogError(ex, "Webhook signature verification failed");

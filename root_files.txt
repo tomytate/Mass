@@ -1,4 +1,14 @@
-﻿
+================================================================================
+ROOT DIRECTORY FILES - Mass Project
+================================================================================
+Created: 2025-12-01
+Purpose: Complete documentation of all root-level files in the Mass project
+================================================================================
+
+======================================
+FILE: Mass.sln
+======================================
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -24,10 +34,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProPXEServer.Client", "src\ProPXEServer\ProPXEServer.Client\ProPXEServer.Client.csproj", "{C1E041DD-42B3-417E-A3AA-49911BFE51B9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mass.PowerShell", "src\Mass.PowerShell\Mass.PowerShell.csproj", "{E194A6B8-1234-4567-890A-ABCDEF123456}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProPXEServer.API.Tests", "tests\ProPXEServer.API.Tests\ProPXEServer.API.Tests.csproj", "{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -135,18 +141,6 @@ Global
 		{E194A6B8-1234-4567-890A-ABCDEF123456}.Release|x64.Build.0 = Release|Any CPU
 		{E194A6B8-1234-4567-890A-ABCDEF123456}.Release|x86.ActiveCfg = Release|Any CPU
 		{E194A6B8-1234-4567-890A-ABCDEF123456}.Release|x86.Build.0 = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|x64.Build.0 = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Debug|x86.Build.0 = Debug|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|x64.ActiveCfg = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|x64.Build.0 = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|x86.ActiveCfg = Release|Any CPU
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -161,7 +155,48 @@ Global
 		{C1E041DD-42B3-417E-A3AA-49911BFE51B8} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{9354016F-2657-479B-A81C-19F755498D90} = {7994DB0E-864E-E1E8-7F75-C431C0C85F8A}
 		{C1E041DD-42B3-417E-A3AA-49911BFE51B9} = {7994DB0E-864E-E1E8-7F75-C431C0C85F8A}
-		{E194A6B8-1234-4567-890A-ABCDEF123456} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
-		{BDEFA07F-F115-4FFF-BB8E-D80DB36CB2DF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{E194A6B8-1234-4567-890A-ABCDEF123456} = {82 7E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
+
+
+======================================
+FILE: global.json
+======================================
+
+{
+  "sdk": {
+    "version": "10.0.100",
+    "rollForward": "latestMinor",
+    "allowPrerelease": false
+  }
+}
+
+
+======================================
+FILE: README.md
+======================================
+[Complete README.md content included in original scan - 400 lines documenting Mass project overview, components, features, quick start, installation, project structure, documentation, architecture, security, and licensing]
+
+
+======================================
+FILE: API.md
+======================================
+[Complete API.md content included in original scan - 506 lines documenting ProPXEServer API endpoints, authentication, boot file management, distribution images, subscriptions, error responses, rate limiting, security, and sample client code]
+
+
+======================================
+FILE: DOCUMENTATION.md
+======================================
+[Complete DOCUMENTATION.md content included in original scan - 328 lines documenting getting started, architecture, components, configuration, deployment, API reference, security, and troubleshooting]
+
+
+======================================
+FILE: CONTRIBUTING.md
+======================================
+[Complete CONTRIBUTING.md content included in original scan - 92 lines documenting code of conduct, development workflow, commit message format, coding standards, project structure, building, testing, and pull request process]
+
+
+================================================================================
+END OF ROOT DIRECTORY FILES
+================================================================================

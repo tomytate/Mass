@@ -186,6 +186,12 @@ public class DhcpService(
         offset = AddDhcpOption(response, offset, 54, serverIp);
         offset = AddDhcpOption(response, offset, 60, "PXEClient"u8.ToArray());
         
+        // Option 66: TFTP Server Name
+        offset = AddDhcpOption(response, offset, 66, System.Text.Encoding.ASCII.GetBytes(_advertisedIp));
+
+        // Option 67: Bootfile Name
+        offset = AddDhcpOption(response, offset, 67, System.Text.Encoding.ASCII.GetBytes(bootFile));
+
         byte[] pxeOptions = [0x08, 0x00, 0x00, 0x00];
         offset = AddDhcpOption(response, offset, 43, pxeOptions);
         response[offset++] = 0xFF;

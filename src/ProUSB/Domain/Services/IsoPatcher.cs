@@ -143,8 +143,19 @@ public class IsoPatcher {
                     File.SetAttributes(filePath, attr & ~FileAttributes.ReadOnly);
                 }
                 
-                await File.WriteAllTextAsync(filePath, content, ct);
-                _log.Info($"Saved patched config file: {filePath}");
+                // Atomic write: Write to temp file, then move/replace
+                string tempFile = filePath + ".tmp";
+                await File.WriteAllTextAsync(tempFile, content, ct);
+                
+                try {
+                    File.Move(tempFile, filePath, overwrite: true);
+                    _log.Info($"Saved patched config file (atomic): {filePath}");
+                } catch (Exception ex) {
+                    _log.Error($"Atomic move failed for {filePath}: {ex.Message}");
+                    // Fallback to direct write if move fails (unlikely but safe)
+                    await File.WriteAllTextAsync(filePath, content, ct);
+                    File.Delete(tempFile);
+                }
             }
 
         } catch (Exception ex) {
@@ -152,6 +163,3 @@ public class IsoPatcher {
         }
     }
 }
-
-
-

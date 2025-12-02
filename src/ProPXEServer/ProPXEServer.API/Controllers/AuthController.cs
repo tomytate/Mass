@@ -121,7 +121,16 @@ public class AuthController(
 
     private string GenerateJwtToken(ApplicationUser user) {
         var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT secret key not configured");
+        var secretKey = jwtSettings["SecretKey"];
+        
+        if (string.IsNullOrEmpty(secretKey)) {
+            logger.LogCritical("SECURITY: JWT secret key not configured");
+            throw new InvalidOperationException("Authentication disabled - JWT secret missing");
+        }
+        
+        if (secretKey.Length < 32) {
+            throw new InvalidOperationException("JWT secret must be at least 32 characters");
+        }
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

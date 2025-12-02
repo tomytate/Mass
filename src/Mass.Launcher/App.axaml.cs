@@ -47,7 +47,10 @@ public partial class App : Application
         builder.Services.AddSingleton<Mass.Core.Updates.IUpdateService, Mass.Core.Updates.UpdateService>();
         builder.Services.AddSingleton<Mass.Core.Updates.IRollbackService, Mass.Core.Updates.RollbackService>();
         builder.Services.AddSingleton<Mass.Core.UI.IOperationsConsoleService, Mass.Core.UI.OperationsConsoleService>();
+        builder.Services.AddSingleton<Mass.Core.UI.IOperationsConsoleService, Mass.Core.UI.OperationsConsoleService>();
         builder.Services.AddSingleton<Mass.Core.UI.ICommandPaletteService, Mass.Core.UI.CommandPaletteService>();
+        builder.Services.AddSingleton<IDialogService, DialogService>();
+        builder.Services.AddSingleton<Mass.Core.Services.IIpcService, Mass.Core.Services.IpcService>();
         
         // Telemetry
         builder.Services.AddSingleton<ITelemetryService, LocalTelemetryService>();

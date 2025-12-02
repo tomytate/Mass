@@ -501,6 +501,11 @@ public class NativeDiskFormatter {
         _log.Info($"Step 5: Formatting volume {volumePath} as {fileSystem}, Label: {label}");
         string driveLetter = volumePath.Replace(@"\\.\", "") + "\\";
         
+        if (fileSystem.Equals("ext4", StringComparison.OrdinalIgnoreCase)) {
+            _log.Warn($"Ext4 formatting requested for {volumePath}. Windows format.com does not support Ext4. Skipping format (Partition created but unformatted).");
+            return;
+        }
+
         await Task.Run(() => {
              var psi = new System.Diagnostics.ProcessStartInfo {
                  FileName = "format.com",

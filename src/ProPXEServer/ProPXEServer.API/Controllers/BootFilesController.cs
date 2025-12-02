@@ -91,14 +91,26 @@ public class BootFilesController : ControllerBase {
                 return BadRequest("File path required");
             }
 
-            var filePath = Path.Combine(_pxeRoot, path);
+            // Sanitize: allow only alphanumeric, dash, underscore, dot, forward slash
+            if (!System.Text.RegularExpressions.Regex.IsMatch(path, @"^[a-zA-Z0-9_\-\.\/]+$")) {
+                _logger.LogWarning("Blocked suspicious path: {Path}", path);
+                return BadRequest("Invalid path characters");
+            }
+
+            var fullPath = Path.GetFullPath(Path.Combine(_pxeRoot, path));
             
-            if (!System.IO.File.Exists(filePath)) {
+            // Prevent directory traversal
+            if (!fullPath.StartsWith(_pxeRoot, StringComparison.OrdinalIgnoreCase)) {
+                _logger.LogWarning("Directory traversal attempt: {Path}", path);
+                return Forbid();
+            }
+            
+            if (!System.IO.File.Exists(fullPath)) {
                 return NotFound("File not found");
             }
 
-            var fileBytes = System.IO.File.ReadAllBytes(filePath);
-            var fileName = Path.GetFileName(filePath);
+            var fileBytes = System.IO.File.ReadAllBytes(fullPath);
+            var fileName = Path.GetFileName(fullPath);
             
             return File(fileBytes, "application/octet-stream", fileName);
         }

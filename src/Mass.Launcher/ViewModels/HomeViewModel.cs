@@ -21,16 +21,21 @@ public partial class HomeViewModel : ViewModelBase
     public string WelcomeMessage { get; }
     public string VersionInfo { get; }
 
+    private readonly IDialogService _dialogService;
+
     public HomeViewModel(
         INavigationService navigationService,
         IStatusService statusService,
-        IActivityService activityService)
+        IActivityService activityService,
+        IDialogService dialogService)
     {
         _navigationService = navigationService;
         _statusService = statusService;
         _activityService = activityService;
+        _dialogService = dialogService;
         
         Title = "Home";
+        // ... (rest of constructor)
         
         WelcomeMessage = $"Welcome to Mass Suite";
         VersionInfo = "v1.0.0 - .NET 10.0";
@@ -104,32 +109,39 @@ public partial class HomeViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void NavigateToModule(string target)
+    private async Task NavigateToModule(string target)
     {
-        switch (target)
+        try
         {
-            case "ProUSB":
-                _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>();
-                break;
-            case "MassBoot":
-                // TODO: Navigate to MassBoot when ready
-                break;
-            case "Workflows":
-                _navigationService.NavigateTo<WorkflowsViewModel>();
-                break;
-            case "Plugins":
-                _navigationService.NavigateTo<PluginsViewModel>();
-                break;
-            case "Settings":
-                _navigationService.NavigateTo<SettingsViewModel>();
-                break;
+            switch (target)
+            {
+                case "ProUSB":
+                    _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>();
+                    break;
+                case "MassBoot":
+                    // TODO: Navigate to MassBoot when ready
+                    break;
+                case "Workflows":
+                    _navigationService.NavigateTo<WorkflowsViewModel>();
+                    break;
+                case "Plugins":
+                    _navigationService.NavigateTo<PluginsViewModel>();
+                    break;
+                case "Settings":
+                    _navigationService.NavigateTo<SettingsViewModel>();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await _dialogService.ShowErrorDialogAsync("Navigation Error", $"Failed to navigate to {target}: {ex.Message}");
         }
     }
     
     [RelayCommand]
-    private void NavigateToFavorite(FavoriteItem favorite)
+    private async Task NavigateToFavorite(FavoriteItem favorite)
     {
-        NavigateToModule(favorite.Target);
+        await NavigateToModule(favorite.Target);
     }
 }
 
