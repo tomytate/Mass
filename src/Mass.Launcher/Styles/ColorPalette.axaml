@@ -2,37 +2,37 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <!-- Primary Colors -->
-    <Color x:Key="PrimaryColor">#6366F1</Color>
+    <Color x:Key="PrimaryColor">#58a6ff</Color>
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
     
     <!-- Success/Positive -->
-    <Color x:Key="SuccessColor">#10B981</Color>
+    <Color x:Key="SuccessColor">#3fb950</Color>
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     
     <!-- Info/Informational -->
-    <Color x:Key="InfoColor">#3B82F6</Color>
+    <Color x:Key="InfoColor">#58a6ff</Color>
     <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
     
     <!-- Warning -->
-    <Color x:Key="WarningColor">#F59E0B</Color>
+    <Color x:Key="WarningColor">#d29922</Color>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     
     <!-- Error/Danger -->
-    <Color x:Key="ErrorColor">#EF4444</Color>
+    <Color x:Key="ErrorColor">#f85149</Color>
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
     
     <!-- Danger (Critical) -->
-    <Color x:Key="DangerColor">#DC2626</Color>
+    <Color x:Key="DangerColor">#cf222e</Color>
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
     
     <!-- Background Layers -->
-    <Color x:Key="BackgroundPrimaryColor">#1A1A1A</Color>
+    <Color x:Key="BackgroundPrimaryColor">#0d1117</Color>
     <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimaryColor}"/>
     
-    <Color x:Key="BackgroundSecondaryColor">#2D2D2D</Color>
+    <Color x:Key="BackgroundSecondaryColor">#161b22</Color>
     <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondaryColor}"/>
     
-    <Color x:Key="BackgroundTertiaryColor">#333333</Color>
+    <Color x:Key="BackgroundTertiaryColor">#21262d</Color>
     <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiaryColor}"/>
     
     <Color x:Key="BackgroundHoverColor">#3D3D3D</Color>
@@ -49,7 +49,7 @@
     <SolidColorBrush x:Key="ConsoleTextBrush" Color="{StaticResource ConsoleTextColor}"/>
     
     <!-- Borders & Dividers -->
-    <Color x:Key="BorderColor">#404040</Color>
+    <Color x:Key="BorderColor">#30363d</Color>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     
     <Color x:Key="DividerColor">#2D2D2D</Color>

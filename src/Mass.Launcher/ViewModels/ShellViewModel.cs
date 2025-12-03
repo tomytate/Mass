@@ -81,7 +81,7 @@ public partial class ShellViewModel : ViewModelBase
     public async Task NavigateHome() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
 
     [RelayCommand]
-    public async Task NavigateProUsb() => await SafeNavigate(() => _navigationService.NavigateTo<MainViewModel>());
+    public async Task NavigateProUSB() => await SafeNavigate(() => _navigationService.NavigateTo<MainViewModel>());
 
     [RelayCommand]
     public async Task NavigateSettings() => await SafeNavigate(() => _navigationService.NavigateTo<SettingsViewModel>());
@@ -103,7 +103,7 @@ public partial class ShellViewModel : ViewModelBase
     public async Task NavigateOperationsConsole() => await SafeNavigate(() => _navigationService.NavigateTo<OperationsConsoleViewModel>());
 
     [RelayCommand]
-    public async Task NavigateMassBoot() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
+    public async Task NavigateProPXEServer() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
 
     [RelayCommand]
     public async Task NavigateScripting() => await SafeNavigate(() => _navigationService.NavigateTo<ScriptingViewModel>());

@@ -318,7 +318,7 @@
         isProcessing = true;
 
         try {
-            var response = await Http.PostAsync("/api/subscription/create-checkout", null);
+            var response = await Http.PostAsync("subscription/create-checkout", null);
             if (response.IsSuccessStatusCode) {
                 var result = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
                 if (result?.Url != null) {
@@ -334,7 +334,7 @@
 
     private async Task ManageBilling() {
         try {
-            var response = await Http.PostAsync("/api/subscription/portal", null);
+            var response = await Http.PostAsync("subscription/portal", null);
             if (response.IsSuccessStatusCode) {
                 var result = await response.Content.ReadFromJsonAsync<PortalResponse>();
                 if (result?.Url != null) {

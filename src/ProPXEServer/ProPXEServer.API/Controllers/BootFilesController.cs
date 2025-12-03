@@ -2,21 +2,31 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProPXEServer.API.Data;
+using System.Text.RegularExpressions;
+
+using Asp.Versioning;
 
 namespace ProPXEServer.API.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
-public class BootFilesController : ControllerBase {
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public partial class BootFilesController : ControllerBase {
     private readonly ApplicationDbContext _db;
     private readonly ILogger<BootFilesController> _logger;
     private readonly string _pxeRoot;
 
+    [GeneratedRegex(@"^[a-zA-Z0-9_\-\.]+$", RegexOptions.Compiled)]
+    private static partial Regex SafeFilenameRegex();
+    
+    [GeneratedRegex(@"^[a-zA-Z0-9_\-\.\/]+$", RegexOptions.Compiled)]
+    private static partial Regex SafePathRegex();
+
     public BootFilesController(ApplicationDbContext db, ILogger<BootFilesController> logger, IConfiguration config) {
         _db = db;
         _logger = logger;
-        _pxeRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pxe");
+        _pxeRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "www root", "pxe"));
     }
 
     [HttpGet]
@@ -46,18 +56,25 @@ public class BootFilesController : ControllerBase {
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Error listing boot files");
-            return StatusCode(500, "Error listing boot files");
+            return StatusCode(500, new { message = "Error listing boot files" });
         }
     }
 
     [HttpPost("upload")]
+    [RequestSizeLimit(500_000_000)]
     public async Task<IActionResult> UploadBootFile(IFormFile file) {
         if (file == null || file.Length == 0) {
-            return BadRequest("No file provided");
+            return BadRequest(new { message = "No file provided" });
         }
 
         try {
             var fileName = Path.GetFileName(file.FileName);
+            
+            if (!SafeFilenameRegex().IsMatch(fileName)) {
+                _logger.LogWarning("Rejected upload with unsafe filename: {FileName}", fileName);
+                return BadRequest(new { message = "Invalid filename. Use only alphanumeric, dash, underscore, and dot." });
+            }
+            
             var architecture = GetArchitectureFromFileName(fileName);
             var targetDir = Path.Combine(_pxeRoot, architecture.ToLower());
             
@@ -65,7 +82,12 @@ public class BootFilesController : ControllerBase {
             
             var filePath = Path.Combine(targetDir, fileName);
 
-            using (var stream = new FileStream(filePath, FileMode.Create)) {
+            if (!Path.GetFullPath(filePath).StartsWith(_pxeRoot, StringComparison.OrdinalIgnoreCase)) {
+                _logger.LogWarning("Path traversal attempt in upload: {FileName}", fileName);
+                return BadRequest(new { message = "Invalid file path" });
+            }
+
+            await using (var stream = new FileStream(filePath, FileMode.Create)) {
                 await file.CopyToAsync(stream);
             }
 
@@ -80,7 +102,7 @@ public class BootFilesController : ControllerBase {
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Error uploading boot file");
-            return StatusCode(500, "Error uploading boot file");
+            return StatusCode(500, new { message = "Error uploading boot file" });
         }
     }
 
@@ -88,25 +110,28 @@ public class BootFilesController : ControllerBase {
     public IActionResult DownloadBootFile(int id, [FromQuery] string? path) {
         try {
             if (string.IsNullOrEmpty(path)) {
-                return BadRequest("File path required");
+                return BadRequest(new { message = "File path required" });
             }
 
-            // Sanitize: allow only alphanumeric, dash, underscore, dot, forward slash
-            if (!System.Text.RegularExpressions.Regex.IsMatch(path, @"^[a-zA-Z0-9_\-\.\/]+$")) {
-                _logger.LogWarning("Blocked suspicious path: {Path}", path);
-                return BadRequest("Invalid path characters");
+            if (path.AsSpan().Contains("..", StringComparison.Ordinal)) {
+                _logger.LogWarning("Directory traversal attempt blocked: {Path}", path);
+                return BadRequest(new { message = "Invalid path" });
+            }
+
+            if (!SafePathRegex().IsMatch(path.AsSpan())) {
+                _logger.LogWarning("Blocked path with invalid characters: {Path}", path);
+                return BadRequest(new { message = "Invalid path characters" });
             }
 
             var fullPath = Path.GetFullPath(Path.Combine(_pxeRoot, path));
             
-            // Prevent directory traversal
             if (!fullPath.StartsWith(_pxeRoot, StringComparison.OrdinalIgnoreCase)) {
-                _logger.LogWarning("Directory traversal attempt: {Path}", path);
+                _logger.LogWarning("Directory traversal attempt (normalized): {Path} -> {FullPath}", path, fullPath);
                 return Forbid();
             }
             
             if (!System.IO.File.Exists(fullPath)) {
-                return NotFound("File not found");
+                return NotFound(new { message = "File not found" });
             }
 
             var fileBytes = System.IO.File.ReadAllBytes(fullPath);
@@ -116,7 +141,7 @@ public class BootFilesController : ControllerBase {
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Error downloading boot file");
-            return StatusCode(500, "Error downloading boot file");
+            return StatusCode(500, new { message = "Error downloading boot file" });
         }
     }
 
@@ -124,13 +149,22 @@ public class BootFilesController : ControllerBase {
     public async Task<IActionResult> DeleteBootFile(int id, [FromQuery] string? path) {
         try {
             if (string.IsNullOrEmpty(path)) {
-                return BadRequest("File path required");
+                return BadRequest(new { message = "File path required" });
             }
 
-            var filePath = Path.Combine(_pxeRoot, path);
+            if (path.Contains("..") || !SafePathRegex().IsMatch(path)) {
+                _logger.LogWarning("Invalid delete path: {Path}", path);
+                return BadRequest(new { message = "Invalid path" });
+            }
+
+            var filePath = Path.GetFullPath(Path.Combine(_pxeRoot, path));
+            
+            if (!filePath.StartsWith(_pxeRoot, StringComparison.OrdinalIgnoreCase)) {
+                return Forbid();
+            }
             
             if (!System.IO.File.Exists(filePath)) {
-                return NotFound("File not found");
+                return NotFound(new { message = "File not found" });
             }
 
             System.IO.File.Delete(filePath);
@@ -140,11 +174,11 @@ public class BootFilesController : ControllerBase {
         }
         catch (Exception ex) {
             _logger.LogError(ex, "Error deleting boot file");
-            return StatusCode(500, "Error deleting boot file");
+            return StatusCode(500, new { message = "Error deleting boot file" });
         }
     }
 
-    private string GetArchitecture(string filePath) {
+    private static string GetArchitecture(string filePath) {
         var fileName = Path.GetFileName(filePath).ToLowerInvariant();
         var directory = Path.GetDirectoryName(filePath)?.Split(Path.DirectorySeparatorChar).LastOrDefault()?.ToLowerInvariant();
 
@@ -155,7 +189,7 @@ public class BootFilesController : ControllerBase {
         return "Unknown";
     }
 
-    private string GetArchitectureFromFileName(string fileName) {
+    private static string GetArchitectureFromFileName(string fileName) {
         var lower = fileName.ToLowerInvariant();
         if (lower.Contains("arm64")) return "ARM64";
         if (lower.EndsWith(".efi")) return "UEFI";
@@ -163,5 +197,3 @@ public class BootFilesController : ControllerBase {
         return "BIOS";
     }
 }
-
-

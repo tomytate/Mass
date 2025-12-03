@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>14</LangVersion>
-    <Version>1.0.0</Version>
-    <Authors>Mass Suite Team</Authors>
-    <Company>Mass Suite</Company>
+    <Version>1.0.1</Version>
+    <Authors>Tomy Tolledo</Authors>
+    <Company>Tomy Tolledo</Company>
     <Product>Mass Launcher</Product>
   </PropertyGroup>
 

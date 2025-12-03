@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Stripe;
 using Stripe.Checkout;
 using ProPXEServer.API.Data;
+using Asp.Versioning;
 
 namespace ProPXEServer.API.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
 [Authorize]
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class SubscriptionController(
     UserManager<ApplicationUser> userManager,
     IConfiguration configuration,

@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Mass.Launcher.Views.SplashWindow"
+        Title="Mass Suite"
+        Width="400" Height="250"
+        WindowStartupLocation="CenterScreen"
+        CanResize="False"
+        SystemDecorations="None"
+        Background="#1E1E1E"
+        TransparencyLevelHint="AcrylicBlur">
+
+    <Border CornerRadius="8" BorderBrush="#3D3D3D" BorderThickness="1">
+        <Grid RowDefinitions="*, Auto, Auto">
+            <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
+                <TextBlock Text="MASS SUITE" 
+                           FontSize="32" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Professional Deployment Suite" 
+                           FontSize="12" 
+                           Foreground="#888888"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+            
+            <ProgressBar Grid.Row="1" 
+                         IsIndeterminate="True" 
+                         Height="4" 
+                         Margin="40,0"/>
+            
+            <TextBlock x:Name="StatusText"
+                       Grid.Row="2" 
+                       Text="Starting..." 
+                       FontSize="11" 
+                       Foreground="#666666"
+                       HorizontalAlignment="Center"
+                       Margin="0,15,0,20"/>
+        </Grid>
+    </Border>
+</Window>

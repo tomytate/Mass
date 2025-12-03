@@ -18,7 +18,7 @@ builder.Services.AddScoped<AuthenticationHeaderHandler>();
 builder.Services.AddAuthorizationCore();
 
 builder.Services.AddHttpClient("ProPXEServer.API", client => {
-    client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/");
+    client.BaseAddress = new Uri((builder.Configuration["ApiBaseUrl"] ?? "https://localhost:5001/") + "api/v1/");
 })
 .AddHttpMessageHandler<AuthenticationHeaderHandler>();
 

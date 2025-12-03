@@ -472,7 +472,7 @@
 
     private async Task LoadFiles() {
         try {
-            // bootFiles = await Http.GetFromJsonAsync<List<BootFile>>("/api/bootfiles") ?? [];
+            // bootFiles = await Http.GetFromJsonAsync<List<BootFile>>("bootfiles") ?? [];
         }
         catch { }
     }
@@ -521,7 +521,7 @@
                 await Task.Delay(100);
             }
 
-            var response = await Http.PostAsync("/api/bootfiles/upload", content);
+            var response = await Http.PostAsync("bootfiles/upload", content);
             
             if (response.IsSuccessStatusCode) {
                 uploadSuccess = true;
@@ -544,11 +544,11 @@
     }
 
     private async Task DownloadFile(int fileId) {
-        Navigation.NavigateTo($"/api/bootfiles/{fileId}/download", true);
+        Navigation.NavigateTo($"bootfiles/{fileId}/download", true);
     }
 
     private async Task DeleteFile(int fileId) {
-        await Http.DeleteAsync($"/api/bootfiles/{fileId}");
+        await Http.DeleteAsync($"bootfiles/{fileId}");
         await LoadFiles();
     }
 

@@ -480,7 +480,7 @@
 
     private async Task RefreshData() {
         try {
-            bootEvents = await Http.GetFromJsonAsync<List<PxeEvent>>("/api/pxe/events") ?? [];
+            bootEvents = await Http.GetFromJsonAsync<List<PxeEvent>>("pxe/events") ?? [];
             activeClients = bootEvents
                 .Where(e => e.Timestamp > DateTime.UtcNow.AddHours(-24))
                 .Select(e => e.MacAddress)

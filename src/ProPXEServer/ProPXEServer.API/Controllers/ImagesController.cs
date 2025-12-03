@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace ProPXEServer.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class ImagesController : ControllerBase
 {
     private readonly ILogger<ImagesController> _logger;

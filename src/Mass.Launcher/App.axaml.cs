@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Mass.Core.Abstractions;
 using Mass.Core.Plugins;
 using Mass.Core.Services;
@@ -9,10 +10,12 @@ using Mass.Core.Scripting;
 using Mass.Core.UI;
 using Mass.Launcher.Services;
 using Mass.Launcher.ViewModels;
+using Mass.Launcher.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Mass.Launcher;
 
@@ -25,8 +28,48 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
-    public override void OnFrameworkInitializationCompleted()
+    public override async void OnFrameworkInitializationCompleted()
     {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var splashWindow = new SplashWindow();
+            desktop.MainWindow = splashWindow;
+            splashWindow.Show();
+
+            try
+            {
+                await InitializeApplicationAsync(status => 
+                {
+                    Dispatcher.UIThread.Post(() => splashWindow.UpdateStatus(status));
+                });
+
+                var shellViewModel = Host!.Services.GetRequiredService<ShellViewModel>();
+                var navigationService = Host.Services.GetRequiredService<INavigationService>();
+                navigationService.NavigateTo<HomeViewModel>();
+
+                var mainWindow = new MainWindow { DataContext = shellViewModel };
+                
+                desktop.MainWindow = mainWindow;
+                mainWindow.Show();
+                
+                splashWindow.Close();
+
+                desktop.Exit += (s, e) => Host?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                splashWindow.ShowError($"Startup failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private async Task InitializeApplicationAsync(Action<string> onStatusUpdate)
+    {
+        onStatusUpdate("Initializing services...");
+        
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
 
         var configPath = Path.Combine(
@@ -47,30 +90,22 @@ public partial class App : Application
         builder.Services.AddSingleton<Mass.Core.Updates.IUpdateService, Mass.Core.Updates.UpdateService>();
         builder.Services.AddSingleton<Mass.Core.Updates.IRollbackService, Mass.Core.Updates.RollbackService>();
         builder.Services.AddSingleton<Mass.Core.UI.IOperationsConsoleService, Mass.Core.UI.OperationsConsoleService>();
-        builder.Services.AddSingleton<Mass.Core.UI.IOperationsConsoleService, Mass.Core.UI.OperationsConsoleService>();
         builder.Services.AddSingleton<Mass.Core.UI.ICommandPaletteService, Mass.Core.UI.CommandPaletteService>();
         builder.Services.AddSingleton<IDialogService, DialogService>();
         builder.Services.AddSingleton<Mass.Core.Services.IIpcService, Mass.Core.Services.IpcService>();
         
-        // Telemetry
         builder.Services.AddSingleton<ITelemetryService, LocalTelemetryService>();
         builder.Services.AddTransient<ConsentDialogViewModel>();
 
-        // Scripting
         builder.Services.AddSingleton<IScriptingService, LuaScriptingService>();
         builder.Services.AddTransient<ScriptingViewModel>();
 
-        // Localization
+        onStatusUpdate("Loading localization...");
         var localesPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Locales");
-        // Ensure directory exists for dev
-        if (!Directory.Exists(localesPath))
-        {
-             Directory.CreateDirectory(localesPath);
-        }
+        Directory.CreateDirectory(localesPath);
         var localizationService = new JsonLocalizationService(localesPath);
         builder.Services.AddSingleton<ILocalizationService>(localizationService);
         
-        // ViewModels
         builder.Services.AddSingleton<ShellViewModel>();
         builder.Services.AddTransient<HomeViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
@@ -85,7 +120,6 @@ public partial class App : Application
         {
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "plugins"),
             Path.Combine(AppContext.BaseDirectory, "plugins"),
-            // Add development paths
             Path.Combine(AppContext.BaseDirectory, "../../../ProUSB/bin/Debug/net10.0"),
             Path.Combine(AppContext.BaseDirectory, "../../../MassBoot/MassBoot.Plugin/bin/Debug/net10.0")
         };
@@ -98,36 +132,37 @@ public partial class App : Application
         builder.Services.AddSingleton(pluginDiscovery);
         builder.Services.AddSingleton(pluginLifecycle);
 
+        onStatusUpdate("Building host...");
         Host = builder.Build();
         
-        configService.LoadAsync().GetAwaiter().GetResult();
+        onStatusUpdate("Loading configuration...");
+        await configService.LoadAsync();
         
-        var discoveredPlugins = pluginDiscovery.DiscoverPluginsAsync().GetAwaiter().GetResult();
-        foreach (var discoveredPlugin in discoveredPlugins)
-        {
-            pluginLifecycle.LoadPluginAsync(discoveredPlugin, Host.Services).GetAwaiter().GetResult();
-        }
+        onStatusUpdate("Discovering plugins...");
+        var discoveredPlugins = await pluginDiscovery.DiscoverPluginsAsync();
+        var pluginList = discoveredPlugins.ToList();
         
-        Host.Start();
-
-        // Initialize Localizer
-        Services.Localizer.Instance.Initialize(Host.Services.GetRequiredService<ILocalizationService>());
-
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        for (int i = 0; i < pluginList.Count; i++)
         {
-            var shellViewModel = Host.Services.GetRequiredService<ShellViewModel>();
-            var navigationService = Host.Services.GetRequiredService<INavigationService>();
+            var plugin = pluginList[i];
+            onStatusUpdate($"Loading plugin... ({i + 1}/{pluginList.Count})");
             
-            navigationService.NavigateTo<HomeViewModel>();
-
-            desktop.MainWindow = new MainWindow
+            try
             {
-                DataContext = shellViewModel
-            };
-            
-            desktop.Exit += (s, e) => Host.Dispose();
+                await pluginLifecycle.LoadPluginAsync(plugin, Host.Services);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load plugin: {ex.Message}");
+            }
         }
+        
+        onStatusUpdate("Starting services...");
+        await Host.StartAsync();
 
-        base.OnFrameworkInitializationCompleted();
+        Services.Localizer.Instance.Initialize(Host.Services.GetRequiredService<ILocalizationService>());
+        
+        onStatusUpdate("Ready!");
+        await Task.Delay(300);
     }
 }

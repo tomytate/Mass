@@ -15,7 +15,7 @@ public class AuthService(HttpClient httpClient, ILocalStorageService localStorag
 
     public async Task<bool> LoginAsync(string email, string password) {
         try {
-            var response = await httpClient.PostAsJsonAsync("/api/auth/login", new {
+            var response = await httpClient.PostAsJsonAsync("auth/login", new {
                 email,
                 password
             });
@@ -41,7 +41,7 @@ public class AuthService(HttpClient httpClient, ILocalStorageService localStorag
 
     public async Task<bool> RegisterAsync(string email, string password) {
         try {
-            var response = await httpClient.PostAsJsonAsync("/api/auth/register", new {
+            var response = await httpClient.PostAsJsonAsync("auth/register", new {
                 email,
                 password
             });
@@ -87,7 +87,7 @@ public class AuthService(HttpClient httpClient, ILocalStorageService localStorag
         }
 
         try {
-            var response = await httpClient.GetAsync("/api/auth/me");
+            var response = await httpClient.GetAsync("auth/me");
             if (response.IsSuccessStatusCode) {
                 _currentUser = await response.Content.ReadFromJsonAsync<UserInfo>();
                 return _currentUser;
