@@ -1,0 +1,36 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Mass.Spec -> C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Debug\net10.0\Mass.Spec.dll
+  Mass.Core -> C:\Users\Administrator\Desktop\Mass\src\Mass.Core\bin\Debug\net10.0\Mass.Core.dll
+  ProUSB -> C:\Users\Administrator\Desktop\Mass\src\ProUSB\bin\Debug\net10.0\ProUSB.dll
+  Mass.Core.Tests -> C:\Users\Administrator\Desktop\Mass\tests\Mass.Core.Tests\bin\Debug\net10.0\Mass.Core.Tests.dll
+  ProUSB.Tests -> C:\Users\Administrator\Desktop\Mass\tests\ProUSB.Tests\bin\Debug\net10.0\ProUSB.Tests.dll
+  Mass.CLI -> C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\bin\Debug\net10.0\Mass.CLI.dll
+  ProPXEServer.API -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.API\bin\Debug\net10.0\ProPXEServer.API.dll
+  ProPXEServer.Plugin -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Plugin\bin\Debug\net10.0\ProPXEServer.Plugin.dll
+  ProPXEServer.API.Tests -> C:\Users\Administrator\Desktop\Mass\tests\ProPXEServer.API.Tests\bin\Debug\net10.0\ProPXEServer.API.Tests.dll
+  ProPXEServer.Client -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.dll
+  ProPXEServer.Client (Blazor output) -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(45,32): error CS4033: The 'await' operator can only be used within an async method. Consider marking this method with the 'async' modifier and changing its return type to 'Task'. [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(88,24): error CS1061: 'WorkflowResult' does not contain a definition for 'Context' and no accessible extension method 'Context' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(90,44): error CS1061: 'WorkflowResult' does not contain a definition for 'Context' and no accessible extension method 'Context' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(96,42): error CS1061: 'WorkflowResult' does not contain a definition for 'Success' and no accessible extension method 'Success' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\ShellViewModel.cs(62,64): error CS0234: The type or namespace name 'AppSettings' does not exist in the namespace 'Mass.Core.Configuration' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\ShellViewModel.cs(62,120): error CS0234: The type or namespace name 'AppSettings' does not exist in the namespace 'Mass.Core.Configuration' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(80,82): error CS1503: Argument 1: cannot convert from 'string' to 'Microsoft.Extensions.Logging.ILogger<Mass.Core.Configuration.JsonConfigurationService>' [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(81,62): error CS0234: The type or namespace name 'IConfigurationService' does not exist in the namespace 'Mass.Core.Abstractions' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+
+Build FAILED.
+
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(45,32): error CS4033: The 'await' operator can only be used within an async method. Consider marking this method with the 'async' modifier and changing its return type to 'Task'. [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(88,24): error CS1061: 'WorkflowResult' does not contain a definition for 'Context' and no accessible extension method 'Context' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(90,44): error CS1061: 'WorkflowResult' does not contain a definition for 'Context' and no accessible extension method 'Context' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(96,42): error CS1061: 'WorkflowResult' does not contain a definition for 'Success' and no accessible extension method 'Success' accepting a first argument of type 'WorkflowResult' could be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\ShellViewModel.cs(62,64): error CS0234: The type or namespace name 'AppSettings' does not exist in the namespace 'Mass.Core.Configuration' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\ShellViewModel.cs(62,120): error CS0234: The type or namespace name 'AppSettings' does not exist in the namespace 'Mass.Core.Configuration' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(80,82): error CS1503: Argument 1: cannot convert from 'string' to 'Microsoft.Extensions.Logging.ILogger<Mass.Core.Configuration.JsonConfigurationService>' [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(81,62): error CS0234: The type or namespace name 'IConfigurationService' does not exist in the namespace 'Mass.Core.Abstractions' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+    0 Warning(s)
+    8 Error(s)
+
+Time Elapsed 00:00:09.62

@@ -1,10 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mass.Core.Interfaces;
 using Mass.Core.Abstractions;
-using Mass.Core.Configuration;
+using Mass.Spec.Config;
 using Mass.Core.UI;
+using Mass.Core.Plugins;
 using Microsoft.Extensions.DependencyInjection;
-using ProUSB.UI.ViewModels;
 
 namespace Mass.Launcher.ViewModels;
 
@@ -30,7 +31,8 @@ public partial class ShellViewModel : ViewModelBase
         IConfigurationService config, 
         IServiceProvider serviceProvider,
         IDialogService dialogService,
-        Mass.Core.Services.IIpcService ipcService)
+        Mass.Core.Services.IIpcService ipcService,
+        PluginLifecycleManager pluginLifecycle) // Added pluginLifecycle to match signature if needed, or remove if not used
     {
         _navigationService = navigationService;
         _config = config;
@@ -56,7 +58,7 @@ public partial class ShellViewModel : ViewModelBase
     {
         try 
         {
-            var settings = _config.Get<Mass.Core.Configuration.AppSettings>("AppSettings", new Mass.Core.Configuration.AppSettings());
+            var settings = _config.Get<Mass.Spec.Config.AppSettings>("AppSettings", new Mass.Spec.Config.AppSettings());
             if (settings != null && !settings.Telemetry.ConsentDecisionMade)
             {
                 ShowConsentDialog();
@@ -81,7 +83,7 @@ public partial class ShellViewModel : ViewModelBase
     public async Task NavigateHome() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
 
     [RelayCommand]
-    public async Task NavigateProUSB() => await SafeNavigate(() => _navigationService.NavigateTo<MainViewModel>());
+    public async Task NavigateProUSB() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
 
     [RelayCommand]
     public async Task NavigateSettings() => await SafeNavigate(() => _navigationService.NavigateTo<SettingsViewModel>());
@@ -113,7 +115,7 @@ public partial class ShellViewModel : ViewModelBase
     {
         try
         {
-            bool success = await _ipcService.StartServerAsync();
+            bool success = await _ipcService.StartServerAsync(_serviceProvider);
             if (success)
             {
                 await _dialogService.ShowMessageDialogAsync("Server Started", "ProPXEServer has been started successfully.");

@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/Mass.sln",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "test",
+                "${workspaceFolder}/Mass.sln"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "bootstrap",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/dev/bootstrap.ps1",
+            "windows": {
+                "command": "${workspaceFolder}/scripts/dev/bootstrap.ps1"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/scripts/dev/bootstrap.sh"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

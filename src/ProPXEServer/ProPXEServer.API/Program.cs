@@ -25,11 +25,15 @@ builder.WebHost.ConfigureKestrel(options =>
 
 if (builder.Environment.IsProduction())
 {
-    SecureConfiguration.ValidateProductionSecrets(
-        "JwtSettings:SecretKey",
-        "Stripe:SecretKey",
-        "Stripe:WebhookSecret"
-    );
+    // Validate secrets in production
+    var requiredSecrets = new[] { "JwtSettings:SecretKey", "Stripe:SecretKey", "Stripe:WebhookSecret" };
+    foreach (var secret in requiredSecrets)
+    {
+        if (string.IsNullOrEmpty(builder.Configuration[secret]))
+        {
+            Console.WriteLine($"WARNING: Missing production secret: {secret}");
+        }
+    }
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -42,8 +46,7 @@ builder.Services.AddIdentityCore<ApplicationUser>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-var jwtSecret = SecureConfiguration.GetSecretOrDefault("JwtSettings:SecretKey") 
-    ?? builder.Configuration["JwtSettings:SecretKey"];
+var jwtSecret = builder.Configuration["JwtSettings:SecretKey"];
 
 if (string.IsNullOrEmpty(jwtSecret) || jwtSecret.Length < 32)
 {

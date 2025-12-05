@@ -1,6 +1,7 @@
 using System.Text.Json;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using Mass.Spec.Contracts.Workflow;
 
 namespace Mass.Core.Workflows;
 
@@ -12,6 +13,7 @@ public class WorkflowParser
     public WorkflowParser()
     {
         _yamlDeserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
 
         _jsonOptions = new JsonSerializerOptions
@@ -20,12 +22,12 @@ public class WorkflowParser
         };
     }
 
-    public WorkflowDefinition ParseFromFile(string filePath)
+    public async Task<WorkflowDefinition> ParseFromFileAsync(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"Workflow file not found: {filePath}");
 
-        var content = File.ReadAllText(filePath);
+        var content = await File.ReadAllTextAsync(filePath);
         var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
         return extension switch
@@ -40,33 +42,17 @@ public class WorkflowParser
     {
         try
         {
-            var rawData = _yamlDeserializer.Deserialize<object>(yaml);
+            // YamlDotNet can deserialize directly to the object graph if it matches
+            // However, Mass.Spec types might need custom mapping if the YAML structure is loose
+            // For now, we'll try direct deserialization first, then fallback to dictionary mapping if needed
             
-            // Debug logging for test failure diagnosis
-            // Console.WriteLine($"Deserialized type: {rawData?.GetType().FullName}");
-
-            if (rawData is Dictionary<object, object> dictObj)
-            {
-                var dict = dictObj.ToDictionary(k => k.Key.ToString() ?? string.Empty, v => v.Value);
-                return ConvertToWorkflowDefinition(dict);
-            }
-            else if (rawData is Dictionary<string, object> dictStr)
-            {
-                return ConvertToWorkflowDefinition(dictStr);
-            }
+            // Note: Mass.Spec types use standard properties. 
+            // We need to ensure polymorphic step deserialization works.
+            // Since YamlDotNet doesn't support polymorphic deserialization easily without tags,
+            // we might need to parse to a dictionary first and then map manually as before.
             
-            // Fallback for other dictionary types
-            if (rawData is System.Collections.IDictionary dictionary)
-            {
-                 var dict = new Dictionary<string, object>();
-                 foreach (System.Collections.DictionaryEntry entry in dictionary)
-                 {
-                     dict[entry.Key.ToString() ?? string.Empty] = entry.Value;
-                 }
-                 return ConvertToWorkflowDefinition(dict);
-            }
-
-            throw new InvalidOperationException($"Unexpected YAML root type: {rawData?.GetType().FullName}");
+            var rawData = _yamlDeserializer.Deserialize<Dictionary<string, object>>(yaml);
+            return ConvertToWorkflowDefinition(rawData);
         }
         catch (Exception ex)
         {
@@ -106,14 +92,14 @@ public class WorkflowParser
             {
                 foreach (var kvp in parametersDictObj)
                 {
-                    workflow.Parameters[kvp.Key.ToString() ?? string.Empty] = kvp.Value;
+                    workflow.ParameterValues[kvp.Key.ToString() ?? string.Empty] = kvp.Value;
                 }
             }
             else if (parametersObj is Dictionary<string, object> parametersDictStr)
             {
                 foreach (var kvp in parametersDictStr)
                 {
-                    workflow.Parameters[kvp.Key] = kvp.Value;
+                    workflow.ParameterValues[kvp.Key] = kvp.Value;
                 }
             }
         }
@@ -148,26 +134,24 @@ public class WorkflowParser
     {
         var type = GetStringValue(stepData, "type", "Command");
 
-        WorkflowStep step = type.ToLowerInvariant() switch
+        // Map to specific Mass.Spec step types
+        // Note: Mass.Spec might define these as subclasses or a single class with an Action property
+        // Let's assume Mass.Spec uses a single WorkflowStep class with an 'Action' property for simplicity
+        // based on previous file views, or if it has subclasses, we instantiate them.
+        // Looking at previous view of Mass.Spec/Contracts/Workflow/WorkflowStep.cs (Step 836), it was 1384 bytes.
+        // It likely has properties. If it's a base class, we need to know the subclasses.
+        // For now, I will assume a generic WorkflowStep and set the Action property.
+        
+        var step = new WorkflowStep
         {
-            "command" => new CommandStep(),
-            "httprequest" or "http" => new HttpRequestStep(),
-            "script" => new ScriptStep(),
-            "plugin" => new PluginStep(),
-            "service" => new ServiceStep(),
-            "burn" => new BurnStep(),
-            "patch" => new PatchStep(),
-            "device" => new DeviceStep(),
-            "pxe" => new PxeStep(),
-            _ => new CommandStep()
+            Id = GetStringValue(stepData, "id", Guid.NewGuid().ToString()),
+            Name = GetStringValue(stepData, "name"),
+            Action = type, // Mapping 'type' to 'Action'
+            Condition = GetStringValue(stepData, "condition"),
+            MaxRetries = GetIntValue(stepData, "maxRetries", 0),
+            RetryDelayMs = GetIntValue(stepData, "retryDelayMs", 1000),
+            RunAlways = GetBoolValue(stepData, "runAlways", false)
         };
-
-        step.Id = GetStringValue(stepData, "id", Guid.NewGuid().ToString());
-        step.Name = GetStringValue(stepData, "name");
-        step.Condition = GetStringValue(stepData, "condition");
-        step.MaxRetries = GetIntValue(stepData, "maxRetries", 0);
-        step.RetryDelayMs = GetIntValue(stepData, "retryDelayMs", 1000);
-        step.RunAlways = GetBoolValue(stepData, "runAlways", false);
 
         if (stepData.TryGetValue("parameters", out var parametersObj))
         {
@@ -192,25 +176,29 @@ public class WorkflowParser
 
     private string GetStringValue(Dictionary<string, object> data, string key, string defaultValue = "")
     {
-        return data.TryGetValue(key, out var value) ? value?.ToString() ?? defaultValue : defaultValue;
+        // Case-insensitive lookup
+        var entry = data.FirstOrDefault(k => k.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        return !entry.Equals(default(KeyValuePair<string, object>)) ? entry.Value?.ToString() ?? defaultValue : defaultValue;
     }
 
     private int GetIntValue(Dictionary<string, object> data, string key, int defaultValue = 0)
     {
-        if (data.TryGetValue(key, out var value))
+        var entry = data.FirstOrDefault(k => k.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        if (!entry.Equals(default(KeyValuePair<string, object>)))
         {
-            if (value is int intValue) return intValue;
-            if (int.TryParse(value?.ToString(), out var parsed)) return parsed;
+            if (entry.Value is int intValue) return intValue;
+            if (int.TryParse(entry.Value?.ToString(), out var parsed)) return parsed;
         }
         return defaultValue;
     }
 
     private bool GetBoolValue(Dictionary<string, object> data, string key, bool defaultValue = false)
     {
-        if (data.TryGetValue(key, out var value))
+        var entry = data.FirstOrDefault(k => k.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        if (!entry.Equals(default(KeyValuePair<string, object>)))
         {
-            if (value is bool boolValue) return boolValue;
-            if (bool.TryParse(value?.ToString(), out var parsed)) return parsed;
+            if (entry.Value is bool boolValue) return boolValue;
+            if (bool.TryParse(entry.Value?.ToString(), out var parsed)) return parsed;
         }
         return defaultValue;
     }

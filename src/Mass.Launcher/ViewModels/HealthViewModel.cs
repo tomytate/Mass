@@ -1,5 +1,7 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Mass.Core.Abstractions;
+using Mass.Core.Interfaces;
 using Mass.Core.Services;
 using Mass.Core.UI;
 using System.Collections.ObjectModel;
@@ -12,7 +14,7 @@ public partial class HealthViewModel : ViewModelBase, IDisposable
     private readonly IStatusService _statusService;
     private readonly INavigationService _navigationService;
     private readonly Mass.Core.Plugins.PluginLifecycleManager _pluginManager;
-    private readonly Mass.Core.Configuration.AppSettings _appSettings;
+    private readonly Mass.Spec.Config.AppSettings _appSettings;
     private const int MaxHistoryPoints = 60;
 
     public SystemStatus CurrentStatus { get; private set; } = new();
@@ -24,12 +26,12 @@ public partial class HealthViewModel : ViewModelBase, IDisposable
         IStatusService statusService, 
         INavigationService navigationService,
         Mass.Core.Plugins.PluginLifecycleManager pluginManager,
-        Mass.Core.Abstractions.IConfigurationService configService)
+        Mass.Core.Interfaces.IConfigurationService configService)
     {
         _statusService = statusService;
         _navigationService = navigationService;
         _pluginManager = pluginManager;
-        _appSettings = configService.Get<Mass.Core.Configuration.AppSettings>("AppSettings", new Mass.Core.Configuration.AppSettings());
+        _appSettings = configService.Get<Mass.Spec.Config.AppSettings>("AppSettings", new Mass.Spec.Config.AppSettings());
         Title = "System Health";
 
         // Initialize history with zeros

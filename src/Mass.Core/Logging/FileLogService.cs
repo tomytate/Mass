@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Mass.Core.Interfaces;
+using Mass.Spec.Contracts.Logging;
 
 namespace Mass.Core.Logging;
 
@@ -7,7 +9,7 @@ public class FileLogService : ILogService
 {
     private readonly string _logDirectory;
     private readonly string _currentLogFile;
-    private readonly ConcurrentQueue<LogEntry> _logBuffer = new();
+    private readonly ConcurrentQueue<CoreLogEntry> _logBuffer = new();
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private const int MaxLogFiles = 30;
     private const long MaxLogFileSize = 10 * 1024 * 1024; // 10MB
@@ -26,7 +28,7 @@ public class FileLogService : ILogService
 
     public void Log(LogLevel level, string category, string message, Exception? exception = null, Dictionary<string, object>? properties = null)
     {
-        var entry = new LogEntry
+        var entry = new CoreLogEntry
         {
             Timestamp = DateTime.Now,
             Level = level,
@@ -90,7 +92,7 @@ public class FileLogService : ILogService
         catch { }
     }
 
-    private void WriteToFile(LogEntry entry)
+    private void WriteToFile(CoreLogEntry entry)
     {
         _ = Task.Run(async () =>
         {
@@ -145,9 +147,9 @@ public class FileLogService : ILogService
         catch { }
     }
 
-    private List<LogEntry> LoadLogsFromFile()
+    private List<CoreLogEntry> LoadLogsFromFile()
     {
-        var entries = new List<LogEntry>();
+        var entries = new List<CoreLogEntry>();
         
         try
         {
@@ -168,9 +170,9 @@ public class FileLogService : ILogService
         return entries.OrderByDescending(e => e.Timestamp).ToList();
     }
 
-    private bool TryParseLogLine(string line, out LogEntry entry)
+    private bool TryParseLogLine(string line, out CoreLogEntry entry)
     {
-        entry = new LogEntry();
+        entry = new CoreLogEntry();
         
         try
         {

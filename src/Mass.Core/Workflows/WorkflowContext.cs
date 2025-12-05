@@ -4,6 +4,7 @@ public class WorkflowContext
 {
     public Dictionary<string, object> Variables { get; } = new();
     public Dictionary<string, object> StepResults { get; } = new();
+    public List<Mass.Spec.Contracts.Workflow.WorkflowStepResult> ExecutionHistory { get; } = new();
     public List<string> Logs { get; } = new();
     public CancellationToken CancellationToken { get; set; }
 

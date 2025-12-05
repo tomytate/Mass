@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Mass.Spec.Contracts.Plugins;
 
 namespace Mass.Core.Plugins;
 
@@ -36,7 +37,11 @@ public class PluginDiscoveryService
                 try
                 {
                     var json = await File.ReadAllTextAsync(manifestPath);
-                    var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var manifest = JsonSerializer.Deserialize<PluginManifest>(json, options);
 
                     if (manifest != null && ValidateManifest(manifest))
                     {

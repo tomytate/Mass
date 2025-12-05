@@ -1,4 +1,3 @@
-using Mass.Core.Devices;
 using ProUSB.Drivers;
 using ProUSB.Services.Logging;
 using DiscUtils.Iso9660;
@@ -6,7 +5,7 @@ using System.Management;
 
 namespace ProUSB.Engine;
 
-public class BurnEngine : IUsbBurner
+public class BurnEngine
 {
     private readonly IDriverAdapter _driver;
     private readonly FileLogger _logger;

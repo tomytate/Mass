@@ -1,5 +1,6 @@
 using Mass.Core.Abstractions;
 using Mass.Core.Plugins;
+using Mass.Spec.Contracts.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using ProUSB.Domain.Drivers;
 using ProUSB.Domain.Services;
@@ -21,7 +22,7 @@ using ProUSB.UI.ViewModels;
 
 namespace ProUSB;
 
-public class ProUsbModule : IModule
+public class ProUsbModule : IPlugin
 {
     public PluginManifest Manifest => new()
     {
@@ -36,44 +37,17 @@ public class ProUsbModule : IModule
         Enabled = true
     };
 
-    public void RegisterServices(IServiceCollection s)
+    public void Init(IServiceProvider services)
     {
-        s.AddSingleton<PortablePathManager>();
-        s.AddSingleton<FileLogger>();
-        s.AddSingleton<IDriverFactory, WindowsDriverFactory>();
-        s.AddSingleton<NativeDiskFormatter>();
-        s.AddSingleton<ISafetyGuard, StandardSafetyGuard>();
-        s.AddSingleton<IsoIntegrityVerifier>();
-        s.AddSingleton<IBurnStrategy, RawPipelinedWriteStrategy>();
-        s.AddSingleton<IBurnStrategy, FileSystemDeploymentStrategy>();
-        s.AddSingleton<ParallelBurnService>();
-        s.AddSingleton<MultiDeviceBurnOrchestrator>();
-        s.AddSingleton<BootVerificationService>();
-        s.AddSingleton<SmartHealthChecker>();
-        s.AddSingleton<IsoCreationService>();
-        s.AddSingleton<ProfileManager>();
-        s.AddSingleton<PxeBootImageService>();
-        s.AddSingleton<OsCatalogService>();
-        s.AddSingleton<IsoDownloadService>();
-        s.AddTransient<MainViewModel>();
+        // Initialize any runtime components or register with RegistryService here
     }
 
-    public Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default)
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }
 
-    public Task ActivateAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task DeactivateAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public Task UnloadAsync(CancellationToken cancellationToken = default)
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
         return Task.CompletedTask;
     }

@@ -1,0 +1,362 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Mass.Core</name>
+    </assembly>
+    <members>
+        <member name="T:Mass.Core.Configuration.JsonConfigurationService">
+            <summary>
+            Implementation of IConfigurationService using JSON persistence.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Configuration.JsonConfigurationService.#ctor(Mass.Core.Interfaces.ILogService,System.String)">
+            <summary>
+            Initializes a new instance of the JsonConfigurationService.
+            </summary>
+            <param name="logger">The logger.</param>
+            <param name="configPath">Optional custom path for configuration file.</param>
+        </member>
+        <member name="M:Mass.Core.Configuration.JsonConfigurationService.Get``1(System.String,``0)">
+            <inheritdoc />
+        </member>
+        <member name="M:Mass.Core.Configuration.JsonConfigurationService.Set``1(System.String,``0)">
+            <inheritdoc />
+        </member>
+        <member name="M:Mass.Core.Configuration.JsonConfigurationService.LoadAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:Mass.Core.Configuration.JsonConfigurationService.SaveAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:Mass.Core.Configuration.ServiceCollectionExtensions">
+            <summary>
+            Extension methods for registering configuration services.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Configuration.ServiceCollectionExtensions.AddMassConfiguration(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String)">
+            <summary>
+            Registers the Mass Suite configuration service.
+            </summary>
+            <param name="services">The service collection.</param>
+            <param name="configPath">Optional custom path for the configuration file.</param>
+            <returns>The service collection.</returns>
+        </member>
+        <member name="T:Mass.Core.Interfaces.IConfigurationService">
+            <summary>
+            Public facade for configuration management.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IConfigurationService.Get``1(System.String,``0)">
+            <summary>
+            Gets a configuration value.
+            </summary>
+            <typeparam name="T">The type of the configuration value.</typeparam>
+            <param name="key">The configuration key.</param>
+            <param name="fallback">The fallback value if the key is not found.</param>
+            <returns>The configuration value or fallback.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IConfigurationService.Set``1(System.String,``0)">
+            <summary>
+            Sets a configuration value.
+            </summary>
+            <typeparam name="T">The type of the configuration value.</typeparam>
+            <param name="key">The configuration key.</param>
+            <param name="value">The value to set.</param>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IConfigurationService.LoadAsync">
+            <summary>
+            Loads configuration from persistent storage.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IConfigurationService.SaveAsync">
+            <summary>
+            Saves configuration to persistent storage.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Interfaces.IPxeManager">
+            <summary>
+            Public facade for PXE boot file management.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IPxeManager.UploadBootFileAsync(Mass.Spec.Contracts.Pxe.PxeBootFileDescriptor,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a boot file to the PXE server.
+            </summary>
+            <param name="file">The boot file descriptor to upload.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The result of the upload operation.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IPxeManager.ListBootFilesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all boot files available on the PXE server.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Collection of boot file descriptors.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IPxeManager.DeleteBootFileAsync(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Deletes a boot file from the PXE server.
+            </summary>
+            <param name="id">The unique identifier of the boot file.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>True if the file was deleted successfully.</returns>
+        </member>
+        <member name="T:Mass.Core.Interfaces.IUsbBurner">
+            <summary>
+            Public facade for USB device burning operations.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IUsbBurner.BurnAsync(Mass.Spec.Contracts.Usb.UsbJob,System.IProgress{Mass.Spec.Contracts.Usb.BurnProgress},System.Threading.CancellationToken)">
+            <summary>
+            Burns an image to a USB device.
+            </summary>
+            <param name="job">The USB job describing the burn operation.</param>
+            <param name="progress">Optional progress reporter.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The result of the burn operation.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IUsbBurner.ListDevicesAsync(System.Threading.CancellationToken)">
+            <summary>
+            Lists all available USB devices.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>Collection of detected USB devices.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IUsbBurner.VerifyAsync(Mass.Spec.Contracts.Usb.UsbJob,System.Threading.CancellationToken)">
+            <summary>
+            Verifies a USB device after burning.
+            </summary>
+            <param name="job">The USB job to verify.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The result of the verification.</returns>
+        </member>
+        <member name="T:Mass.Core.Interfaces.IWorkflowExecutor">
+            <summary>
+            Public facade for workflow execution.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IWorkflowExecutor.ExecuteAsync(Mass.Spec.Contracts.Workflow.WorkflowDefinition,Mass.Core.Interfaces.WorkflowExecutionOptions,System.Threading.CancellationToken)">
+            <summary>
+            Executes a workflow definition.
+            </summary>
+            <param name="workflow">The workflow to execute.</param>
+            <param name="options">Optional execution options.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The result of the workflow execution.</returns>
+        </member>
+        <member name="M:Mass.Core.Interfaces.IWorkflowExecutor.ValidateAsync(Mass.Spec.Contracts.Workflow.WorkflowDefinition,System.Threading.CancellationToken)">
+            <summary>
+            Validates a workflow definition without executing it.
+            </summary>
+            <param name="workflow">The workflow to validate.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The validation result.</returns>
+        </member>
+        <member name="T:Mass.Core.Interfaces.WorkflowExecutionOptions">
+            <summary>
+            Options for workflow execution.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Interfaces.WorkflowExecutionOptions.EnableRetry">
+            <summary>
+            Whether to enable automatic retry on step failures.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Interfaces.WorkflowExecutionOptions.MaxRetries">
+            <summary>
+            Maximum number of retries per step.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Interfaces.WorkflowExecutionOptions.StopOnFirstFailure">
+            <summary>
+            Whether to stop execution on the first step failure.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Interfaces.WorkflowExecutionOptions.AdditionalContext">
+            <summary>
+            Additional context to pass to the workflow execution.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Registry.LoadedPluginDescriptor">
+            <summary>
+            Describes a loaded plugin with runtime state.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.LoadedPluginDescriptor.Id">
+            <summary>
+            Unique identifier for the plugin.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.LoadedPluginDescriptor.Manifest">
+            <summary>
+            Plugin manifest from Mass.Spec.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.LoadedPluginDescriptor.State">
+            <summary>
+            Current state of the plugin.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Registry.PluginState">
+            <summary>
+            Plugin lifecycle states.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Registered">
+            <summary>
+            Plugin has been registered but not loaded.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Loading">
+            <summary>
+            Plugin is currently being loaded.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Loaded">
+            <summary>
+            Plugin has been loaded into memory.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Active">
+            <summary>
+            Plugin is active and running.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Stopped">
+            <summary>
+            Plugin has been stopped.
+            </summary>
+        </member>
+        <member name="F:Mass.Core.Registry.PluginState.Failed">
+            <summary>
+            Plugin failed to load or encountered an error.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Registry.RegistryService">
+            <summary>
+            Thread-safe central registry for steps, plugins, and handlers.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.#ctor(System.IServiceProvider)">
+            <summary>
+            Initializes a new instance of the RegistryService.
+            </summary>
+            <param name="serviceProvider">Service provider for DI resolution.</param>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.RegisterStep(Mass.Core.Registry.StepDescriptor)">
+            <summary>
+            Registers a workflow step.
+            </summary>
+            <param name="descriptor">The step descriptor.</param>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.ListSteps">
+            <summary>
+            Lists all registered steps.
+            </summary>
+            <returns>Read-only list of step descriptors.</returns>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.FindStep(System.String)">
+            <summary>
+            Finds a step by its identifier.
+            </summary>
+            <param name="id">The step identifier.</param>
+            <returns>The step descriptor if found; otherwise, null.</returns>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.RegisterPlugin(Mass.Core.Registry.LoadedPluginDescriptor)">
+            <summary>
+            Registers a plugin.
+            </summary>
+            <param name="descriptor">The plugin descriptor.</param>
+        </member>
+        <member name="P:Mass.Core.Registry.RegistryService.LoadedPlugins">
+            <summary>
+            Gets all loaded plugins.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.ResolveHandler(System.Type)">
+            <summary>
+            Resolves a handler instance from the service provider.
+            </summary>
+            <param name="handlerType">The type of handler to resolve.</param>
+            <returns>The handler instance, or null if not found.</returns>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.Save">
+            <summary>
+            Saves the registry to persistent storage using atomic writes.
+            </summary>
+        </member>
+        <member name="M:Mass.Core.Registry.RegistryService.Load">
+            <summary>
+            Loads the registry from persistent storage.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Registry.RegistryService.RegistryData">
+            <summary>
+            Internal data structure for JSON serialization.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.Registry.StepDescriptor">
+            <summary>
+            Describes a registered workflow step handler.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.StepDescriptor.Id">
+            <summary>
+            Unique identifier for the step type (e.g., "burn.iso", "file.copy").
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.StepDescriptor.Version">
+            <summary>
+            Version of the step handler.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.StepDescriptor.HandlerTypeName">
+            <summary>
+            Fully qualified type name of the handler (for DI resolution).
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.StepDescriptor.Permissions">
+            <summary>
+            Required permissions for this step.
+            </summary>
+        </member>
+        <member name="P:Mass.Core.Registry.StepDescriptor.Description">
+            <summary>
+            Human-readable description of the step.
+            </summary>
+        </member>
+        <member name="T:Mass.Core.UI.ViewModelBase">
+            <inheritdoc/>
+        </member>
+        <member name="P:Mass.Core.UI.ViewModelBase.IsBusy">
+            <inheritdoc cref="F:Mass.Core.UI.ViewModelBase._isBusy"/>
+        </member>
+        <member name="P:Mass.Core.UI.ViewModelBase.Title">
+            <inheritdoc cref="F:Mass.Core.UI.ViewModelBase._title"/>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.IsBusy">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "IsBusy" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangingArgs.Title">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangingEventArgs"/> instance for all "Title" generated properties.</summary>
+        </member>
+        <member name="T:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs">
+            <summary>
+            A helper type providing cached, reusable <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instances
+            for all properties generated with <see cref="T:CommunityToolkit.Mvvm.ComponentModel.ObservablePropertyAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.IsBusy">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "IsBusy" generated properties.</summary>
+        </member>
+        <member name="F:CommunityToolkit.Mvvm.ComponentModel.__Internals.__KnownINotifyPropertyChangedArgs.Title">
+            <summary>The cached <see cref="T:System.ComponentModel.PropertyChangedEventArgs"/> instance for all "Title" generated properties.</summary>
+        </member>
+    </members>
+</doc>

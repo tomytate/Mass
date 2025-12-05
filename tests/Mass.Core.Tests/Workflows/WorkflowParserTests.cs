@@ -14,7 +14,7 @@ public class WorkflowParserTests
     }
 
     [Fact]
-    public void ParseFromFile_WithValidYaml_ReturnsWorkflowDefinition()
+    public async Task ParseFromFile_WithValidYaml_ReturnsWorkflowDefinition()
     {
         // Arrange
         var yamlContent = @"
@@ -34,12 +34,12 @@ steps:
 ";
         var tempFile = Path.GetTempFileName();
         var yamlFile = Path.ChangeExtension(tempFile, ".yaml");
-        File.WriteAllText(yamlFile, yamlContent);
+        await File.WriteAllTextAsync(yamlFile, yamlContent);
 
         try
         {
             // Act
-            var workflow = _parser.ParseFromFile(yamlFile);
+            var workflow = await _parser.ParseFromFileAsync(yamlFile);
 
             // Assert
             workflow.Should().NotBeNull();
@@ -48,7 +48,7 @@ steps:
             workflow.Description.Should().Be("A test workflow");
             workflow.Steps.Should().HaveCount(1);
             workflow.Steps[0].Id.Should().Be("step1");
-            workflow.Steps[0].Type.Should().Be("Command");
+            workflow.Steps[0].Action.Should().Be("Command");
         }
         finally
         {
@@ -58,7 +58,7 @@ steps:
     }
 
     [Fact]
-    public void ParseFromFile_WithBurnStep_CreatesBurnStepType()
+    public async Task ParseFromFile_WithBurnStep_CreatesBurnStepType()
     {
         // Arrange
         var yamlContent = @"
@@ -72,16 +72,17 @@ steps:
 ";
         var tempFile = Path.GetTempFileName();
         var yamlFile = Path.ChangeExtension(tempFile, ".yaml");
-        File.WriteAllText(yamlFile, yamlContent);
+        await File.WriteAllTextAsync(yamlFile, yamlContent);
 
         try
         {
             // Act
-            var workflow = _parser.ParseFromFile(yamlFile);
+            var workflow = await _parser.ParseFromFileAsync(yamlFile);
 
             // Assert
-            workflow.Steps[0].Should().BeOfType<BurnStep>();
-            workflow.Steps[0].Type.Should().Be("Burn");
+            // Note: In the new parser, we map to generic WorkflowStep with Action property
+            workflow.Steps[0].Action.Should().Be("Burn");
+            workflow.Steps[0].Id.Should().Be("burn1");
         }
         finally
         {
@@ -91,12 +92,12 @@ steps:
     }
 
     [Fact]
-    public void ParseFromFile_WithInvalidFile_ThrowsException()
+    public async Task ParseFromFile_WithInvalidFile_ThrowsException()
     {
         // Arrange
         var invalidPath = "nonexistent-file.yaml";
 
         // Act & Assert
-        Assert.Throws<FileNotFoundException>(() => _parser.ParseFromFile(invalidPath));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _parser.ParseFromFileAsync(invalidPath));
     }
 }

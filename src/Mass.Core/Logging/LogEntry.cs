@@ -1,21 +1,14 @@
+using Mass.Spec.Contracts.Logging;
+
 namespace Mass.Core.Logging;
 
-public enum LogLevel
+public class CoreLogEntry : LogEntry
 {
-    Trace,
-    Debug,
-    Information,
-    Warning,
-    Error,
-    Critical
-}
+    public string Category
+    {
+        get => Source;
+        set => Source = value;
+    }
 
-public class LogEntry
-{
-    public DateTime Timestamp { get; set; } = DateTime.Now;
-    public LogLevel Level { get; set; }
-    public string Category { get; set; } = string.Empty;
-    public string Message { get; set; } = string.Empty;
-    public string? Exception { get; set; }
     public Dictionary<string, object> Properties { get; set; } = new();
 }

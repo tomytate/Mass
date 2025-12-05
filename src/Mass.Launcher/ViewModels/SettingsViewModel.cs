@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Mass.Core.Abstractions;
-using Mass.Core.Configuration;
+using Mass.Core.Interfaces;
+using Mass.Spec.Config;
 using Mass.Core.Security;
 using Mass.Core.Services;
 using Mass.Core.UI;
@@ -116,7 +116,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     private void SetTheme(string theme)
     {
-        AppSettings.Theme = theme;
+        AppSettings.General.Theme = theme;
         _config.Set("AppSettings", AppSettings);
         OnPropertyChanged(nameof(AppSettings));
     }

@@ -1,19 +1,21 @@
 using System.CommandLine;
-using Mass.Core;
 using Mass.Core.Configuration;
+using Mass.Core.Interfaces;
+using Mass.Core.Logging;
+using Mass.Spec.Config;
+using Microsoft.Extensions.Logging.Abstractions;
 using Spectre.Console;
 
 namespace Mass.CLI.Commands;
 
 public class ConfigCommand : Command
 {
-    private readonly IConfigurationManager _configManager;
+    private readonly IConfigurationService _configService;
 
     public ConfigCommand() : base("config", "Manage application configuration")
     {
-        // In a real DI scenario, this would be injected.
-        // For CLI, we initialize it here or pass it in.
-        _configManager = new ConfigurationManager(Constants.ConfigPath);
+        // Initialize JsonConfigurationService with FileLogService for CLI
+        _configService = new JsonConfigurationService(new FileLogService());
         
         AddCommand(CreateListCommand());
         AddCommand(CreateGetCommand());
@@ -30,7 +32,7 @@ public class ConfigCommand : Command
     private Command CreateGetCommand()
     {
         var command = new Command("get", "Get a configuration value");
-        var keyArgument = new Argument<string>("key", "Configuration key (e.g. App.Theme)");
+        var keyArgument = new Argument<string>("key", "Configuration key (e.g. General.Theme)");
         command.AddArgument(keyArgument);
         command.SetHandler(GetConfig, keyArgument);
         return command;
@@ -39,7 +41,7 @@ public class ConfigCommand : Command
     private Command CreateSetCommand()
     {
         var command = new Command("set", "Set a configuration value");
-        var keyArgument = new Argument<string>("key", "Configuration key (e.g. App.Theme)");
+        var keyArgument = new Argument<string>("key", "Configuration key (e.g. General.Theme)");
         var valueArgument = new Argument<string>("value", "Configuration value");
         command.AddArgument(keyArgument);
         command.AddArgument(valueArgument);
@@ -49,46 +51,57 @@ public class ConfigCommand : Command
 
     private async Task ListConfig()
     {
-        await _configManager.LoadAsync();
-        var config = _configManager.Current;
+        await _configService.LoadAsync();
+        
+        // We need to access the full object to list it. 
+        // IConfigurationService doesn't expose the root object directly via interface, 
+        // but we can get sections.
+        // Or we can cast to JsonConfigurationService if we know the implementation (hacky but works for CLI).
+        // Or better, use Get<AppSettings>("") if supported, or Get<GeneralSettings>("General").
+        
+        var general = _configService.Get<GeneralSettings>("General");
+        var pxe = _configService.Get<PxeSettings>("Pxe");
+        var usb = _configService.Get<UsbSettings>("Usb");
 
         var table = new Table();
         table.AddColumn("Section");
         table.AddColumn("Key");
         table.AddColumn("Value");
 
-        // App Settings
-        table.AddRow("App", "Theme", config.App.Theme);
-        table.AddRow("App", "Language", config.App.Language);
+        // General Settings
+        table.AddRow("General", "Theme", general.Theme);
+        table.AddRow("General", "Language", general.Language);
         
         // PXE Settings
-        table.AddRow("Pxe", "RootPath", config.Pxe.RootPath);
-        table.AddRow("Pxe", "EnableDhcp", config.Pxe.EnableDhcp.ToString());
+        table.AddRow("Pxe", "TftpRoot", pxe.TftpRoot);
+        table.AddRow("Pxe", "EnableDhcp", pxe.EnableDhcp.ToString());
 
         // USB Settings
-        table.AddRow("Usb", "VerifyAfterBurn", config.Usb.VerifyAfterBurn.ToString());
+        table.AddRow("Usb", "VerifyWrites", usb.VerifyWrites.ToString());
         
         AnsiConsole.Write(table);
     }
 
     private async Task GetConfig(string key)
     {
-        await _configManager.LoadAsync();
-        // Simple reflection or property traversal could go here.
-        // For now, just printing that we need to implement the traversal logic.
-        AnsiConsole.MarkupLine($"[yellow]Get logic for '{key}' not fully implemented in this refactor step yet.[/]");
+        await _configService.LoadAsync();
+        var value = _configService.Get<object>(key);
+        AnsiConsole.MarkupLine($"[bold]{key}[/] = [blue]{value}[/]");
     }
 
     private async Task SetConfig(string key, string value)
     {
-        await _configManager.LoadAsync();
+        await _configService.LoadAsync();
         
-        // Update logic would go here.
-        // For now, just acknowledging.
+        // Basic type inference for CLI input
+        object typedValue = value;
+        if (bool.TryParse(value, out bool b)) typedValue = b;
+        else if (int.TryParse(value, out int i)) typedValue = i;
         
-        AnsiConsole.MarkupLine($"[green]Configuration updated (simulation):[/]");
+        _configService.Set(key, typedValue);
+        await _configService.SaveAsync();
+        
+        AnsiConsole.MarkupLine($"[green]Configuration updated:[/]");
         AnsiConsole.MarkupLine($"[bold]{key}[/] = [blue]{value}[/]");
-        
-        // await _configManager.SaveAsync();
     }
 }

@@ -1,6 +1,7 @@
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Mass.Core.Logging;
+using Mass.Spec.Contracts.Logging;
 using System.Globalization;
 
 namespace Mass.Launcher.Converters;

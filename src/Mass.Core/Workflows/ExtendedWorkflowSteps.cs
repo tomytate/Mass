@@ -1,10 +1,12 @@
+using Mass.Spec.Contracts.Workflow;
+
 namespace Mass.Core.Workflows;
 
 public class BurnStep : WorkflowStep
 {
     public BurnStep()
     {
-        Type = "Burn";
+        Action = "Burn";
     }
 }
 
@@ -12,7 +14,7 @@ public class PatchStep : WorkflowStep
 {
     public PatchStep()
     {
-        Type = "Patch";
+        Action = "Patch";
     }
 }
 
@@ -20,7 +22,7 @@ public class DeviceStep : WorkflowStep
 {
     public DeviceStep()
     {
-        Type = "Device";
+        Action = "Device";
     }
 }
 
@@ -28,6 +30,6 @@ public class PxeStep : WorkflowStep
 {
     public PxeStep()
     {
-        Type = "Pxe";
+        Action = "Pxe";
     }
 }

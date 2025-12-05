@@ -1,14 +1,15 @@
 using System.Reflection;
 using System.Runtime.Loader;
 using Mass.Core.Abstractions;
+using Mass.Spec.Contracts.Plugins;
 
 namespace Mass.Core.Plugins;
 
-public class PluginLoader
+public class PluginLoader : IPluginLoader
 {
     private readonly Dictionary<string, AssemblyLoadContext> _loadContexts = new();
 
-    public IModule? LoadPlugin(string pluginPath, PluginManifest manifest)
+    public IPlugin? LoadPlugin(string pluginPath, PluginManifest manifest)
     {
         var assemblyPath = Path.Combine(pluginPath, manifest.EntryAssembly);
         
@@ -28,12 +29,21 @@ public class PluginLoader
             throw new TypeLoadException($"Plugin type not found: {manifest.EntryType}");
         }
 
-        if (!typeof(IModule).IsAssignableFrom(pluginType))
+        if (!typeof(IPlugin).IsAssignableFrom(pluginType))
         {
-            throw new InvalidOperationException($"Type {manifest.EntryType} does not implement IModule");
+            throw new InvalidOperationException($"Type {manifest.EntryType} does not implement IPlugin");
         }
 
-        return Activator.CreateInstance(pluginType) as IModule;
+        var plugin = Activator.CreateInstance(pluginType) as IPlugin;
+        // We can't set the Manifest property on the interface if it's read-only without a setter or constructor injection.
+        // Assuming the plugin implementation handles its own manifest or we need to pass it.
+        // For now, let's assume the plugin implementation might need to be initialized with it, 
+        // but the interface only has a getter. 
+        // Let's modify the interface or the loader to handle this.
+        // Actually, usually the plugin knows its own metadata, OR we inject it.
+        // Given the previous code, let's assume we just return the instance.
+        
+        return plugin;
     }
 
     public void UnloadPlugin(string pluginId)

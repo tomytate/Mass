@@ -1,0 +1,33 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Mass.Spec -> C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Debug\net10.0\Mass.Spec.dll
+  Mass.Core -> C:\Users\Administrator\Desktop\Mass\src\Mass.Core\bin\Debug\net10.0\Mass.Core.dll
+  ProUSB -> C:\Users\Administrator\Desktop\Mass\src\ProUSB\bin\Debug\net10.0\ProUSB.dll
+  Mass.Core.Tests -> C:\Users\Administrator\Desktop\Mass\tests\Mass.Core.Tests\bin\Debug\net10.0\Mass.Core.Tests.dll
+  ProUSB.Tests -> C:\Users\Administrator\Desktop\Mass\tests\ProUSB.Tests\bin\Debug\net10.0\ProUSB.Tests.dll
+  ProPXEServer.API -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.API\bin\Debug\net10.0\ProPXEServer.API.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(17,55): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.Abstractions.NullLogger<Mass.Core.Configuration.JsonConfigurationService>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Program.cs(10,42): error CS0246: The type or namespace name 'ILogService' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\WorkflowCommand.cs(101,49): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.Abstractions.NullLogger<Mass.Core.Workflows.WorkflowExecutor>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(22,42): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.ILogger<Mass.Core.Workflows.WorkflowExecutor>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(97,57): error CS0234: The type or namespace name 'ILogService' does not exist in the namespace 'Mass.Core.Logging' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(103,84): error CS0234: The type or namespace name 'ILogService' does not exist in the namespace 'Mass.Core.Logging' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(30,24): warning MVVMTK0039: The method Mass.Launcher.ViewModels.WorkflowsViewModel.LoadWorkflows() annotated with [RelayCommand] is async void (make sure to return a Task type instead) (https://aka.ms/mvvmtoolkit/errors/mvvmtk0039) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+  ProPXEServer.Plugin -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Plugin\bin\Debug\net10.0\ProPXEServer.Plugin.dll
+  ProPXEServer.API.Tests -> C:\Users\Administrator\Desktop\Mass\tests\ProPXEServer.API.Tests\bin\Debug\net10.0\ProPXEServer.API.Tests.dll
+  ProPXEServer.Client -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.dll
+  ProPXEServer.Client (Blazor output) -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot
+
+Build FAILED.
+
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(30,24): warning MVVMTK0039: The method Mass.Launcher.ViewModels.WorkflowsViewModel.LoadWorkflows() annotated with [RelayCommand] is async void (make sure to return a Task type instead) (https://aka.ms/mvvmtoolkit/errors/mvvmtk0039) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\ConfigCommand.cs(17,55): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.Abstractions.NullLogger<Mass.Core.Configuration.JsonConfigurationService>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Program.cs(10,42): error CS0246: The type or namespace name 'ILogService' could not be found (are you missing a using directive or an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Commands\WorkflowCommand.cs(101,49): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.Abstractions.NullLogger<Mass.Core.Workflows.WorkflowExecutor>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.CLI\Mass.CLI.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\ViewModels\WorkflowsViewModel.cs(22,42): error CS1503: Argument 1: cannot convert from 'Microsoft.Extensions.Logging.ILogger<Mass.Core.Workflows.WorkflowExecutor>' to 'Mass.Core.Interfaces.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(97,57): error CS0234: The type or namespace name 'ILogService' does not exist in the namespace 'Mass.Core.Logging' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\App.axaml.cs(103,84): error CS0234: The type or namespace name 'ILogService' does not exist in the namespace 'Mass.Core.Logging' (are you missing an assembly reference?) [C:\Users\Administrator\Desktop\Mass\src\Mass.Launcher\Mass.Launcher.csproj]
+    1 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:05.18

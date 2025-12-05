@@ -47,105 +47,6 @@ public class WorkflowCommand : Command
         return command;
     }
 
-    private async Task ExecuteWorkflow(string filePath)
-    {
-        if (!File.Exists(filePath))
-        {
-            AnsiConsole.MarkupLine($"[red]Error: Workflow file not found: {filePath}[/]");
-            return;
-        }
-
-        try
-        {
-            var parser = new WorkflowParser();
-            var workflow = parser.ParseFromFile(filePath);
-            var executor = new WorkflowExecutor();
-
-            AnsiConsole.MarkupLine($"[bold green]Starting workflow: {workflow.Name}[/]");
-            if (!string.IsNullOrEmpty(workflow.Description))
-            {
-                AnsiConsole.MarkupLine($"[dim]{workflow.Description}[/]");
-            }
-            AnsiConsole.WriteLine();
-
-            await AnsiConsole.Status()
-                .Spinner(Spinner.Known.Dots)
-                .StartAsync("Executing workflow...", async ctx =>
-                {
-                    var result = await executor.ExecuteAsync(workflow);
-
-                    if (result.Success)
-                    {
-                        AnsiConsole.MarkupLine($"[bold green]Workflow completed successfully![/]");
-                    }
-                    else
-                    {
-                        AnsiConsole.MarkupLine($"[bold red]Workflow failed: {result.Message}[/]");
-                    }
-
-                    if (result.Context != null && result.Context.Logs.Any())
-                    {
-                        AnsiConsole.WriteLine();
-                        AnsiConsole.Write(new Rule("[yellow]Execution Log[/]"));
-                        foreach (var log in result.Context.Logs)
-                        {
-                            AnsiConsole.MarkupLine($"[dim]{log}[/]");
-                        }
-                    }
-                });
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.WriteException(ex);
-        }
-    }
-
-    private void ListWorkflows()
-    {
-        var workflowDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "workflows");
-        
-        if (!Directory.Exists(workflowDir))
-        {
-            AnsiConsole.MarkupLine($"[yellow]No workflows directory found at {workflowDir}[/]");
-            return;
-        }
-
-        var files = Directory.GetFiles(workflowDir, "*.yaml")
-            .Concat(Directory.GetFiles(workflowDir, "*.yml"))
-            .Concat(Directory.GetFiles(workflowDir, "*.json"));
-
-        var table = new Table();
-        table.AddColumn("Name");
-        table.AddColumn("Version");
-        table.AddColumn("Steps");
-        table.AddColumn("File");
-
-        var parser = new WorkflowParser();
-
-        foreach (var file in files)
-        {
-            try
-            {
-                var workflow = parser.ParseFromFile(file);
-                table.AddRow(
-                    workflow.Name, 
-                    workflow.Version, 
-                    workflow.Steps.Count.ToString(), 
-                    Path.GetFileName(file));
-            }
-            catch
-            {
-                table.AddRow(
-                    $"[red]Invalid: {Path.GetFileName(file)}[/]", 
-                    "-", 
-                    "-", 
-                    Path.GetFileName(file));
-            }
-        }
-
-        AnsiConsole.Write(table);
-    }
-
     private Command CreateValidateCommand()
     {
         var command = new Command("validate", "Validate a workflow file");
@@ -184,6 +85,105 @@ public class WorkflowCommand : Command
         return command;
     }
 
+    private async Task ExecuteWorkflow(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error: Workflow file not found: {filePath}[/]");
+            return;
+        }
+
+        try
+        {
+            var parser = new WorkflowParser();
+            var workflow = await parser.ParseFromFileAsync(filePath);
+            var executor = new WorkflowExecutor(new Mass.Core.Logging.FileLogService());
+
+            AnsiConsole.MarkupLine($"[bold green]Starting workflow: {workflow.Name}[/]");
+            if (!string.IsNullOrEmpty(workflow.Description))
+            {
+                AnsiConsole.MarkupLine($"[dim]{workflow.Description}[/]");
+            }
+            AnsiConsole.WriteLine();
+
+            await AnsiConsole.Status()
+                .Spinner(Spinner.Known.Dots)
+                .StartAsync("Executing workflow...", async ctx =>
+                {
+                    var result = await executor.ExecuteAsync(workflow);
+
+                    if (result.Success)
+                    {
+                        AnsiConsole.MarkupLine($"[bold green]Workflow completed successfully![/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"[bold red]Workflow failed: {result.Error?.MessageTemplate ?? "Unknown error"}[/]");
+                    }
+
+                    if (result.CompletedSteps != null && result.CompletedSteps.Any())
+                    {
+                        AnsiConsole.WriteLine();
+                        AnsiConsole.Write(new Rule("[yellow]Execution Log[/]"));
+                        // Note: Context logs are no longer directly exposed in WorkflowResult
+                        // We would need to capture logs via the ILogger passed to Executor if we want to show them
+                        // For now, we rely on the result message.
+                    }
+                });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.WriteException(ex);
+        }
+    }
+
+    private void ListWorkflows()
+    {
+        var workflowDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "workflows");
+        
+        if (!Directory.Exists(workflowDir))
+        {
+            AnsiConsole.MarkupLine($"[yellow]No workflows directory found at {workflowDir}[/]");
+            return;
+        }
+
+        var files = Directory.GetFiles(workflowDir, "*.yaml")
+            .Concat(Directory.GetFiles(workflowDir, "*.yml"))
+            .Concat(Directory.GetFiles(workflowDir, "*.json"));
+
+        var table = new Table();
+        table.AddColumn("Name");
+        table.AddColumn("Version");
+        table.AddColumn("Steps");
+        table.AddColumn("File");
+
+        var parser = new WorkflowParser();
+
+        foreach (var file in files)
+        {
+            try
+            {
+                // Synchronous parse for list command
+                var workflow = parser.ParseFromFileAsync(file).GetAwaiter().GetResult();
+                table.AddRow(
+                    workflow.Name, 
+                    workflow.Version, 
+                    workflow.Steps.Count.ToString(), 
+                    Path.GetFileName(file));
+            }
+            catch
+            {
+                table.AddRow(
+                    $"[red]Invalid: {Path.GetFileName(file)}[/]", 
+                    "-", 
+                    "-", 
+                    Path.GetFileName(file));
+            }
+        }
+
+        AnsiConsole.Write(table);
+    }
+
     private async Task ValidateWorkflow(string filePath)
     {
         if (!File.Exists(filePath))
@@ -194,13 +194,11 @@ public class WorkflowCommand : Command
 
         try
         {
-            var workflowsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "workflows");
-            var engine = new WorkflowEngine(workflowsPath);
-            
             var parser = new WorkflowParser();
-            var workflow = parser.ParseFromFile(filePath);
+            var workflow = await parser.ParseFromFileAsync(filePath);
             
-            var validation = await engine.ValidateWorkflowAsync(workflow.Id);
+            var validator = new WorkflowValidator();
+            var validation = validator.Validate(workflow);
             
             if (validation.IsValid)
             {
@@ -252,7 +250,7 @@ public class WorkflowCommand : Command
         {
             try
             {
-                var workflow = parser.ParseFromFile(file);
+                var workflow = parser.ParseFromFileAsync(file).GetAwaiter().GetResult();
                 table.AddRow(
                     workflow.Name,
                     workflow.Description,

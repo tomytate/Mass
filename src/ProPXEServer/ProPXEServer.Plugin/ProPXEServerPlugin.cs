@@ -1,11 +1,11 @@
 using Mass.Core.Abstractions;
-using Mass.Core.Plugins;
+using Mass.Spec.Contracts.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace ProPXEServer.Plugin;
 
-public class ProPXEServerPlugin : IModule
+public class ProPXEServerPlugin : IPlugin
 {
     private System.Diagnostics.Process? _serverProcess;
 
@@ -23,24 +23,18 @@ public class ProPXEServerPlugin : IModule
         Permissions = new List<string> { "network", "filesystem" }
     };
 
-    public void RegisterServices(IServiceCollection services)
+    public void Init(IServiceProvider services)
     {
-        // Register ProPXEServer services here if needed to be shared
-        // For now, the web host manages its own services
+        // Initialize services if needed
     }
 
-    public Task InitializeAsync(IServiceProvider services, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
-
-    public async Task ActivateAsync(CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (_serverProcess == null)
         {
             // Locate the executable
             // Assuming standard build output structure relative to the plugin dll
-            var pluginDir = Path.GetDirectoryName(typeof(ProPXEServerPlugin).Assembly.Location);
+            var pluginDir = Path.GetDirectoryName(typeof(ProPXEServerPlugin).Assembly.Location) ?? AppContext.BaseDirectory;
             // We need to find ProPXEServer.API.exe. 
             // In dev, it might be in a different path, but for now let's try to find it relative to the plugin or known path.
             
@@ -70,7 +64,7 @@ public class ProPXEServerPlugin : IModule
         await Task.CompletedTask;
     }
 
-    public async Task DeactivateAsync(CancellationToken cancellationToken = default)
+    public async Task StopAsync(CancellationToken cancellationToken = default)
     {
         if (_serverProcess != null && !_serverProcess.HasExited)
         {
@@ -86,11 +80,6 @@ public class ProPXEServerPlugin : IModule
                 _serverProcess = null;
             }
         }
-    }
-
-    public Task UnloadAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
     }
 }
 

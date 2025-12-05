@@ -43,11 +43,11 @@ public partial class PluginsViewModel : ViewModelBase
         {
             if (plugin.State == PluginState.Running)
             {
-                await _lifecycleManager.ShutdownPluginAsync(pluginId);
+                await _lifecycleManager.StopPluginAsync(pluginId);
             }
             else if (plugin.State == PluginState.Loaded || plugin.State == PluginState.Stopped)
             {
-                await _lifecycleManager.InitializePluginAsync(pluginId, null!);
+                await _lifecycleManager.StartPluginAsync(pluginId);
             }
         }
         

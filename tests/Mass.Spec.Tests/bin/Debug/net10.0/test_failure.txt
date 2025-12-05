@@ -1,0 +1,1 @@
+(Line: 2, Col: 3, Idx: 14) - (Line: 2, Col: 11, Idx: 22): Property 'DateTime' not found on type 'System.DateTimeOffset'.

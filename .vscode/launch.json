@@ -1,0 +1,42 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Mass.Launcher",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Mass.Launcher/bin/Debug/net10.0/Mass.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Mass.Launcher",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Launch Mass.CLI",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Mass.CLI/bin/Debug/net10.0/Mass.CLI.dll",
+            "args": [
+                "--help"
+            ],
+            "cwd": "${workspaceFolder}/src/Mass.CLI",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Test Mass.Core",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "dotnet",
+            "args": [
+                "test",
+                "${workspaceFolder}/tests/Mass.Core.Tests/Mass.Core.Tests.csproj"
+            ],
+            "cwd": "${workspaceFolder}/tests/Mass.Core.Tests",
+            "console": "internalConsole"
+        }
+    ]
+}

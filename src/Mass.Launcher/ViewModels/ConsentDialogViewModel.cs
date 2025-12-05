@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Mass.Core.Abstractions;
-using Mass.Core.Configuration;
+using Mass.Core.Interfaces;
+using Mass.Spec.Config;
 using Mass.Core.Telemetry;
 using Mass.Core.UI;
 
@@ -22,6 +22,10 @@ public partial class ConsentDialogViewModel : ViewModelBase
     [RelayCommand]
     private async Task AcceptAsync()
     {
+        // Set consent through telemetry service
+        _telemetry.ConsentGiven = true;
+
+        // Also persist to AppSettings for backwards compatibility
         var settings = _config.Get<AppSettings>("AppSettings", new AppSettings());
         if (settings != null)
         {
@@ -30,7 +34,8 @@ public partial class ConsentDialogViewModel : ViewModelBase
             _config.Set("AppSettings", settings);
             await _config.SaveAsync();
             
-            _telemetry.TrackEvent("TelemetryConsentGiven");
+            // Track consent event using extension method
+            _telemetry.TrackEvent("TelemetryConsentGiven", "Consent");
         }
         
         CloseDialog();
@@ -39,6 +44,10 @@ public partial class ConsentDialogViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeclineAsync()
     {
+        // Set consent through telemetry service
+        _telemetry.ConsentGiven = false;
+
+        // Also persist to AppSettings for backwards compatibility
         var settings = _config.Get<AppSettings>("AppSettings", new AppSettings());
         if (settings != null)
         {

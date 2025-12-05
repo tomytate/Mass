@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Mass.Spec\Mass.Spec.csproj" />
     <ProjectReference Include="..\..\Mass.Core\Mass.Core.csproj" />
   </ItemGroup>
 

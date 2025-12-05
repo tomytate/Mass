@@ -9,16 +9,17 @@ namespace Mass.Launcher.ViewModels;
 public partial class WorkflowsViewModel : ViewModelBase
 {
     private readonly WorkflowParser _parser = new();
-    private readonly WorkflowExecutor _executor = new();
+    private readonly WorkflowExecutor _executor;
     private readonly IActivityService _activityService;
     private string _workflowDirectory = string.Empty;
 
     public ObservableCollection<WorkflowInfo> Workflows { get; } = new();
     public ObservableCollection<string> ExecutionLogs { get; } = new();
 
-    public WorkflowsViewModel(IActivityService activityService)
+    public WorkflowsViewModel(IActivityService activityService, Mass.Core.Interfaces.ILogService logger)
     {
         _activityService = activityService;
+        _executor = new WorkflowExecutor(logger);
         Title = "Workflows";
         _workflowDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "workflows");
         Directory.CreateDirectory(_workflowDirectory);
@@ -26,7 +27,7 @@ public partial class WorkflowsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void LoadWorkflows()
+    private async void LoadWorkflows()
     {
         Workflows.Clear();
         
@@ -41,7 +42,7 @@ public partial class WorkflowsViewModel : ViewModelBase
         {
             try
             {
-                var workflow = _parser.ParseFromFile(file);
+                var workflow = await _parser.ParseFromFileAsync(file);
                 var id = $"workflow:{Path.GetFileNameWithoutExtension(file)}";
                 
                 Workflows.Add(new WorkflowInfo
@@ -81,16 +82,17 @@ public partial class WorkflowsViewModel : ViewModelBase
 
         try
         {
-            var workflow = _parser.ParseFromFile(workflowInfo.FilePath);
+            var workflow = await _parser.ParseFromFileAsync(workflowInfo.FilePath);
             var result = await _executor.ExecuteAsync(workflow);
 
-            if (result.Context != null)
-            {
-                foreach (var log in result.Context.Logs)
-                {
-                    ExecutionLogs.Add(log);
-                }
-            }
+            // Logs are now handled by the ILogService, not returned in the result
+            // if (result.Logs != null)
+            // {
+            //     foreach (var log in result.Logs)
+            //     {
+            //         ExecutionLogs.Add(log);
+            //     }
+            // }
 
             workflowInfo.Status = result.Success ? "Completed" : "Failed";
         }

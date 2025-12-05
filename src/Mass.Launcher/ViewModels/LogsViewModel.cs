@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Mass.Core.Interfaces;
 using Mass.Core.Logging;
+using Mass.Spec.Contracts.Logging;
 using Mass.Core.UI;
 using System.Collections.ObjectModel;
 
@@ -68,7 +70,7 @@ public partial class LogsViewModel : ViewModelBase
             var exportPath = Path.Combine(desktop, $"mass_logs_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
             
             var lines = LogEntries.Select(e => 
-                $"[{e.Timestamp:yyyy-MM-dd HH:mm:ss}] [{e.Level}] [{e.Category}] {e.Message}");
+                $"[{e.Timestamp:yyyy-MM-dd HH:mm:ss}] [{e.Level}] [{e.Source}] {e.Message}");
             
             File.WriteAllLines(exportPath, lines);
             

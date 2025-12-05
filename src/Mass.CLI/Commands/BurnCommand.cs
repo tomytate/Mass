@@ -1,12 +1,17 @@
 using System.CommandLine;
+using Mass.Core.Interfaces;
+using Mass.Core.Logging;
 using Spectre.Console;
 
 namespace Mass.CLI.Commands;
 
 public class BurnCommand : Command
 {
-    public BurnCommand() : base("burn", "Burn an ISO image to a USB drive")
+    private readonly ILogService _logger;
+
+    public BurnCommand(ILogService logger) : base("burn", "Burn an ISO image to a USB drive")
     {
+        _logger = logger;
         var isoOption = new Option<string>(
             aliases: new[] { "--iso", "-i" },
             description: "Path to the ISO image file")
@@ -56,6 +61,8 @@ public class BurnCommand : Command
         AnsiConsole.MarkupLine($"[bold]Scheme:[/] {scheme}");
         AnsiConsole.WriteLine();
 
+        _logger.LogInformation($"Starting burn operation: ISO={isoPath}, Drive={driveLetter}, FS={filesystem}, Scheme={scheme}", "BurnCommand");
+
         await AnsiConsole.Progress()
             .StartAsync(async ctx => 
             {
@@ -75,9 +82,11 @@ public class BurnCommand : Command
                 catch (Exception ex)
                 {
                     AnsiConsole.MarkupLine($"[red]Error: {ex.Message}[/]");
+                    _logger.LogError("Burn operation failed", ex, "BurnCommand");
                 }
             });
 
         AnsiConsole.MarkupLine("[bold green]Command completed![/]");
+        _logger.LogInformation("Burn operation completed successfully", "BurnCommand");
     }
 }

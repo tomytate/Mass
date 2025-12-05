@@ -1,0 +1,14 @@
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Release\net10.0\Mass.Spec.deps.json
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Release\net10.0\Mass.Spec.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Release\net10.0\Mass.Spec.pdb
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Release\net10.0\Mass.Spec.xml
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.sourcelink.json
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\refint\Mass.Spec.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.xml
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\Mass.Spec.pdb
+C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\obj\Release\net10.0\ref\Mass.Spec.dll

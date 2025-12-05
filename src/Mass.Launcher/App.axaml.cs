@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using ProUSB;
 
 namespace Mass.Launcher;
 
@@ -76,13 +77,36 @@ public partial class App : Application
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MassSuite",
             "settings.json");
-        var configService = new Mass.Core.Configuration.JsonConfigurationService(configPath);
-        builder.Services.AddSingleton<Mass.Core.Abstractions.IConfigurationService>(configService);
+            
+        // Create FileLogService early for configuration loading
+        var fileLogService = new Mass.Core.Logging.FileLogService();
+        
+        var configService = new Mass.Core.Configuration.JsonConfigurationService(
+            fileLogService, 
+            configPath);
+        builder.Services.AddSingleton<Mass.Core.Interfaces.IConfigurationService>(sp => configService);
 
         builder.Services.AddSingleton<INavigationService, NavigationService>();
         builder.Services.AddSingleton<Mass.Core.Services.IStatusService, Mass.Core.Services.StatusService>();
         builder.Services.AddSingleton<Mass.Core.Services.IActivityService, Mass.Core.Services.ActivityService>();
-        builder.Services.AddSingleton<Mass.Core.Logging.ILogService, Mass.Core.Logging.FileLogService>();
+        
+        // Register Telemetry
+        builder.Services.AddSingleton<ITelemetryService, LocalTelemetryService>();
+        
+        // Register Composite Logger
+        builder.Services.AddSingleton<Mass.Core.Interfaces.ILogService>(sp => 
+        {
+            var telemetry = sp.GetRequiredService<ITelemetryService>();
+            var telemetryLog = new Mass.Core.Logging.TelemetryLogService(telemetry);
+            
+            // Combine FileLogService (created early) and TelemetryLogService
+            return new Mass.Core.Logging.CompositeLogService(new Mass.Core.Interfaces.ILogService[] 
+            { 
+                fileLogService, 
+                telemetryLog 
+            });
+        });
+
         builder.Services.AddSingleton<Mass.Core.Services.INotificationService, Mass.Core.Services.NotificationService>();
         builder.Services.AddSingleton<Mass.Core.Services.ResourceAlertService>();
         builder.Services.AddSingleton<Mass.Core.Security.IElevationService, Mass.Core.Security.ElevationService>();
@@ -93,8 +117,6 @@ public partial class App : Application
         builder.Services.AddSingleton<Mass.Core.UI.ICommandPaletteService, Mass.Core.UI.CommandPaletteService>();
         builder.Services.AddSingleton<IDialogService, DialogService>();
         builder.Services.AddSingleton<Mass.Core.Services.IIpcService, Mass.Core.Services.IpcService>();
-        
-        builder.Services.AddSingleton<ITelemetryService, LocalTelemetryService>();
         builder.Services.AddTransient<ConsentDialogViewModel>();
 
         builder.Services.AddSingleton<IScriptingService, LuaScriptingService>();
@@ -116,6 +138,9 @@ public partial class App : Application
         builder.Services.AddTransient<OperationsConsoleViewModel>();
         builder.Services.AddSingleton<CommandPaletteViewModel>();
 
+        // Register ProUSB services
+        builder.Services.AddProUsb();
+
         var pluginPaths = new[]
         {
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "plugins"),
@@ -126,17 +151,20 @@ public partial class App : Application
 
         var pluginLoader = new PluginLoader();
         var pluginDiscovery = new PluginDiscoveryService(pluginPaths);
-        var pluginLifecycle = new PluginLifecycleManager(pluginLoader);
 
-        builder.Services.AddSingleton(pluginLoader);
+        builder.Services.AddSingleton<IPluginLoader>(pluginLoader);
         builder.Services.AddSingleton(pluginDiscovery);
-        builder.Services.AddSingleton(pluginLifecycle);
+        builder.Services.AddSingleton<PluginLifecycleManager>();
 
         onStatusUpdate("Building host...");
         Host = builder.Build();
         
         onStatusUpdate("Loading configuration...");
         await configService.LoadAsync();
+
+        // Initialize Plugin Manager (load persisted state)
+        var pluginLifecycle = Host.Services.GetRequiredService<PluginLifecycleManager>();
+        await pluginLifecycle.InitializeAsync();
         
         onStatusUpdate("Discovering plugins...");
         var discoveredPlugins = await pluginDiscovery.DiscoverPluginsAsync();
@@ -149,7 +177,8 @@ public partial class App : Application
             
             try
             {
-                await pluginLifecycle.LoadPluginAsync(plugin, Host.Services);
+                // LoadPluginAsync now handles initialization and persistence
+                await pluginLifecycle.LoadPluginAsync(plugin);
             }
             catch (Exception ex)
             {

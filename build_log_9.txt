@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Mass.Spec -> C:\Users\Administrator\Desktop\Mass\src\Mass.Spec\bin\Debug\net10.0\Mass.Spec.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Telemetry\LocalTelemetryService.cs(3,7): warning CS0105: The using directive for 'System.Text.Json' appeared previously in this namespace [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Configuration\JsonConfigurationService.cs(14,22): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Configuration\JsonConfigurationService.cs(24,9): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Workflows\WorkflowExecutor.cs(11,22): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Workflows\WorkflowExecutor.cs(13,29): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+  ProPXEServer.Client -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.dll
+  ProPXEServer.Client (Blazor output) -> C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot
+
+Build FAILED.
+
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Telemetry\LocalTelemetryService.cs(3,7): warning CS0105: The using directive for 'System.Text.Json' appeared previously in this namespace [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Configuration\JsonConfigurationService.cs(14,22): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Configuration\JsonConfigurationService.cs(24,9): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Workflows\WorkflowExecutor.cs(11,22): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Workflows\WorkflowExecutor.cs(13,29): error CS0104: 'ILogService' is an ambiguous reference between 'Mass.Core.Interfaces.ILogService' and 'Mass.Core.Logging.ILogService' [C:\Users\Administrator\Desktop\Mass\src\Mass.Core\Mass.Core.csproj]
+    1 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:03.56
