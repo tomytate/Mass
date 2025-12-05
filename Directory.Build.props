@@ -14,11 +14,11 @@
 
   <PropertyGroup>
     <Version>1.0.0</Version>
-    <Authors>MassSuite Team</Authors>
-    <Company>MassSuite</Company>
+    <Authors>Tomy Tolledo</Authors>
+    <Company>Tomy Tolledo</Company>
     <Product>Mass Suite</Product>
-    <Copyright>Copyright © 2024-2025 MassSuite</Copyright>
-    <RepositoryUrl>https://github.com/masssuite/mass</RepositoryUrl>
+    <Copyright>Copyright © 2024-2025 Tomy Tolledo</Copyright>
+    <RepositoryUrl>https://github.com/tomytate/Mass</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

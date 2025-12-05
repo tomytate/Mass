@@ -7,7 +7,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/masssuite/mass/ci.yml?style=for-the-badge&logo=github)](https://github.com/masssuite/mass/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/tomytate/Mass/ci.yml?style=for-the-badge&logo=github)](https://github.com/tomytate/Mass/actions)
 
 [Features](#-features) •
 [Quick Start](#-quick-start) •
@@ -79,8 +79,8 @@ Real-time monitoring and management through a modern Blazor-based admin portal. 
 
 ```bash
 # Clone the repository
-git clone https://github.com/masssuite/mass.git
-cd mass
+git clone https://github.com/tomytate/Mass.git
+cd Mass
 
 # Build the solution
 dotnet build
@@ -147,7 +147,7 @@ Mass/
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for details.
 
 ```bash
 # Create a feature branch
@@ -163,6 +163,14 @@ git push origin feature/amazing-feature
 
 ---
 
+## 👤 Author
+
+**Tomy Tolledo**
+
+- GitHub: [@tomytate](https://github.com/tomytate)
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -171,9 +179,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-Made with ❤️ by the Mass Suite Team
+Made with ❤️ by Tomy Tolledo
 
-[Report Bug](https://github.com/masssuite/mass/issues) •
-[Request Feature](https://github.com/masssuite/mass/issues)
+[Report Bug](https://github.com/tomytate/Mass/issues) •
+[Request Feature](https://github.com/tomytate/Mass/issues)
 
 </div>

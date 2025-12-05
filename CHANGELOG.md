@@ -18,11 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **ProPXEServer** - Network boot server with DHCP, TFTP, and HTTP services
 
 ### Technical
-- Upgraded to .NET 10 and C# 14
+- Built with .NET 10 and C# 14
 - Implemented unified design system (`Mass.UI.Shared`)
 - Added multi-tenancy support for SaaS deployment
 - Created plugin marketplace infrastructure
-- Comprehensive test coverage (83 tests)
+- Comprehensive test coverage (80+ tests)
 
 ### Documentation
 - Architecture documentation
@@ -31,4 +31,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Operations manual
 - Contributing guide
 
-[1.0.0]: https://github.com/masssuite/mass/releases/tag/v1.0.0
+[1.0.0]: https://github.com/tomytate/Mass/releases/tag/v1.0.0

@@ -30,7 +30,7 @@ public class ProUsbModule : IPlugin
         Name = "ProUSB",
         Version = "1.0.0",
         Description = "USB bootable media creator",
-        Author = "Mass Suite Team",
+        Author = "Tomy Tolledo",
         Icon = "💾",
         EntryAssembly = "ProUSB.dll",
         EntryType = "ProUSB.ProUsbModule",

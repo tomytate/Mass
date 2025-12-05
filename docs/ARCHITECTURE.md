@@ -120,3 +120,7 @@ Dashboard ←→ SignalR Hub ←→ Agent Workers
 - **Tenant Isolation**: SaaS data partitioned by tenant ID
 - **Agent Authentication**: SignalR connections authenticated via token
 - **API Versioning**: Breaking changes isolated to major versions
+
+## Author
+
+Developed by [Tomy Tolledo](https://github.com/tomytate)

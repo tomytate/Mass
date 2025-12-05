@@ -1,5 +1,7 @@
 # Contributing to Mass Suite
 
+Thank you for your interest in contributing to Mass Suite!
+
 ## Development Setup
 
 ### Prerequisites
@@ -11,8 +13,8 @@
 ### Clone and Build
 
 ```bash
-git clone https://github.com/masssuite/mass.git
-cd mass
+git clone https://github.com/tomytate/Mass.git
+cd Mass
 dotnet restore
 dotnet build
 ```
@@ -31,15 +33,15 @@ dotnet test
 | `develop` | Integration branch |
 | `feature/*` | New features |
 | `fix/*` | Bug fixes |
-| `release/*` | Release preparation |
 
 ### Workflow
 
-1. Create feature branch from `develop`
-2. Implement changes with tests
-3. Open pull request to `develop`
-4. Code review and approval
-5. Squash merge to `develop`
+1. Fork the repository
+2. Create feature branch from `main`
+3. Implement changes with tests
+4. Open pull request to `main`
+5. Code review and approval
+6. Squash merge
 
 ## Coding Conventions
 
@@ -80,14 +82,7 @@ Within each type:
 2. Constructors
 3. Properties
 4. Public methods
-5. Internal methods
-6. Private methods
-
-### Comments
-
-- Remove inline comments that restate code
-- Keep XML docs for public API types only
-- No TODO/FIXME markers in production code
+5. Private methods
 
 ## Testing Requirements
 
@@ -112,40 +107,17 @@ public async Task ExecuteAsync_ValidWorkflow_ReturnsSuccess()
 }
 ```
 
-### Integration Tests
-
-- Test cross-component flows
-- Use TestContainers for databases
-- Mark with `[Trait("Category", "Integration")]`
-
 ## Pull Request Checklist
 
 - [ ] Code compiles without warnings
 - [ ] All tests pass
-- [ ] No TODO/FIXME markers added
 - [ ] Documentation updated (if applicable)
 - [ ] Follows C# 14 conventions
-- [ ] Breaking changes documented
 
-## Code Review
+## Questions?
 
-### Reviewers Check
+Open an issue at [github.com/tomytate/Mass/issues](https://github.com/tomytate/Mass/issues)
 
-- Correctness: Does it work?
-- Clarity: Is it readable?
-- Completeness: Are edge cases handled?
-- Consistency: Does it match existing patterns?
+---
 
-### Response Time
-
-- Initial review: 24 hours
-- Follow-up: 8 hours
-
-## Release Process
-
-1. Create `release/vX.Y.Z` branch
-2. Update version in `Directory.Build.props`
-3. Update CHANGELOG.md
-4. Create pull request to `main`
-5. Tag release after merge
-6. CI/CD publishes artifacts
+Thank you for contributing! 🚀

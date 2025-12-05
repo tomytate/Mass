@@ -15,7 +15,7 @@ public class ProPXEServerPlugin : IPlugin
         Name = "ProPXEServer",
         Version = "1.0.0",
         Description = "PXE network boot server",
-        Author = "Mass Suite Team",
+        Author = "Tomy Tolledo",
         Icon = "🖥️",
         EntryAssembly = "ProPXEServer.Plugin.dll",
         EntryType = "ProPXEServer.Plugin.ProPXEServerPlugin",
