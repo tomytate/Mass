@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "pS5+tv6myM4=",
+  "dgSpecHash": "Cg+dqkEEkTo=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\src\\ProPXEServer\\ProPXEServer.API\\ProPXEServer.API.csproj",
   "expectedPackageFiles": [
@@ -39,6 +39,7 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.identitymodel.protocols\\8.0.1\\microsoft.identitymodel.protocols.8.0.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\8.0.1\\microsoft.identitymodel.protocols.openidconnect.8.0.1.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.0.1\\microsoft.identitymodel.tokens.8.0.1.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.0\\microsoft.net.illink.tasks.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.stringtools\\17.14.28\\microsoft.net.stringtools.17.14.28.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\mono.texttemplating\\3.0.0\\mono.texttemplating.3.0.0.nupkg.sha512",

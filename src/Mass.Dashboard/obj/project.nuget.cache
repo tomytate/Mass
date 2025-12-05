@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "dgSpecHash": "Fn5BcxruEdE=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\src\\Mass.Dashboard\\Mass.Dashboard.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Administrator\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\keralua\\1.4.7\\keralua.1.4.7.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.0\\microsoft.aspnetcore.app.internal.assets.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.0\\microsoft.net.illink.tasks.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\nlua\\1.7.6\\nlua.1.7.6.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.codedom\\10.0.0\\system.codedom.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.configuration.configurationmanager\\10.0.0\\system.configuration.configurationmanager.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.diagnostics.performancecounter\\10.0.0\\system.diagnostics.performancecounter.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.management\\10.0.0\\system.management.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\system.security.cryptography.protecteddata\\10.0.0\\system.security.cryptography.protecteddata.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\yamldotnet\\16.3.0\\yamldotnet.16.3.0.nupkg.sha512"
+  ],
+  "logs": []
+}

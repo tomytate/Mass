@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "yciwslqGaIA=",
+  "dgSpecHash": "xKjk5TnGnvc=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\tests\\ProUSB.Tests\\ProUSB.Tests.csproj",
   "expectedPackageFiles": [
@@ -43,6 +43,7 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.options\\10.0.0\\microsoft.extensions.options.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\10.0.0\\microsoft.extensions.options.configurationextensions.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.0\\microsoft.extensions.primitives.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.0\\microsoft.net.illink.tasks.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.test.sdk\\17.11.0\\microsoft.net.test.sdk.17.11.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.testplatform.objectmodel\\17.11.0\\microsoft.testplatform.objectmodel.17.11.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.testplatform.testhost\\17.11.0\\microsoft.testplatform.testhost.17.11.0.nupkg.sha512",

@@ -1,0 +1,14 @@
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\bin\Debug\net10.0\Themes\Icons.css
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\bin\Debug\net10.0\Themes\MassTheme.css
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\bin\Debug\net10.0\Mass.UI.Shared.deps.json
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\bin\Debug\net10.0\Mass.UI.Shared.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\bin\Debug\net10.0\Mass.UI.Shared.pdb
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.AssemblyInfoInputs.cache
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.AssemblyInfo.cs
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.sourcelink.json
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\refint\Mass.UI.Shared.dll
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\Mass.UI.Shared.pdb
+C:\Users\Administrator\Desktop\Mass\src\Mass.UI.Shared\obj\Debug\net10.0\ref\Mass.UI.Shared.dll

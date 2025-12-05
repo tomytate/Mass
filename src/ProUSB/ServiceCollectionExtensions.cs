@@ -42,11 +42,6 @@ public static class ServiceCollectionExtensions
         s.AddSingleton<IsoDownloadService>();
         s.AddTransient<MainViewModel>();
         
-        // Register the plugin itself so it can be resolved if needed, 
-        // though PluginLifecycleManager usually loads it. 
-        // If it's a "System Plugin", maybe we register it here?
-        // For now, let's just register the services.
-        
         return s;
     }
 }

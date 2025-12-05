@@ -1,3 +1,4 @@
+using System.Management;
 using Mass.Core.Interfaces;
 using Mass.Spec.Contracts.Usb;
 using Microsoft.Extensions.Logging;
@@ -7,9 +8,6 @@ using ProUSB.Engine;
 
 namespace ProUSB.Services;
 
-/// <summary>
-/// Implementation of IUsbBurner using ProUSB burn engine.
-/// </summary>
 public class UsbBurner : IUsbBurner
 {
     private readonly BurnEngine _burnEngine;
@@ -31,7 +29,6 @@ public class UsbBurner : IUsbBurner
         IProgress<Mass.Spec.Contracts.Usb.BurnProgress>? progress = null, 
         CancellationToken ct = default)
     {
-        // Safety check: require elevation/permission
         if (!_safetyConfig.AllowRealWrites)
         {
             throw new OperationException("elevation_required", 
@@ -45,7 +42,6 @@ public class UsbBurner : IUsbBurner
         
         try
         {
-            // Convert Mass.Spec UsbJob to legacy BurnRequest
             var legacyRequest = new ProUSB.Engine.BurnRequest(
                 IsoPath: job.ImagePath,
                 TargetDeviceId: job.TargetDeviceId,
@@ -54,7 +50,6 @@ public class UsbBurner : IUsbBurner
                 PersistenceSizeMB: job.PersistenceSizeMB
             );
 
-            // Setup progress reporting adapter
             IProgress<ProUSB.Engine.BurnProgress>? legacyProgress = null;
             if (progress != null)
             {
@@ -71,7 +66,6 @@ public class UsbBurner : IUsbBurner
                 });
             }
 
-            // Execute burn using legacy engine
             var legacyResult = await _burnEngine.BurnIsoAsync(
                 legacyRequest, 
                 legacyProgress!, 
@@ -80,7 +74,6 @@ public class UsbBurner : IUsbBurner
             var duration = DateTime.UtcNow - startTime;
             _logger.LogInformation("Burn operation completed in {Duration}", duration);
 
-            // Convert legacy result to Mass.Spec format
             return new Mass.Spec.Contracts.Usb.BurnResult
             {
                 IsSuccess = legacyResult.Success,
@@ -115,17 +108,42 @@ public class UsbBurner : IUsbBurner
         try
         {
             _logger.LogInformation("Enumerating USB devices");
+            
+            var devices = new List<DeviceInfo>();
+            
+            if (!OperatingSystem.IsWindows())
+            {
+                return devices;
+            }
 
-            // TODO: Implement proper device enumeration using ProUSB's logic
-            // For now, return empty list
-            await Task.CompletedTask;
+            await Task.Run(() =>
+            {
+                using var searcher = new ManagementObjectSearcher(
+                    "SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'");
+                
+                foreach (ManagementObject disk in searcher.Get())
+                {
+                    var deviceId = disk["DeviceID"]?.ToString() ?? "";
+                    var model = disk["Model"]?.ToString() ?? "Unknown";
+                    var size = Convert.ToInt64(disk["Size"] ?? 0);
+                    
+                    devices.Add(new DeviceInfo
+                    {
+                        Id = deviceId,
+                        Name = model,
+                        Size = size,
+                        Path = deviceId,
+                        IsRemovable = true
+                    });
+                }
+            }, ct);
 
-            return Enumerable.Empty<DeviceInfo>();
+            return devices;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to enumerate USB devices");
-            return Enumerable.Empty<DeviceInfo>();
+            return [];
         }
     }
 
@@ -137,10 +155,8 @@ public class UsbBurner : IUsbBurner
         {
             _logger.LogInformation("Verifying device {DeviceId}", job.TargetDeviceId);
 
-            // Use ProUSB's existing verification logic
             var legacyResult = await _burnEngine.VerifyAsync(job.TargetDeviceId, ct);
 
-            // Convert to Mass.Spec format
             return new Mass.Spec.Contracts.Usb.VerifyResult
             {
                 IsSuccess = legacyResult.Success,
@@ -153,7 +169,7 @@ public class UsbBurner : IUsbBurner
             return new Mass.Spec.Contracts.Usb.VerifyResult
             {
                 IsSuccess = false,
-                Errors = new List<string> { ex.Message }
+                Errors = [ex.Message]
             };
         }
     }

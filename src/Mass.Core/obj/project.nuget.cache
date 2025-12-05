@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "9dkpdE83W/I=",
+  "dgSpecHash": "uuY2JZWZhjE=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\src\\Mass.Core\\Mass.Core.csproj",
   "expectedPackageFiles": [
@@ -9,6 +9,7 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\10.0.0\\microsoft.extensions.dependencyinjection.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.0\\microsoft.net.illink.tasks.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\nlua\\1.7.6\\nlua.1.7.6.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.codedom\\10.0.0\\system.codedom.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\system.configuration.configurationmanager\\10.0.0\\system.configuration.configurationmanager.10.0.0.nupkg.sha512",

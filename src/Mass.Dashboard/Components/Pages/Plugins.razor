@@ -1,0 +1,108 @@
+@page "/plugins"
+
+<PageTitle>Plugins - Mass Suite</PageTitle>
+
+<div class="page-header">
+    <h1>🔌 Plugin Marketplace</h1>
+    <div class="header-actions">
+        <input type="text" class="mass-input search-input" placeholder="Search plugins..." @bind="_searchQuery" />
+        <button class="mass-btn mass-btn-secondary" @onclick="RefreshPlugins">🔄 Refresh</button>
+    </div>
+</div>
+
+<div class="tabs">
+    <button class="tab @(_activeTab == "installed" ? "active" : "")" @onclick='() => _activeTab = "installed"'>
+        Installed (@_installedPlugins.Count)
+    </button>
+    <button class="tab @(_activeTab == "available" ? "active" : "")" @onclick='() => _activeTab = "available"'>
+        Available (@_availablePlugins.Count)
+    </button>
+</div>
+
+@if (_activeTab == "installed")
+{
+    <div class="plugins-grid">
+        @foreach (var plugin in _installedPlugins)
+        {
+            <div class="plugin-card installed">
+                <div class="plugin-icon">@plugin.Icon</div>
+                <div class="plugin-info">
+                    <h3>@plugin.Name</h3>
+                    <p>@plugin.Description</p>
+                    <div class="plugin-meta">
+                        <span class="version">v@plugin.Version</span>
+                        <span class="author">by @plugin.Author</span>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="mass-btn mass-btn-secondary">⚙️ Configure</button>
+                    <button class="mass-btn mass-btn-ghost" @onclick="() => UninstallPlugin(plugin)">🗑️</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="plugins-grid">
+        @foreach (var plugin in _availablePlugins)
+        {
+            <div class="plugin-card">
+                <div class="plugin-icon">@plugin.Icon</div>
+                <div class="plugin-info">
+                    <h3>@plugin.Name</h3>
+                    <p>@plugin.Description</p>
+                    <div class="plugin-meta">
+                        <span class="version">v@plugin.Version</span>
+                        <span class="author">by @plugin.Author</span>
+                        <span class="downloads">📥 @plugin.Downloads</span>
+                    </div>
+                </div>
+                <div class="plugin-actions">
+                    <button class="mass-btn mass-btn-primary" @onclick="() => InstallPlugin(plugin)">
+                        ⬇️ Install
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private string _activeTab = "installed";
+    private string _searchQuery = "";
+
+    private List<PluginInfo> _installedPlugins = new()
+    {
+        new("📦", "AutoWIM", "Automatic WIM file processing", "1.2.0", "MassSuite", ""),
+        new("🔐", "SecureBoot", "Secure boot configuration helper", "2.0.1", "Community", ""),
+        new("📊", "Analytics", "Usage analytics and reporting", "1.0.0", "MassSuite", ""),
+    };
+
+    private List<PluginInfo> _availablePlugins = new()
+    {
+        new("☁️", "CloudSync", "Sync workflows to cloud storage", "1.0.0", "MassSuite", "2.4k"),
+        new("🔄", "AutoUpdate", "Automatic update checker", "1.1.0", "Community", "1.8k"),
+        new("📝", "LogExporter", "Export logs to various formats", "2.0.0", "Community", "956"),
+        new("🎨", "ThemePack", "Additional UI themes", "1.0.0", "Community", "3.1k"),
+        new("🔌", "RemoteAgent", "Remote agent management", "1.0.0", "MassSuite", "1.2k"),
+    };
+
+    private void RefreshPlugins()
+    {
+    }
+
+    private void InstallPlugin(PluginInfo plugin)
+    {
+        _availablePlugins.Remove(plugin);
+        _installedPlugins.Add(plugin);
+    }
+
+    private void UninstallPlugin(PluginInfo plugin)
+    {
+        _installedPlugins.Remove(plugin);
+        _availablePlugins.Add(plugin);
+    }
+
+    private record PluginInfo(string Icon, string Name, string Description, string Version, string Author, string Downloads);
+}

@@ -1,0 +1,93 @@
+﻿@page "/"
+@inject ILogService Logger
+
+<PageTitle>Mass Suite Dashboard</PageTitle>
+
+<div class="dashboard-hero">
+    <h1>🚀 Mass Suite</h1>
+    <p class="subtitle">Unified Deployment & Automation Platform</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">💾</div>
+        <div class="stat-value">@_usbJobsToday</div>
+        <div class="stat-label">USB Jobs Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🌐</div>
+        <div class="stat-value">@_pxeBootsToday</div>
+        <div class="stat-label">PXE Boots Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⚙️</div>
+        <div class="stat-value">@_workflowsRun</div>
+        <div class="stat-label">Workflows Run</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🔌</div>
+        <div class="stat-value">@_activePlugins</div>
+        <div class="stat-label">Active Plugins</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="dashboard-card">
+        <h2>📊 Recent Activity</h2>
+        <ul class="activity-list">
+            @foreach (var activity in _recentActivities)
+            {
+                <li>
+                    <span class="activity-icon">@activity.Icon</span>
+                    <span class="activity-text">@activity.Description</span>
+                    <span class="activity-time">@activity.TimeAgo</span>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="dashboard-card">
+        <h2>⚡ Quick Actions</h2>
+        <div class="quick-actions">
+            <a href="/usb" class="action-btn">
+                <span class="action-icon">💾</span>
+                <span>Burn USB</span>
+            </a>
+            <a href="/pxe" class="action-btn">
+                <span class="action-icon">🌐</span>
+                <span>PXE Boot</span>
+            </a>
+            <a href="/workflows" class="action-btn">
+                <span class="action-icon">⚙️</span>
+                <span>Workflows</span>
+            </a>
+            <a href="/plugins" class="action-btn">
+                <span class="action-icon">🔌</span>
+                <span>Plugins</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _usbJobsToday = 12;
+    private int _pxeBootsToday = 48;
+    private int _workflowsRun = 156;
+    private int _activePlugins = 8;
+
+    private List<ActivityItem> _recentActivities = new()
+    {
+        new("✅", "USB burn completed: Windows 11 Pro", "2 min ago"),
+        new("🚀", "Workflow 'deploy-image' executed", "15 min ago"),
+        new("🌐", "PXE boot: 192.168.1.105", "32 min ago"),
+        new("🔌", "Plugin installed: AutoWIM", "1 hour ago"),
+        new("⚠️", "Workflow 'backup' failed", "2 hours ago"),
+    };
+
+    private record ActivityItem(string Icon, string Description, string TimeAgo);
+
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("Dashboard loaded", "Dashboard");
+    }
+}

@@ -4,37 +4,25 @@ using DiscUtils.Iso9660;
 
 namespace ProUSB.Patching;
 
-public class IsoPatchEngine : IIsoPatcher
+public class IsoPatchEngine(FileLogger logger) : IIsoPatcher
 {
-    private readonly FileLogger _logger;
-
-    public IsoPatchEngine(FileLogger logger)
-    {
-        _logger = logger;
-    }
-
     public async Task<PatchResult> PatchIsoAsync(PatchRequest request, CancellationToken ct = default)
     {
         var changes = new List<string>();
 
         try
         {
-            _logger.Info($"Patching ISO: {request.SourceIsoPath}");
-
-            // For now, we'll implement live patching (patch files on mounted volume)
-            // Future enhancement: Extract ISO, patch, rebuild ISO
+            logger.Info($"Patching ISO: {request.SourceIsoPath}");
 
             foreach (var operation in request.Operations)
             {
                 switch (operation.Type.ToLowerInvariant())
                 {
                     case "persistence":
-                        // This is handled during burn, not ISO modification
                         changes.Add("Persistence configuration set");
                         break;
 
                     case "bootloader":
-                        // Patch bootloader config files
                         var result = await PatchBootloaderAsync(
                             operation.Parameters.GetValueOrDefault("targetPath")?.ToString() ?? "",
                             ct);
@@ -42,7 +30,7 @@ public class IsoPatchEngine : IIsoPatcher
                         break;
 
                     default:
-                        _logger.Warn($"Unknown patch operation: {operation.Type}");
+                        logger.Warn($"Unknown patch operation: {operation.Type}");
                         break;
                 }
             }
@@ -51,8 +39,8 @@ public class IsoPatchEngine : IIsoPatcher
         }
         catch (Exception ex)
         {
-            _logger.Error($"ISO patching failed: {ex.Message}", ex);
-            return new PatchResult(false, "", new List<string> { ex.Message });
+            logger.Error($"ISO patching failed: {ex.Message}", ex);
+            return new PatchResult(false, "", [ex.Message]);
         }
     }
 
@@ -60,13 +48,12 @@ public class IsoPatchEngine : IIsoPatcher
     {
         try
         {
-            using var isoStream = File.OpenRead(isoPath);
+            await using var isoStream = File.OpenRead(isoPath);
             using var cd = new CDReader(isoStream, true);
 
             var fileInfo = new FileInfo(isoPath);
             var label = cd.VolumeLabel ?? "Unknown";
             
-            // Check for bootability by looking for EFI or boot directories
             var isBootable = DirectoryContainsEfi(cd.Root) || DirectoryContainsBoot(cd.Root);
             var bootMethods = new List<string>();
 
@@ -78,8 +65,6 @@ public class IsoPatchEngine : IIsoPatcher
                     bootMethods.Add("BIOS/Legacy");
             }
 
-            await Task.CompletedTask; // Placeholder for async consistency
-
             return new IsoInfo(
                 label,
                 fileInfo.Length,
@@ -90,8 +75,8 @@ public class IsoPatchEngine : IIsoPatcher
         }
         catch (Exception ex)
         {
-            _logger.Error($"ISO inspection failed: {ex.Message}", ex);
-            return new IsoInfo("Error", 0, "Unknown", false, new List<string>());
+            logger.Error($"ISO inspection failed: {ex.Message}", ex);
+            return new IsoInfo("Error", 0, "Unknown", false, []);
         }
     }
 
@@ -99,19 +84,17 @@ public class IsoPatchEngine : IIsoPatcher
     {
         var changes = new List<string>();
 
-        // Reuse logic from original IsoPatcher
-        var patcher = new Domain.Services.IsoPatcher(_logger);
+        var patcher = new Domain.Services.IsoPatcher(logger);
         await patcher.PatchAsync(volumePath, ct);
 
         changes.Add("Bootloader configuration patched for persistence");
         return changes;
     }
 
-    private bool DirectoryContainsEfi(DiscUtils.DiscDirectoryInfo dir)
+    private static bool DirectoryContainsEfi(DiscUtils.DiscDirectoryInfo dir)
     {
         try
         {
-            // Look for EFI directory or boot files
             foreach (var subDir in dir.GetDirectories())
             {
                 if (subDir.Name.Equals("EFI", StringComparison.OrdinalIgnoreCase))
@@ -135,15 +118,14 @@ public class IsoPatchEngine : IIsoPatcher
         }
     }
 
-    private bool DirectoryContainsBoot(DiscUtils.DiscDirectoryInfo dir)
+    private static bool DirectoryContainsBoot(DiscUtils.DiscDirectoryInfo dir)
     {
         try
         {
-            // Look for common boot directories or files
             foreach (var subDir in dir.GetDirectories())
             {
                 var name = subDir.Name.ToLowerInvariant();
-                if (name == "boot" || name == "isolinux" || name == "syslinux" || name == "grub")
+                if (name is "boot" or "isolinux" or "syslinux" or "grub")
                     return true;
             }
 

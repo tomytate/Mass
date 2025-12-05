@@ -39,17 +39,9 @@ public class ProUsbModule : IPlugin
 
     public void Init(IServiceProvider services)
     {
-        // Initialize any runtime components or register with RegistryService here
     }
 
-    public Task StartAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public Task StopAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
-

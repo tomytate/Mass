@@ -1,0 +1,56 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-layout">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            🚀 Mass Suite
+        </div>
+        <nav class="sidebar-nav">
+            <NavLink href="/" Match="NavLinkMatch.All">
+                <span class="nav-icon">🏠</span>
+                <span>Dashboard</span>
+            </NavLink>
+            <NavLink href="/usb">
+                <span class="nav-icon">💾</span>
+                <span>USB Burner</span>
+            </NavLink>
+            <NavLink href="/pxe">
+                <span class="nav-icon">🌐</span>
+                <span>PXE Server</span>
+            </NavLink>
+            <NavLink href="/workflows">
+                <span class="nav-icon">⚙️</span>
+                <span>Workflows</span>
+            </NavLink>
+            <NavLink href="/plugins">
+                <span class="nav-icon">🔌</span>
+                <span>Plugins</span>
+            </NavLink>
+            <NavLink href="/agents">
+                <span class="nav-icon">📡</span>
+                <span>Agents</span>
+            </NavLink>
+            <NavLink href="/telemetry">
+                <span class="nav-icon">📊</span>
+                <span>Telemetry</span>
+            </NavLink>
+            <NavLink href="/settings">
+                <span class="nav-icon">⚡</span>
+                <span>Settings</span>
+            </NavLink>
+        </nav>
+        <div class="sidebar-footer">
+            <span class="version">v1.0.0</span>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

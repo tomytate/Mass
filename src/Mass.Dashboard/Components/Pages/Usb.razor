@@ -1,0 +1,489 @@
+@page "/usb"
+
+<PageTitle>USB Burner - Mass Suite</PageTitle>
+
+<div class="page-header">
+    <h1>💾 USB Burner</h1>
+</div>
+
+<div class="burn-wizard">
+    <div class="wizard-step @(_currentStep >= 1 ? "active" : "") @(_currentStep > 1 ? "completed" : "")">
+        <div class="step-number">1</div>
+        <div class="step-label">Select ISO</div>
+    </div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step @(_currentStep >= 2 ? "active" : "") @(_currentStep > 2 ? "completed" : "")">
+        <div class="step-number">2</div>
+        <div class="step-label">Select Drive</div>
+    </div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step @(_currentStep >= 3 ? "active" : "") @(_currentStep > 3 ? "completed" : "")">
+        <div class="step-number">3</div>
+        <div class="step-label">Configure</div>
+    </div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step @(_currentStep >= 4 ? "active" : "")">
+        <div class="step-number">4</div>
+        <div class="step-label">Burn</div>
+    </div>
+</div>
+
+<div class="burn-content">
+    @if (_currentStep == 1)
+    {
+        <div class="step-content">
+            <h2>Select ISO Image</h2>
+            <div class="iso-dropzone @(_isDragging ? "dragging" : "")" 
+                 @ondragover="HandleDragOver" 
+                 @ondragover:preventDefault
+                 @ondrop="HandleDrop"
+                 @ondrop:preventDefault>
+                <div class="dropzone-icon">📁</div>
+                <p>Drag & drop ISO file here</p>
+                <span class="or">or</span>
+                <button class="mass-btn mass-btn-primary" @onclick="BrowseForIso">Browse Files</button>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(_selectedIso))
+            {
+                <div class="selected-file">
+                    <span class="file-icon">💿</span>
+                    <span class="file-name">@_selectedIso</span>
+                    <span class="file-size">4.7 GB</span>
+                </div>
+            }
+        </div>
+    }
+    else if (_currentStep == 2)
+    {
+        <div class="step-content">
+            <h2>Select Target Drive</h2>
+            <div class="drive-list">
+                @foreach (var drive in _availableDrives)
+                {
+                    <div class="drive-item @(_selectedDrive == drive.Letter ? "selected" : "")"
+                         @onclick="() => SelectDrive(drive.Letter)">
+                        <div class="drive-icon">💾</div>
+                        <div class="drive-info">
+                            <div class="drive-name">@drive.Name</div>
+                            <div class="drive-letter">@drive.Letter</div>
+                        </div>
+                        <div class="drive-size">@drive.Size</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else if (_currentStep == 3)
+    {
+        <div class="step-content">
+            <h2>Configure Options</h2>
+            <div class="config-options">
+                <div class="config-option">
+                    <label>Partition Scheme</label>
+                    <select class="mass-input" @bind="_partitionScheme">
+                        <option value="GPT">GPT (UEFI)</option>
+                        <option value="MBR">MBR (Legacy BIOS)</option>
+                    </select>
+                </div>
+                <div class="config-option">
+                    <label>File System</label>
+                    <select class="mass-input" @bind="_fileSystem">
+                        <option value="NTFS">NTFS</option>
+                        <option value="FAT32">FAT32</option>
+                    </select>
+                </div>
+                <div class="config-option">
+                    <label>Volume Label</label>
+                    <input type="text" class="mass-input" @bind="_volumeLabel" placeholder="BOOTABLE" />
+                </div>
+                <div class="config-option checkbox">
+                    <input type="checkbox" id="verify" @bind="_verifyAfterBurn" />
+                    <label for="verify">Verify after burning</label>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentStep == 4)
+    {
+        <div class="step-content">
+            <h2>@(_isBurning ? "Burning..." : "Ready to Burn")</h2>
+            
+            @if (_isBurning)
+            {
+                <div class="burn-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: @_burnProgress%"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span>@_burnProgress%</span>
+                        <span>@_currentOperation</span>
+                        <span>@_timeRemaining</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="burn-summary">
+                    <div class="summary-item">
+                        <span class="label">ISO:</span>
+                        <span class="value">@_selectedIso</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Target:</span>
+                        <span class="value">@_selectedDrive</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">Partition:</span>
+                        <span class="value">@_partitionScheme</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="label">File System:</span>
+                        <span class="value">@_fileSystem</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<div class="wizard-actions">
+    @if (_currentStep > 1 && !_isBurning)
+    {
+        <button class="mass-btn mass-btn-secondary" @onclick="PreviousStep">← Back</button>
+    }
+    <div class="spacer"></div>
+    @if (_currentStep < 4)
+    {
+        <button class="mass-btn mass-btn-primary" @onclick="NextStep" disabled="@(!CanProceed())">
+            Next →
+        </button>
+    }
+    else if (!_isBurning)
+    {
+        <button class="mass-btn mass-btn-primary" @onclick="StartBurn">
+            🔥 Start Burn
+        </button>
+    }
+</div>
+
+<style>
+    .burn-wizard {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: var(--mass-bg-elevated);
+        border-bottom: 1px solid var(--mass-border);
+    }
+    
+    .wizard-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--mass-bg-surface);
+        border: 2px solid var(--mass-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .wizard-step.active .step-number {
+        background: var(--mass-primary);
+        border-color: var(--mass-primary);
+        color: white;
+    }
+    
+    .wizard-step.completed .step-number {
+        background: var(--mass-success);
+        border-color: var(--mass-success);
+    }
+    
+    .step-label {
+        font-size: 0.875rem;
+        color: var(--mass-text-muted);
+    }
+    
+    .wizard-step.active .step-label {
+        color: var(--mass-text-primary);
+    }
+    
+    .wizard-connector {
+        width: 80px;
+        height: 2px;
+        background: var(--mass-border);
+        margin: 0 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .burn-content {
+        padding: 2rem;
+        min-height: 400px;
+    }
+    
+    .step-content h2 {
+        margin: 0 0 1.5rem 0;
+        font-size: 1.25rem;
+    }
+    
+    .iso-dropzone {
+        border: 2px dashed var(--mass-border);
+        border-radius: var(--mass-radius-lg);
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.2s ease;
+    }
+    
+    .iso-dropzone:hover, .iso-dropzone.dragging {
+        border-color: var(--mass-primary);
+        background: rgba(99, 102, 241, 0.05);
+    }
+    
+    .dropzone-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .or {
+        display: block;
+        margin: 1rem 0;
+        color: var(--mass-text-muted);
+    }
+    
+    .selected-file {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        margin-top: 1rem;
+        background: var(--mass-bg-surface);
+        border-radius: var(--mass-radius-md);
+    }
+    
+    .file-icon {
+        font-size: 1.5rem;
+    }
+    
+    .file-name {
+        flex: 1;
+    }
+    
+    .file-size {
+        color: var(--mass-text-muted);
+    }
+    
+    .drive-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .drive-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--mass-bg-surface);
+        border: 2px solid var(--mass-border);
+        border-radius: var(--mass-radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .drive-item:hover {
+        border-color: var(--mass-primary);
+    }
+    
+    .drive-item.selected {
+        border-color: var(--mass-primary);
+        background: rgba(99, 102, 241, 0.1);
+    }
+    
+    .drive-icon {
+        font-size: 1.5rem;
+    }
+    
+    .drive-info {
+        flex: 1;
+    }
+    
+    .drive-name {
+        font-weight: 500;
+    }
+    
+    .drive-letter {
+        font-size: 0.875rem;
+        color: var(--mass-text-muted);
+    }
+    
+    .drive-size {
+        font-size: 0.875rem;
+        color: var(--mass-text-muted);
+    }
+    
+    .config-options {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        max-width: 400px;
+    }
+    
+    .config-option label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .config-option select, .config-option input[type="text"] {
+        width: 100%;
+    }
+    
+    .config-option.checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .config-option.checkbox label {
+        margin: 0;
+    }
+    
+    .burn-progress {
+        max-width: 500px;
+        margin: 2rem auto;
+    }
+    
+    .progress-bar {
+        height: 12px;
+        background: var(--mass-bg-surface);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--mass-primary), var(--mass-accent));
+        border-radius: 999px;
+        transition: width 0.3s ease;
+    }
+    
+    .progress-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--mass-text-muted);
+    }
+    
+    .burn-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: var(--mass-bg-surface);
+        border-radius: var(--mass-radius-lg);
+        max-width: 400px;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .summary-item .label {
+        color: var(--mass-text-muted);
+    }
+    
+    .wizard-actions {
+        display: flex;
+        padding: 1.5rem 2rem;
+        border-top: 1px solid var(--mass-border);
+        background: var(--mass-bg-elevated);
+    }
+    
+    .spacer {
+        flex: 1;
+    }
+</style>
+
+@code {
+    private int _currentStep = 1;
+    private string _selectedIso = "";
+    private string _selectedDrive = "";
+    private string _partitionScheme = "GPT";
+    private string _fileSystem = "NTFS";
+    private string _volumeLabel = "BOOTABLE";
+    private bool _verifyAfterBurn = true;
+    private bool _isDragging = false;
+    private bool _isBurning = false;
+    private int _burnProgress = 0;
+    private string _currentOperation = "";
+    private string _timeRemaining = "";
+
+    private List<DriveInfo> _availableDrives = new()
+    {
+        new("USB Drive", "E:", "32 GB"),
+        new("SanDisk Ultra", "F:", "64 GB"),
+        new("Kingston DataTraveler", "G:", "16 GB"),
+    };
+
+    private void NextStep()
+    {
+        if (_currentStep < 4 && CanProceed())
+            _currentStep++;
+    }
+
+    private void PreviousStep()
+    {
+        if (_currentStep > 1)
+            _currentStep--;
+    }
+
+    private bool CanProceed() => _currentStep switch
+    {
+        1 => !string.IsNullOrEmpty(_selectedIso),
+        2 => !string.IsNullOrEmpty(_selectedDrive),
+        3 => true,
+        _ => false
+    };
+
+    private void HandleDragOver() => _isDragging = true;
+    private void HandleDrop() { _isDragging = false; _selectedIso = "Windows_11_Pro_x64.iso"; }
+    private void BrowseForIso() => _selectedIso = "Windows_11_Pro_x64.iso";
+    private void SelectDrive(string letter) => _selectedDrive = letter;
+
+    private async Task StartBurn()
+    {
+        _isBurning = true;
+        _burnProgress = 0;
+        
+        var operations = new[] { "Formatting drive...", "Copying files...", "Configuring bootloader...", "Verifying..." };
+        
+        foreach (var op in operations)
+        {
+            _currentOperation = op;
+            for (int i = 0; i < 25; i++)
+            {
+                _burnProgress++;
+                _timeRemaining = $"{(100 - _burnProgress) / 5} min remaining";
+                StateHasChanged();
+                await Task.Delay(50);
+            }
+        }
+        
+        _isBurning = false;
+        _currentOperation = "Complete!";
+    }
+
+    private record DriveInfo(string Name, string Letter, string Size);
+}

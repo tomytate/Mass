@@ -66,6 +66,12 @@
               "target": "Package",
               "version": "[10.0.0, )"
             },
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.0, )",
+              "autoReferenced": true
+            },
             "NLua": {
               "target": "Package",
               "version": "[1.7.6, )"
@@ -449,6 +455,12 @@
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
               "version": "[10.0.0, )"
+            },
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.0, )",
+              "autoReferenced": true
             }
           },
           "imports": [
@@ -790,6 +802,14 @@
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
+          "dependencies": {
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.0, )",
+              "autoReferenced": true
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -1172,6 +1192,12 @@
             "Microsoft.Extensions.Logging.Console": {
               "target": "Package",
               "version": "[10.0.0, )"
+            },
+            "Microsoft.NET.ILLink.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.0, )",
+              "autoReferenced": true
             },
             "System.Management": {
               "target": "Package",

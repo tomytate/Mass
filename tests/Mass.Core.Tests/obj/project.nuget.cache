@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "HzkXvBUQnR0=",
+  "dgSpecHash": "pgaMbm4D5CI=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\tests\\Mass.Core.Tests\\Mass.Core.Tests.csproj",
   "expectedPackageFiles": [
@@ -13,6 +13,7 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\10.0.0\\microsoft.extensions.dependencyinjection.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\10.0.0\\microsoft.extensions.logging.abstractions.10.0.0.nupkg.sha512",
+    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.illink.tasks\\10.0.0\\microsoft.net.illink.tasks.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.net.test.sdk\\17.11.0\\microsoft.net.test.sdk.17.11.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.testplatform.objectmodel\\17.11.0\\microsoft.testplatform.objectmodel.17.11.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.testplatform.testhost\\17.11.0\\microsoft.testplatform.testhost.17.11.0.nupkg.sha512",

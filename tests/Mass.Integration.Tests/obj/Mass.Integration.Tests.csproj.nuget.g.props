@@ -17,6 +17,7 @@
     <Import Project="$(NuGetPackageRoot)xunit.runner.visualstudio\3.1.4\build\net8.0\xunit.runner.visualstudio.props" Condition="Exists('$(NuGetPackageRoot)xunit.runner.visualstudio\3.1.4\build\net8.0\xunit.runner.visualstudio.props')" />
     <Import Project="$(NuGetPackageRoot)xunit.core\2.9.3\build\xunit.core.props" Condition="Exists('$(NuGetPackageRoot)xunit.core\2.9.3\build\xunit.core.props')" />
     <Import Project="$(NuGetPackageRoot)skiasharp.nativeassets.webassembly\2.88.9\buildTransitive\netstandard1.0\SkiaSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)skiasharp.nativeassets.webassembly\2.88.9\buildTransitive\netstandard1.0\SkiaSharp.NativeAssets.WebAssembly.props')" />
+    <Import Project="$(NuGetPackageRoot)microsoft.net.illink.tasks\10.0.0\build\Microsoft.NET.ILLink.Tasks.props" Condition="Exists('$(NuGetPackageRoot)microsoft.net.illink.tasks\10.0.0\build\Microsoft.NET.ILLink.Tasks.props')" />
     <Import Project="$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\8.3.1.1\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props" Condition="Exists('$(NuGetPackageRoot)harfbuzzsharp.nativeassets.webassembly\8.3.1.1\buildTransitive\netstandard1.0\HarfBuzzSharp.NativeAssets.WebAssembly.props')" />
     <Import Project="$(NuGetPackageRoot)avalonia\11.3.9\buildTransitive\Avalonia.props" Condition="Exists('$(NuGetPackageRoot)avalonia\11.3.9\buildTransitive\Avalonia.props')" />
     <Import Project="$(NuGetPackageRoot)microsoft.testplatform.testhost\17.14.1\build\net8.0\Microsoft.TestPlatform.TestHost.props" Condition="Exists('$(NuGetPackageRoot)microsoft.testplatform.testhost\17.14.1\build\net8.0\Microsoft.TestPlatform.TestHost.props')" />
@@ -26,6 +27,7 @@
   </ImportGroup>
   <PropertyGroup Condition=" '$(ExcludeRestorePackageImports)' != 'true' ">
     <Pkgxunit_analyzers Condition=" '$(Pkgxunit_analyzers)' == '' ">C:\Users\Administrator\.nuget\packages\xunit.analyzers\1.18.0</Pkgxunit_analyzers>
+    <PkgMicrosoft_NET_ILLink_Tasks Condition=" '$(PkgMicrosoft_NET_ILLink_Tasks)' == '' ">C:\Users\Administrator\.nuget\packages\microsoft.net.illink.tasks\10.0.0</PkgMicrosoft_NET_ILLink_Tasks>
     <PkgAvalonia_BuildServices Condition=" '$(PkgAvalonia_BuildServices)' == '' ">C:\Users\Administrator\.nuget\packages\avalonia.buildservices\11.3.2</PkgAvalonia_BuildServices>
     <PkgAvalonia Condition=" '$(PkgAvalonia)' == '' ">C:\Users\Administrator\.nuget\packages\avalonia\11.3.9</PkgAvalonia>
   </PropertyGroup>

@@ -211,9 +211,6 @@ C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Deb
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_CJK.tjcz0u77k5.dat
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_EFIGS.tptq2av103.dat
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_no_CJK.lfu7j35m59.dat
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.3fv5hy28ok.wasm
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.c9zl4oz7uk.pdb
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\dotnet.5dhc9b9bjt.js
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\blazor.webassembly.66stpp682q.js.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\Blazored.LocalStorage.12n6dz54qr.wasm.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\Microsoft.AspNetCore.Authorization.f7yamg8acn.wasm.gz
@@ -426,9 +423,6 @@ C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Deb
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_CJK.tjcz0u77k5.dat.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_EFIGS.tptq2av103.dat.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\icudt_no_CJK.lfu7j35m59.dat.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.3fv5hy28ok.wasm.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.c9zl4oz7uk.pdb.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\dotnet.5dhc9b9bjt.js.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.staticwebassets.runtime.json
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.staticwebassets.endpoints.json
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\ProPXEServer.Client.dll
@@ -1133,10 +1127,6 @@ C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Deb
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\suammzn7jr-{0}-tjcz0u77k5-tjcz0u77k5.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\9qeaivygfp-{0}-tptq2av103-tptq2av103.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\7k6bn46zdo-{0}-lfu7j35m59-lfu7j35m59.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\6zedmzmn84-{0}-3fv5hy28ok-3fv5hy28ok.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\ylt6idhynx-{0}-c9zl4oz7uk-c9zl4oz7uk.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\u3dmo954lx-{0}-5dhc9b9bjt-5dhc9b9bjt.gz
-C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\y2eu7hlon3-{0}-0tfn1p1mxq-0tfn1p1mxq.gz
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\staticwebassets.development.json
@@ -1147,3 +1137,13 @@ C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Deb
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\refint\ProPXEServer.Client.dll
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\ProPXEServer.Client.pdb
 C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\ref\ProPXEServer.Client.dll
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.0u8n27l6hg.wasm
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.qq77fcs0wh.pdb
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\dotnet.ici9d3spbe.js
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.0u8n27l6hg.wasm.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\ProPXEServer.Client.qq77fcs0wh.pdb.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\bin\Debug\net10.0\wwwroot\_framework\dotnet.ici9d3spbe.js.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\6zedmzmn84-{0}-0u8n27l6hg-0u8n27l6hg.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\ylt6idhynx-{0}-qq77fcs0wh-qq77fcs0wh.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\u3dmo954lx-{0}-ici9d3spbe-ici9d3spbe.gz
+C:\Users\Administrator\Desktop\Mass\src\ProPXEServer\ProPXEServer.Client\obj\Debug\net10.0\compressed\y2eu7hlon3-{0}-e4x73zbkvd-e4x73zbkvd.gz

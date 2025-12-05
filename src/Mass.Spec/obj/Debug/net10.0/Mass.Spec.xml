@@ -462,36 +462,6 @@
             The time taken to complete the operation.
             </summary>
         </member>
-        <member name="T:Mass.Spec.Contracts.Usb.DeviceInfo">
-            <summary>
-            Represents information about a USB device.
-            </summary>
-        </member>
-        <member name="P:Mass.Spec.Contracts.Usb.DeviceInfo.Id">
-            <summary>
-            The unique identifier of the device.
-            </summary>
-        </member>
-        <member name="P:Mass.Spec.Contracts.Usb.DeviceInfo.Name">
-            <summary>
-            The friendly name of the device.
-            </summary>
-        </member>
-        <member name="P:Mass.Spec.Contracts.Usb.DeviceInfo.Size">
-            <summary>
-            The total size of the device in bytes.
-            </summary>
-        </member>
-        <member name="P:Mass.Spec.Contracts.Usb.DeviceInfo.Path">
-            <summary>
-            The path to the device (e.g., \\.\PhysicalDrive1).
-            </summary>
-        </member>
-        <member name="P:Mass.Spec.Contracts.Usb.DeviceInfo.IsRemovable">
-            <summary>
-            Whether the device is removable.
-            </summary>
-        </member>
         <member name="T:Mass.Spec.Contracts.Usb.UsbJob">
             <summary>
             Represents a job to burn an image to a USB device.

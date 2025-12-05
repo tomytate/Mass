@@ -1,0 +1,175 @@
+@page "/workflows"
+@using Mass.Spec.Contracts.Workflow
+@inject WorkflowParser Parser
+@inject ILogService Logger
+
+<PageTitle>Workflows - Mass Suite</PageTitle>
+
+<div class="page-header">
+    <h1>⚙️ Workflow Manager</h1>
+    <button class="mass-btn mass-btn-primary" @onclick="CreateNewWorkflow">
+        + New Workflow
+    </button>
+</div>
+
+<div class="workflows-grid">
+    @foreach (var workflow in _workflows)
+    {
+        <div class="workflow-card @(workflow.IsRunning ? "running" : "")">
+            <div class="workflow-header">
+                <h3>@workflow.Name</h3>
+                <span class="workflow-version">v@workflow.Version</span>
+            </div>
+            <p class="workflow-description">@workflow.Description</p>
+            <div class="workflow-meta">
+                <span>📋 @workflow.StepCount steps</span>
+                <span>🕐 @workflow.LastRun</span>
+            </div>
+            <div class="workflow-actions">
+                <button class="mass-btn mass-btn-primary" @onclick="() => RunWorkflow(workflow)" disabled="@workflow.IsRunning">
+                    @if (workflow.IsRunning)
+                    {
+                        <span class="spinner"></span>
+                        <span>Running...</span>
+                    }
+                    else
+                    {
+                        <span>▶ Run</span>
+                    }
+                </button>
+                <button class="mass-btn mass-btn-secondary" @onclick="() => EditWorkflow(workflow)">
+                    ✏️ Edit
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@if (_showEditor)
+{
+    <div class="modal-overlay" @onclick="CloseEditor">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2>@(_editingWorkflow == null ? "New Workflow" : "Edit Workflow")</h2>
+                <button class="mass-btn mass-btn-ghost" @onclick="CloseEditor">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" class="mass-input" @bind="_editorName" placeholder="my-workflow" />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" class="mass-input" @bind="_editorDescription" placeholder="What does this workflow do?" />
+                </div>
+                <div class="form-group">
+                    <label>YAML Definition</label>
+                    <textarea class="mass-input code-editor" rows="15" @bind="_editorYaml"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="mass-btn mass-btn-secondary" @onclick="CloseEditor">Cancel</button>
+                <button class="mass-btn mass-btn-primary" @onclick="SaveWorkflow">Save Workflow</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<WorkflowViewModel> _workflows = new();
+    private bool _showEditor = false;
+    private WorkflowViewModel? _editingWorkflow = null;
+    private string _editorName = "";
+    private string _editorDescription = "";
+    private string _editorYaml = "";
+
+    protected override void OnInitialized()
+    {
+        LoadWorkflows();
+    }
+
+    private void LoadWorkflows()
+    {
+        _workflows = new List<WorkflowViewModel>
+        {
+            new("burn-iso", "Burn ISO to USB", "Creates bootable USB from ISO image", "1.0.0", 5, "Today 10:30 AM"),
+            new("deploy-image", "Deploy Windows Image", "Deploys WIM to target machines", "2.1.0", 8, "Yesterday"),
+            new("backup-config", "Backup Configuration", "Backs up system configuration files", "1.2.0", 3, "3 days ago"),
+            new("pxe-setup", "Setup PXE Server", "Configures PXE boot environment", "1.0.0", 6, "1 week ago"),
+        };
+    }
+
+    private void CreateNewWorkflow()
+    {
+        _editingWorkflow = null;
+        _editorName = "";
+        _editorDescription = "";
+        _editorYaml = GetDefaultYaml();
+        _showEditor = true;
+    }
+
+    private void EditWorkflow(WorkflowViewModel workflow)
+    {
+        _editingWorkflow = workflow;
+        _editorName = workflow.Name;
+        _editorDescription = workflow.Description;
+        _editorYaml = GetDefaultYaml();
+        _showEditor = true;
+    }
+
+    private void CloseEditor()
+    {
+        _showEditor = false;
+    }
+
+    private async Task RunWorkflow(WorkflowViewModel workflow)
+    {
+        workflow.IsRunning = true;
+        StateHasChanged();
+
+        await Task.Delay(3000); // Simulate execution
+
+        workflow.IsRunning = false;
+        workflow.LastRun = "Just now";
+        StateHasChanged();
+    }
+
+    private void SaveWorkflow()
+    {
+        CloseEditor();
+    }
+
+    private string GetDefaultYaml() => @"id: new-workflow
+name: New Workflow
+version: 1.0.0
+description: Describe your workflow
+
+steps:
+  - id: step1
+    name: First Step
+    type: Command
+    parameters:
+      command: echo Hello World
+";
+
+    private class WorkflowViewModel
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Version { get; set; }
+        public int StepCount { get; set; }
+        public string LastRun { get; set; }
+        public bool IsRunning { get; set; }
+
+        public WorkflowViewModel(string id, string name, string desc, string version, int steps, string lastRun)
+        {
+            Id = id;
+            Name = name;
+            Description = desc;
+            Version = version;
+            StepCount = steps;
+            LastRun = lastRun;
+        }
+    }
+}
