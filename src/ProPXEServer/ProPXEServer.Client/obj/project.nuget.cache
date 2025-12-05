@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "Wyeds9yYO+0=",
+  "dgSpecHash": "bIiAyl2Q5OY=",
   "success": true,
   "projectFilePath": "C:\\Users\\Administrator\\Desktop\\Mass\\src\\ProPXEServer\\ProPXEServer.Client\\ProPXEServer.Client.csproj",
   "expectedPackageFiles": [
@@ -16,7 +16,6 @@
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.components.webassembly.authentication\\10.0.0\\microsoft.aspnetcore.components.webassembly.authentication.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.components.webassembly.devserver\\10.0.0\\microsoft.aspnetcore.components.webassembly.devserver.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.aspnetcore.metadata\\10.0.0\\microsoft.aspnetcore.metadata.10.0.0.nupkg.sha512",
-    "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.dotnet.hotreload.webassembly.browser\\10.0.100\\microsoft.dotnet.hotreload.webassembly.browser.10.0.100.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.configuration\\10.0.0\\microsoft.extensions.configuration.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.0\\microsoft.extensions.configuration.abstractions.10.0.0.nupkg.sha512",
     "C:\\Users\\Administrator\\.nuget\\packages\\microsoft.extensions.configuration.binder\\10.0.0\\microsoft.extensions.configuration.binder.10.0.0.nupkg.sha512",

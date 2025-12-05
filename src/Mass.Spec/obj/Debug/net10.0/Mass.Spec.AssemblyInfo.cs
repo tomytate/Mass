@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyCopyrightAttribute("Copyright © 2024-2025 MassSuite")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0c40c16d0ff7dcdd5ae3a4290c4f9a56a974bb95")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2c9a8184c01c950f63f34b1debe1996a4b866f3")]
 [assembly: System.Reflection.AssemblyProductAttribute("Mass Suite")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Mass.Spec")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

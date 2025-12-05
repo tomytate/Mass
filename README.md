@@ -1,107 +1,179 @@
-# Mass Suite
+<div align="center">
 
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
-[![C# 14](https://img.shields.io/badge/C%23-14-blue)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+# 🚀 Mass Suite
 
-**Mass Suite** is a unified deployment and automation platform for Windows system administrators and IT professionals. It provides USB bootable media creation, PXE network boot services, workflow automation, and remote agent management.
+**Unified Deployment & Automation Platform for Windows**
 
-## Features
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
+[![C# 14](https://img.shields.io/badge/C%23-14-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Build](https://img.shields.io/github/actions/workflow/status/masssuite/mass/ci.yml?style=for-the-badge&logo=github)](https://github.com/masssuite/mass/actions)
 
-| Component | Description |
-|-----------|-------------|
-| **ProUSB** | Create bootable USB drives from ISO images with UEFI/BIOS support |
-| **ProPXEServer** | Network boot server with DHCP, TFTP, and HTTP services |
-| **Mass Agent** | Lightweight remote agent for distributed deployments |
-| **Mass Dashboard** | Web-based administration portal (Blazor) |
-| **Mass CLI** | Command-line interface for automation and scripting |
-| **Mass Launcher** | Desktop application (Avalonia) |
+[Features](#-features) •
+[Quick Start](#-quick-start) •
+[Documentation](#-documentation) •
+[Contributing](#-contributing)
 
-## Tech Stack
+</div>
 
-- **.NET 10** with **C# 14** language features
-- **Avalonia UI** for cross-platform desktop
-- **Blazor Server** for web dashboard
-- **SignalR** for real-time agent communication
-- **Entity Framework Core** for data persistence
+---
 
-## Quick Start
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+### 💾 USB Burner
+Create bootable USB drives from ISO images with full UEFI/BIOS support, Windows 11 bypass injection, and multi-drive parallel burning.
+
+</td>
+<td width="50%">
+
+### 🌐 PXE Server
+Network boot infrastructure with built-in DHCP, TFTP, and HTTP services. Boot Windows, Linux, or recovery tools over the network.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### ⚙️ Workflow Engine
+YAML-based automation for deployment tasks. Chain operations, define dependencies, and execute complex workflows with a single command.
+
+</td>
+<td width="50%">
+
+### 📡 Remote Agents
+Deploy lightweight agents to remote machines. Execute workflows, collect telemetry, and manage devices from a central dashboard.
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🔌 Plugin System
+Extend functionality with a modular plugin architecture. Build custom integrations or install from the marketplace.
+
+</td>
+<td width="50%">
+
+### 📊 Web Dashboard
+Real-time monitoring and management through a modern Blazor-based admin portal. Track jobs, view telemetry, and manage your fleet.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-- Windows 10/11 or Windows Server 2019+ (for USB and PXE operations)
+- Windows 10/11 or Windows Server 2019+
 - Administrator privileges (for hardware operations)
 
-### Build
+### Installation
 
 ```bash
+# Clone the repository
 git clone https://github.com/masssuite/mass.git
 cd mass
+
+# Build the solution
 dotnet build
+
+# Run tests
+dotnet test
 ```
 
 ### Run
 
 ```bash
-# Desktop Launcher
+# Desktop Application
 dotnet run --project src/Mass.Launcher
 
 # Web Dashboard
 dotnet run --project src/Mass.Dashboard
 
-# CLI
+# Command Line
 dotnet run --project src/Mass.CLI -- --help
 ```
 
-### Test
+---
 
-```bash
-dotnet test
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 Mass/
-├── src/
-│   ├── Mass.Core/           # Core business logic and abstractions
-│   ├── Mass.Spec/           # Shared contracts and DTOs
+├── 📂 src/
+│   ├── Mass.Core/           # Core business logic
+│   ├── Mass.Spec/           # Shared contracts & DTOs
 │   ├── Mass.CLI/            # Command-line interface
-│   ├── Mass.Launcher/       # Desktop application (Avalonia)
-│   ├── Mass.Dashboard/      # Web admin portal (Blazor)
+│   ├── Mass.Launcher/       # Desktop app (Avalonia)
+│   ├── Mass.Dashboard/      # Web portal (Blazor)
 │   ├── Mass.Agent/          # Remote deployment agent
-│   ├── Mass.UI.Shared/      # Shared design system
 │   ├── ProUSB/              # USB operations engine
 │   └── ProPXEServer/        # PXE boot server
-├── tests/                   # Unit and integration tests
-├── docs/                    # Documentation
-└── Directory.Build.props    # Centralized build configuration
+├── 📂 tests/                # Unit & integration tests
+├── 📂 docs/                 # Documentation
+└── 📄 Mass.sln              # Solution file
 ```
 
-## Configuration
+---
 
-Environment variables:
+## ⚙️ Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Environment Variable | Description | Default |
+|---------------------|-------------|---------|
+| `MASS_LOG_LEVEL` | Logging verbosity | `Information` |
 | `MASS_DASHBOARD_URL` | Dashboard server URL | `http://localhost:5000` |
 | `MASS_AGENT_ID` | Unique agent identifier | Auto-generated |
-| `MASS_LOG_LEVEL` | Logging verbosity | `Information` |
 
-## Documentation
+---
 
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System design and patterns
-- [API.md](docs/API.md) - HTTP API reference
-- [SECURITY.md](docs/SECURITY.md) - Security considerations
-- [OPERATIONS.md](docs/OPERATIONS.md) - Deployment and operations
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
+## 📚 Documentation
 
-## License
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/ARCHITECTURE.md) | System design and patterns |
+| [API Reference](docs/API.md) | REST API documentation |
+| [Security](docs/SECURITY.md) | Security considerations |
+| [Operations](docs/OPERATIONS.md) | Deployment and monitoring |
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+```bash
+# Create a feature branch
+git checkout -b feature/amazing-feature
+
+# Make your changes and test
+dotnet test
+
+# Commit and push
+git commit -m "Add amazing feature"
+git push origin feature/amazing-feature
+```
+
+---
+
+## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+---
 
-- [GitHub Issues](https://github.com/masssuite/mass/issues)
-- [Discussions](https://github.com/masssuite/mass/discussions)
+<div align="center">
+
+Made with ❤️ by the Mass Suite Team
+
+[Report Bug](https://github.com/masssuite/mass/issues) •
+[Request Feature](https://github.com/masssuite/mass/issues)
+
+</div>

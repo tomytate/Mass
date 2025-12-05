@@ -1,0 +1,60 @@
+# .NET
+bin/
+obj/
+publish/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.user
+*.suo
+*.userprefs
+
+# IDE
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+*.rsuser
+*.ncrunchproject
+*.ncrunchsolution
+
+# Build artifacts
+artifacts/
+TestResults/
+BenchmarkDotNet.Artifacts/
+*.trx
+coverage.cobertura.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+nuget.exe
+packages/
+!packages/repositories.config
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Secrets (never commit)
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json.example
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Project specific
+data/
+*.db
+*.db-shm
+*.db-wal

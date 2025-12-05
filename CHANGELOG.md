@@ -2,26 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [1.0.0] - 2025-12-05
 
-### 🚀 Major Features
-- **Unified Architecture**: Consolidated `ProUSB` and `ProPXEServer` into the **Mass Suite** ecosystem.
-- **Mass.Spec**: Introduced a central contract library (`Mass.Spec`) for shared DTOs, interfaces, and error models.
-- **Mass.Core**: Implemented a unified core service layer handling configuration, logging, telemetry, and plugins.
-- **New Launcher**: Rebuilt `Mass.Launcher` as a thin consumer of `Mass.Core` services.
-- **New CLI**: Introduced `Mass.CLI` for headless automation and scripting.
+### Added
+- **Mass.Core** - Core business logic with workflow engine, plugin system, and SaaS infrastructure
+- **Mass.Spec** - Shared contracts and DTOs for cross-project communication
+- **Mass.CLI** - Command-line interface for automation and scripting
+- **Mass.Launcher** - Desktop application built with Avalonia UI
+- **Mass.Dashboard** - Web admin portal built with Blazor Server
+- **Mass.Agent** - Remote deployment agent with SignalR connectivity
+- **ProUSB** - USB bootable media creation engine with UEFI/BIOS support
+- **ProPXEServer** - Network boot server with DHCP, TFTP, and HTTP services
 
-### 🛠️ Infrastructure
-- **Unified Configuration**: Single `settings.json` for all components.
-- **Plugin System**: Standardized plugin discovery and lifecycle management.
-- **Workflow Engine**: YAML-based workflow engine for defining complex operations.
-- **Telemetry**: Centralized telemetry with user consent management.
+### Technical
+- Upgraded to .NET 10 and C# 14
+- Implemented unified design system (`Mass.UI.Shared`)
+- Added multi-tenancy support for SaaS deployment
+- Created plugin marketplace infrastructure
+- Comprehensive test coverage (83 tests)
 
-### 🛡️ Quality & Stability
-- **Testing**: Added comprehensive unit and integration tests (100% coverage).
-- **API Stability**: Implemented Semver enforcement and API compatibility checks.
-- **Error Handling**: Standardized `ErrorCode` and `OperationException` model.
+### Documentation
+- Architecture documentation
+- API reference
+- Security guidelines
+- Operations manual
+- Contributing guide
 
-### 📦 Modules
-- **ProUSB**: Refactored as a modular service for USB burning.
-- **ProPXEServer**: Refactored as a subsystem for network booting.
+[1.0.0]: https://github.com/masssuite/mass/releases/tag/v1.0.0
