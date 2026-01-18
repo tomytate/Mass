@@ -1,0 +1,44 @@
+name: Bug Report
+description: Create a report to help us improve Mass Suite
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: input
+    id: version
+    attributes:
+      label: Mass Suite Version
+      description: What version of Mass Suite are you running? (e.g., v1.0.0, or commit hash)
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "I clicked 'Burn USB' and it crashed with error..."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to 'ProUSB'
+        2. Select 'Windows 11 ISO'
+        3. Click 'Start'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Please copy and paste any relevant log output (masking sensitive info).
+      render: shell

@@ -13,11 +13,19 @@ public class ViewLocator : IDataTemplate
             return null;
 
         var name = data.GetType().FullName!.Replace("ViewModel", "View");
-        
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057:Type.GetType", Justification = "ViewModel to View mapping is dynamic.")]
-        Type? GetViewType(string typeName) => Type.GetType(typeName);
 
-        var type = GetViewType(name);
+        // 1. Try standard Type.GetType (for same assembly)
+        var type = Type.GetType(name);
+
+        // 2. If not found, search all loaded assemblies (for plugins/ProUSB)
+        if (type == null)
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                type = asm.GetType(name);
+                if (type != null) break;
+            }
+        }
 
         if (type != null)
         {
@@ -25,7 +33,7 @@ public class ViewLocator : IDataTemplate
             object? CreateView() => Activator.CreateInstance(type);
             return (Control)CreateView()!;
         }
-        
+
         return new TextBlock { Text = "Not Found: " + name };
     }
 

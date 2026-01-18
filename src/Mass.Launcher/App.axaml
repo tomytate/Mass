@@ -10,7 +10,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="/Styles/ColorPalette.axaml"/>
                 <ResourceInclude Source="/Styles/Typography.axaml"/>
-                <ResourceInclude Source="/Styles/Controls.axaml"/>
             </ResourceDictionary.MergedDictionaries>
             
             <local:ViewLocator x:Key="ViewLocator"/>
@@ -27,5 +26,6 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="/Styles/Controls.axaml"/>
     </Application.Styles>
 </Application>

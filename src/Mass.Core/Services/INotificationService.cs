@@ -3,6 +3,7 @@ namespace Mass.Core.Services;
 public enum NotificationSeverity
 {
     Info,
+    Success,
     Warning,
     Error
 }

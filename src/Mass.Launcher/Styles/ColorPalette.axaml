@@ -2,69 +2,102 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
     <!-- Primary Colors -->
-    <Color x:Key="PrimaryColor">#58a6ff</Color>
+    <Color x:Key="PrimaryColor">#00D4FF</Color> <!-- Neon Cyan -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
     
     <!-- Success/Positive -->
-    <Color x:Key="SuccessColor">#3fb950</Color>
+    <Color x:Key="SuccessColor">#00FF9D</Color> <!-- Neon Green -->
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     
     <!-- Info/Informational -->
-    <Color x:Key="InfoColor">#58a6ff</Color>
+    <Color x:Key="InfoColor">#00D4FF</Color>
     <SolidColorBrush x:Key="InfoBrush" Color="{StaticResource InfoColor}"/>
     
     <!-- Warning -->
-    <Color x:Key="WarningColor">#d29922</Color>
+    <Color x:Key="WarningColor">#FFD700</Color> <!-- Bright Gold -->
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     
     <!-- Error/Danger -->
-    <Color x:Key="ErrorColor">#f85149</Color>
+    <Color x:Key="ErrorColor">#FF0055</Color> <!-- Neon Red/Pink -->
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
     
     <!-- Danger (Critical) -->
-    <Color x:Key="DangerColor">#cf222e</Color>
+    <Color x:Key="DangerColor">#FF0055</Color>
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
     
-    <!-- Background Layers -->
-    <Color x:Key="BackgroundPrimaryColor">#0d1117</Color>
+    <!-- Background Layers - Deep Dark Blue/Black for contrast -->
+    <Color x:Key="BackgroundPrimaryColor">#050510</Color>
     <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimaryColor}"/>
     
-    <Color x:Key="BackgroundSecondaryColor">#161b22</Color>
+    <Color x:Key="BackgroundSecondaryColor">#10101A</Color>
     <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondaryColor}"/>
     
-    <Color x:Key="BackgroundTertiaryColor">#21262d</Color>
+    <Color x:Key="BackgroundTertiaryColor">#1A1A2E</Color>
     <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiaryColor}"/>
     
-    <Color x:Key="BackgroundHoverColor">#3D3D3D</Color>
+    <Color x:Key="BackgroundHoverColor">#252540</Color>
     <SolidColorBrush x:Key="BackgroundHoverBrush" Color="{StaticResource BackgroundHoverColor}"/>
     
     <!-- Console/Terminal -->
-    <Color x:Key="ConsoleBackgroundColor">#1E1E1E</Color>
+    <Color x:Key="ConsoleBackgroundColor">#0A0A12</Color>
     <SolidColorBrush x:Key="ConsoleBackgroundBrush" Color="{StaticResource ConsoleBackgroundColor}"/>
     
     <Color x:Key="ConsoleOutputBackgroundColor">#000000</Color>
     <SolidColorBrush x:Key="ConsoleOutputBackgroundBrush" Color="{StaticResource ConsoleOutputBackgroundColor}"/>
     
-    <Color x:Key="ConsoleTextColor">#00FF00</Color>
+    <Color x:Key="ConsoleTextColor">#00FF9D</Color> 
     <SolidColorBrush x:Key="ConsoleTextBrush" Color="{StaticResource ConsoleTextColor}"/>
     
     <!-- Borders & Dividers -->
-    <Color x:Key="BorderColor">#30363d</Color>
+    <Color x:Key="BorderColor">#303050</Color>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     
-    <Color x:Key="DividerColor">#2D2D2D</Color>
+    <Color x:Key="DividerColor">#2A2A40</Color>
     <SolidColorBrush x:Key="DividerBrush" Color="{StaticResource DividerColor}"/>
     
     <!-- Text Colors -->
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B3B3B3"/>
-    <SolidColorBrush x:Key="TextMutedBrush" Color="#6B7280"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B0B0FF"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#606090"/>
     
     <!-- Status Colors -->
-    <Color x:Key="StatusActiveColor">#10B981</Color>
+    <Color x:Key="StatusActiveColor">#00FF9D</Color>
     <SolidColorBrush x:Key="StatusActiveBrush" Color="{StaticResource StatusActiveColor}"/>
     
-    <Color x:Key="StatusInactiveColor">#6B7280</Color>
+    <Color x:Key="StatusInactiveColor">#404060</Color>
     <SolidColorBrush x:Key="StatusInactiveBrush" Color="{StaticResource StatusInactiveColor}"/>
+    
+    <!-- ========================================== -->
+    <!-- Glassmorphism & Premium Effects -->
+    <!-- ========================================== -->
+    
+    <!-- Glass Effect Background -->
+    <SolidColorBrush x:Key="GlassBrush" Color="#15FFFFFF"/>
+    <SolidColorBrush x:Key="GlassHoverBrush" Color="#25FFFFFF"/>
+    <SolidColorBrush x:Key="GlassBorderBrush" Color="#30FFFFFF"/>
+    
+    <!-- Gradient Accents -->
+    <LinearGradientBrush x:Key="PrimaryGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#00D4FF" Offset="0"/>
+        <GradientStop Color="#00FF9D" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="WarningGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#FFD700" Offset="0"/>
+        <GradientStop Color="#FF8C00" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="DangerGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#FF0055" Offset="0"/>
+        <GradientStop Color="#FF4500" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <!-- Glow Colors for Interactive Elements -->
+    <Color x:Key="GlowPrimaryColor">#4000D4FF</Color>
+    <Color x:Key="GlowSuccessColor">#4000FF9D</Color>
+    <Color x:Key="GlowErrorColor">#40FF0055</Color>
+    
+    <!-- Card with Glassmorphism -->
+    <SolidColorBrush x:Key="CardGlassBrush" Color="#0DFFFFFF"/>
     
 </ResourceDictionary>

@@ -11,6 +11,7 @@ public class AgentWorker : BackgroundService
     private readonly AgentConfiguration _config;
     private readonly ILogService _logService;
     private readonly WorkflowExecutor _executor;
+    private readonly WorkflowQueue _workflowQueue;
     private HubConnection? _hubConnection;
 
     public AgentWorker(ILogger<AgentWorker> logger, AgentConfiguration config, ILogService logService)
@@ -19,6 +20,7 @@ public class AgentWorker : BackgroundService
         _config = config;
         _logService = logService;
         _executor = new WorkflowExecutor(logService);
+        _workflowQueue = new WorkflowQueue();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -39,7 +41,7 @@ public class AgentWorker : BackgroundService
         try
         {
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl($"{_config.DashboardUrl}/agenthub")
+                .WithUrl($"{_config.DashboardUrl}/hubs/agents")
                 .WithAutomaticReconnect()
                 .Build();
 
@@ -80,8 +82,37 @@ public class AgentWorker : BackgroundService
 
     private async Task ProcessPendingWorkflows(CancellationToken stoppingToken)
     {
-        // Check local queue for any pending workflows
-        // In a full implementation, this would pull from a local SQLite database
+        // Process queued workflows from local persistent queue
+        var queued = _workflowQueue?.Dequeue();
+        if (queued is null) return;
+
+        _logger.LogInformation("Processing queued workflow: {Name} (queued {Time})", 
+            queued.Workflow.Name, queued.QueuedAt);
+
+        try
+        {
+            var result = await _executor.ExecuteAsync(queued.Workflow, ct: stoppingToken);
+
+            if (_hubConnection?.State == HubConnectionState.Connected)
+            {
+                await _hubConnection.InvokeAsync("WorkflowCompleted", 
+                    _config.AgentId, queued.Workflow.Id, result.Success, stoppingToken);
+            }
+
+            _logger.LogInformation("Queued workflow completed: {Name} - Success: {Success}", 
+                queued.Workflow.Name, result.Success);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to execute queued workflow: {Name}", queued.Workflow.Name);
+
+            // Re-queue with retry logic
+            if (queued.RetryCount < 3)
+            {
+                queued.RetryCount++;
+                _workflowQueue?.Enqueue(queued.Workflow);
+            }
+        }
     }
 
     private async Task ExecuteCommand(string command, Dictionary<string, object> parameters)

@@ -33,10 +33,10 @@ public partial class HomeViewModel : ViewModelBase
         _statusService = statusService;
         _activityService = activityService;
         _dialogService = dialogService;
-        
+
         Title = "Home";
         // ... (rest of constructor)
-        
+
         WelcomeMessage = $"Welcome to Mass Suite";
         VersionInfo = "v1.0.0 - .NET 10.0";
         QuickActions = new List<QuickActionCard>
@@ -119,8 +119,8 @@ public partial class HomeViewModel : ViewModelBase
                     _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>();
                     break;
                 case "MassBoot":
-                    // Navigate to Health view which shows MassBoot server status and all module statuses
-                    _navigationService.NavigateTo<HealthViewModel>();
+                    // Navigate to Operations Console to view server logs/activity since headless
+                    _navigationService.NavigateTo<OperationsConsoleViewModel>();
                     break;
                 case "Workflows":
                     _navigationService.NavigateTo<WorkflowsViewModel>();
@@ -138,7 +138,7 @@ public partial class HomeViewModel : ViewModelBase
             await _dialogService.ShowErrorDialogAsync("Navigation Error", $"Failed to navigate to {target}: {ex.Message}");
         }
     }
-    
+
     [RelayCommand]
     private async Task NavigateToFavorite(FavoriteItem favorite)
     {

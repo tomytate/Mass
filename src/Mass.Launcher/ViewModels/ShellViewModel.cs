@@ -12,6 +12,7 @@ namespace Mass.Launcher.ViewModels;
 public partial class ShellViewModel : ViewModelBase
 {
     private readonly INavigationService _navigationService;
+    private readonly System.Net.Http.HttpClient _httpClient = new();
 
     public ViewModelBase? CurrentView => (_navigationService as Services.NavigationService)?.CurrentViewModel;
 
@@ -24,22 +25,32 @@ public partial class ShellViewModel : ViewModelBase
     private bool _isConsentDialogVisible;
 
     [ObservableProperty]
+    private bool _isSidebarOpen = true;
+
+    [RelayCommand]
+    public void ToggleSidebar() => IsSidebarOpen = !IsSidebarOpen;
+
+    [ObservableProperty]
     private ConsentDialogViewModel? _consentDialog;
 
+    public ToastViewModel Toast { get; }
+
     public ShellViewModel(
-        INavigationService navigationService, 
-        IConfigurationService config, 
+        INavigationService navigationService,
+        IConfigurationService config,
         IServiceProvider serviceProvider,
         IDialogService dialogService,
         Mass.Core.Services.IIpcService ipcService,
-        PluginLifecycleManager pluginLifecycle) // Added pluginLifecycle to match signature if needed, or remove if not used
+        PluginLifecycleManager pluginLifecycle,
+        ToastViewModel toastViewModel) 
     {
         _navigationService = navigationService;
         _config = config;
         _serviceProvider = serviceProvider;
         _dialogService = dialogService;
         _ipcService = ipcService;
-        
+        Toast = toastViewModel;
+
         if (_navigationService is Services.NavigationService navService)
         {
             navService.PropertyChanged += (s, e) =>
@@ -51,39 +62,13 @@ public partial class ShellViewModel : ViewModelBase
             };
         }
 
-        CheckTelemetryConsent();
-    }
-
-    private void CheckTelemetryConsent()
-    {
-        try 
-        {
-            var settings = _config.Get<Mass.Spec.Config.AppSettings>("AppSettings", new Mass.Spec.Config.AppSettings());
-            if (settings != null && !settings.Telemetry.ConsentDecisionMade)
-            {
-                ShowConsentDialog();
-            }
-        }
-        catch (Exception ex)
-        {
-            // Log but don't crash shell for consent check
-            System.Diagnostics.Debug.WriteLine($"Error checking consent: {ex.Message}");
-        }
-    }
-
-    private void ShowConsentDialog()
-    {
-        var dialog = _serviceProvider.GetRequiredService<ConsentDialogViewModel>();
-        dialog.OnRequestClose += () => IsConsentDialogVisible = false;
-        ConsentDialog = dialog;
-        IsConsentDialogVisible = true;
     }
 
     [RelayCommand]
     public async Task NavigateHome() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
 
     [RelayCommand]
-    public async Task NavigateProUSB() => await SafeNavigate(() => _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>());
+    public async Task NavigateProUsb() => await SafeNavigate(() => _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>());
 
     [RelayCommand]
     public async Task NavigateSettings() => await SafeNavigate(() => _navigationService.NavigateTo<SettingsViewModel>());
@@ -100,15 +85,44 @@ public partial class ShellViewModel : ViewModelBase
     [RelayCommand]
     public async Task NavigateLogs() => await SafeNavigate(() => _navigationService.NavigateTo<LogsViewModel>());
 
-
     [RelayCommand]
-    public async Task NavigateOperationsConsole() => await SafeNavigate(() => _navigationService.NavigateTo<OperationsConsoleViewModel>());
+    public async Task NavigateMassBoot()
+    {
+        try
+        {
+            var url = "http://localhost:5054";
+            
+            // Pre-flight check
+            try 
+            {
+                await _dialogService.ShowMessageDialogAsync("MassBoot", "Checking MassBoot availability...");
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                await _httpClient.GetAsync(url, cts.Token);
+            }
+            catch
+            {
+                // Verify specific error or just warn user
+                await _dialogService.ShowErrorDialogAsync("Connection Warning", "MassBoot UI might not be ready (Port 5054). Opening anyway...");
+            }
 
-    [RelayCommand]
-    public async Task NavigateProPXEServer() => await SafeNavigate(() => _navigationService.NavigateTo<HomeViewModel>());
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(startInfo);
+        }
+        catch (Exception ex)
+        {
+            await _dialogService.ShowErrorDialogAsync("Navigation Error", $"Failed to open MassBoot Web UI: {ex.Message}");
+        }
+    }
 
     [RelayCommand]
     public async Task NavigateScripting() => await SafeNavigate(() => _navigationService.NavigateTo<ScriptingViewModel>());
+
+    [RelayCommand]
+    public async Task NavigateOperationsConsole() => await SafeNavigate(() => _navigationService.NavigateTo<OperationsConsoleViewModel>());
 
     [RelayCommand]
     public async Task StartServer()

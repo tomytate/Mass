@@ -1,0 +1,21 @@
+{
+    "General": {
+        "ApplicationName": "Mass Suite",
+        "Version": "1.0.0",
+        "Language": "en-US",
+        "IsFirstRun": true
+    },
+    "Network": {
+        "PxePort": 67,
+        "TftpPort": 69,
+        "DashboardUrl": "http://localhost:5000"
+    },
+    "Agents": {
+        "HeartbeatIntervalSeconds": 30,
+        "AutoApprove": false
+    },
+    "Updates": {
+        "Channel": "Stable",
+        "AutoCheck": true
+    }
+}

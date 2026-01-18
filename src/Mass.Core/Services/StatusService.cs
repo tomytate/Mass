@@ -6,12 +6,15 @@ namespace Mass.Core.Services;
 public class StatusService : IStatusService, IDisposable
 {
     private readonly Process _currentProcess;
-    private Timer? _monitoringTimer;
+    private PeriodicTimer? _periodicTimer;
+    private CancellationTokenSource? _cts;
+    private Task? _monitoringTask;
+    
     private readonly PerformanceCounter? _cpuCounter;
     private long _previousBytesSent;
     private long _previousBytesReceived;
     private DateTime _previousNetworkCheck = DateTime.Now;
-    
+
     public event EventHandler<SystemStatus>? StatusUpdated;
 
     private readonly IIpcService? _ipcService;
@@ -24,7 +27,7 @@ public class StatusService : IStatusService, IDisposable
         _ipcService = ipcService;
         _pluginManager = pluginManager;
         _currentProcess = Process.GetCurrentProcess();
-        
+
         try
         {
             if (OperatingSystem.IsWindows())
@@ -32,11 +35,12 @@ public class StatusService : IStatusService, IDisposable
                 _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
                 _cpuCounter.NextValue();
             }
-            
+
             InitializeNetworkCounters();
         }
         catch
         {
+            // Suppress initialization errors for counters
         }
     }
 
@@ -48,16 +52,34 @@ public class StatusService : IStatusService, IDisposable
 
     public void StartMonitoring()
     {
-        _monitoringTimer?.Dispose();
-        _monitoringTimer = new Timer(OnMonitoringTick, null, 0, 1000);
+        if (_monitoringTask != null) return;
+
+        _cts = new CancellationTokenSource();
+        _periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        
+        _monitoringTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (await _periodicTimer.WaitForNextTickAsync(_cts.Token))
+                {
+                    OnMonitoringTick();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Normal shutdown
+            }
+        });
     }
 
     public void StopMonitoring()
     {
-        _monitoringTimer?.Change(Timeout.Infinite, 0);
+        _cts?.Cancel();
+        _monitoringTask = null;
     }
 
-    private void OnMonitoringTick(object? state)
+    private void OnMonitoringTick()
     {
         var status = GetSystemStatus();
         StatusUpdated?.Invoke(this, status);
@@ -67,34 +89,45 @@ public class StatusService : IStatusService, IDisposable
     {
         var statuses = new List<ModuleStatus>();
 
-        // Check MassBoot (IPC Server)
-        bool isServerRunning = _ipcService?.IsServerRunning ?? false;
-        statuses.Add(new ModuleStatus 
-        { 
-            Name = "MassBoot Server", 
-            Icon = "🖥️", 
-            Status = isServerRunning ? "Running" : "Stopped", 
-            Color = isServerRunning ? "#10B981" : "#6B7280" 
+        // Check MassBoot (TCP Port 5054)
+        bool isServerRunning = IsPortOpen(5054);
+        statuses.Add(new ModuleStatus
+        {
+            Name = "MassBoot Server",
+            Icon = "🖥️",
+            Status = isServerRunning ? "Running" : "Stopped",
+            Color = isServerRunning ? "#10B981" : "#6B7280"
         });
 
-        // Check ProUSB (Plugin)
-        var proUsb = _pluginManager?.LoadedPlugins.Values.FirstOrDefault(p => p.Manifest.Id.Equals("prousb", StringComparison.OrdinalIgnoreCase));
-        bool isProUsbReady = proUsb?.State == Mass.Core.Plugins.PluginState.Running;
-        statuses.Add(new ModuleStatus 
-        { 
-            Name = "ProUSB Engine", 
-            Icon = "💾", 
-            Status = isProUsbReady ? "Ready" : "Inactive", 
-            Color = isProUsbReady ? "#10B981" : "#6B7280" 
+        // Check ProUSB
+        // 1. Check if Plugin is loaded via Lifecycle Manager
+        var proUsbPlugin = _pluginManager?.LoadedPlugins.Values
+            .FirstOrDefault(p => p.Manifest.Id.Equals("prousb", StringComparison.OrdinalIgnoreCase));
+        
+        bool isProUsbReady = proUsbPlugin?.State == Mass.Core.Plugins.PluginState.Running;
+
+        // 2. If not a plugin, check if ProUSB assembly is loaded in current domain (Core integration)
+        if (!isProUsbReady)
+        {
+             isProUsbReady = AppDomain.CurrentDomain.GetAssemblies()
+                .Any(a => a.GetName().Name?.Equals("ProUSB", StringComparison.OrdinalIgnoreCase) == true);
+        }
+
+        statuses.Add(new ModuleStatus
+        {
+            Name = "ProUSB Engine",
+            Icon = "💾",
+            Status = isProUsbReady ? "Ready" : "Inactive",
+            Color = isProUsbReady ? "#10B981" : "#6B7280"
         });
 
-        // Check Orchestrator (Workflows)
-        statuses.Add(new ModuleStatus 
-        { 
-            Name = "Orchestrator", 
-            Icon = "⚙️", 
-            Status = "Ready", 
-            Color = "#10B981" 
+        // Check Orchestrator (Workflows) - assumed ready as part of core
+        statuses.Add(new ModuleStatus
+        {
+            Name = "Orchestrator",
+            Icon = "⚙️",
+            Status = "Ready",
+            Color = "#10B981"
         });
 
         return statuses;
@@ -144,9 +177,9 @@ public class StatusService : IStatusService, IDisposable
         try
         {
             var interfaces = NetworkInterface.GetAllNetworkInterfaces()
-                .Where(ni => ni.OperationalStatus == OperationalStatus.Up && 
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up &&
                             ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
-            
+
             foreach (var ni in interfaces)
             {
                 var stats = ni.GetIPv4Statistics();
@@ -160,41 +193,41 @@ public class StatusService : IStatusService, IDisposable
     private NetworkStatus GetNetworkStatus()
     {
         var networkStatus = new NetworkStatus();
-        
+
         try
         {
             long currentBytesSent = 0;
             long currentBytesReceived = 0;
-            
+
             var interfaces = NetworkInterface.GetAllNetworkInterfaces()
-                .Where(ni => ni.OperationalStatus == OperationalStatus.Up && 
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up &&
                             ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
-            
+
             foreach (var ni in interfaces)
             {
                 var stats = ni.GetIPv4Statistics();
                 currentBytesSent += stats.BytesSent;
                 currentBytesReceived += stats.BytesReceived;
             }
-            
+
             var now = DateTime.Now;
             var elapsed = (now - _previousNetworkCheck).TotalSeconds;
-            
+
             if (elapsed > 0)
             {
                 networkStatus.BytesSentPerSecond = (currentBytesSent - _previousBytesSent) / elapsed;
                 networkStatus.BytesReceivedPerSecond = (currentBytesReceived - _previousBytesReceived) / elapsed;
             }
-            
+
             networkStatus.TotalBytesSent = currentBytesSent;
             networkStatus.TotalBytesReceived = currentBytesReceived;
-            
+
             _previousBytesSent = currentBytesSent;
             _previousBytesReceived = currentBytesReceived;
             _previousNetworkCheck = now;
         }
         catch { }
-        
+
         return networkStatus;
     }
 
@@ -206,7 +239,26 @@ public class StatusService : IStatusService, IDisposable
 
     public void Dispose()
     {
-        _monitoringTimer?.Dispose();
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _periodicTimer?.Dispose();
         _cpuCounter?.Dispose();
+    }
+
+    private static bool IsPortOpen(int port)
+    {
+        try
+        {
+            using var client = new System.Net.Sockets.TcpClient();
+            var result = client.BeginConnect("127.0.0.1", port, null, null);
+            var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(500));
+            if (!success) return false;
+            client.EndConnect(result);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

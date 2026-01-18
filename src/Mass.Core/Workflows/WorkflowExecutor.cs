@@ -168,10 +168,15 @@ public class WorkflowExecutor : IWorkflowExecutor
         var command = context.InterpolateString(step.Parameters.GetValueOrDefault("command")?.ToString() ?? string.Empty);
         var workingDir = context.InterpolateString(step.Parameters.GetValueOrDefault("workingDirectory")?.ToString() ?? Environment.CurrentDirectory);
 
+        // Cross-platform shell detection
+        var (shell, shellArg) = OperatingSystem.IsWindows() 
+            ? ("cmd.exe", "/c") 
+            : ("/bin/bash", "-c");
+
         var processInfo = new ProcessStartInfo
         {
-            FileName = "cmd.exe",
-            Arguments = $"/c {command}",
+            FileName = shell,
+            Arguments = $"{shellArg} {command}",
             WorkingDirectory = workingDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

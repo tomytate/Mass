@@ -139,28 +139,57 @@ public class JsonConfigurationService : IConfigurationService
     /// <inheritdoc />
     public async Task LoadAsync()
     {
+        // 1. Load Defaults
+        var defaultPath = Path.Combine(AppContext.BaseDirectory, "DefaultSettings.json");
+        if (File.Exists(defaultPath))
+        {
+             try
+             {
+                 using var stream = File.OpenRead(defaultPath);
+                 var defaults = await JsonSerializer.DeserializeAsync<AppSettings>(stream, _jsonOptions);
+                 if (defaults != null)
+                 {
+                     _settings = defaults;
+                     _logger.LogInformation($"Loaded default configuration from {defaultPath}", "Configuration");
+                 }
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError($"Failed to load defaults from {defaultPath}", ex, "Configuration");
+             }
+        }
+        else
+        {
+            _logger.LogWarning($"Default configuration not found at {defaultPath}", "Configuration");
+        }
+
+        // 2. Load User Settings
         if (!File.Exists(_configPath))
         {
-            _logger.LogInformation($"Configuration file not found at {_configPath}, using defaults.", "Configuration");
-            _settings = new AppSettings();
-            await SaveAsync(); // Create default file
+            _logger.LogInformation($"User configuration not found at {_configPath}, creating from defaults.", "Configuration");
+            await SaveAsync(); // Save specific user copy
             return;
         }
 
         try
         {
             using var stream = File.OpenRead(_configPath);
+            // We deserialize to a separate object to assume overlay
+            // Ideally we'd merge JSON nodes, but for now we'll assume the user file is the master for top-level sections
+            // A true deep merge is complex without NewtonSoft JObject.Merge. 
+            // For now, we'll replace _settings with loaded user settings if successful, 
+            // relying on the user file being complete (which SaveAsync ensures).
             var loaded = await JsonSerializer.DeserializeAsync<AppSettings>(stream, _jsonOptions);
             if (loaded != null)
             {
+                // TODO: Deep merge logic if we want to support partial user settings
                 _settings = loaded;
-                _logger.LogInformation($"Configuration loaded from {_configPath}", "Configuration");
+                _logger.LogInformation($"User configuration loaded from {_configPath}", "Configuration");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError($"Failed to load configuration from {_configPath}", ex, "Configuration");
-            // Keep default settings on failure
         }
     }
 

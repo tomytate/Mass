@@ -1,34 +1,38 @@
-<ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     
-    <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source="ColorPalette.axaml"/>
-        <ResourceInclude Source="Typography.axaml"/>
-    </ResourceDictionary.MergedDictionaries>
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="ColorPalette.axaml"/>
+                <ResourceInclude Source="Typography.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Styles.Resources>
     
     <!-- Card Style -->
-    <Style x:Key="CardBorder" Selector="Border">
+    <Style Selector="Border.card">
         <Setter Property="Background" Value="{StaticResource BackgroundSecondaryBrush}"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusMD}"/>
         <Setter Property="Padding" Value="{StaticResource SpaceXL}"/>
     </Style>
     
     <!-- Inner Card Style -->
-    <Style x:Key="InnerCardBorder" Selector="Border">
+    <Style Selector="Border.innerCard">
         <Setter Property="Background" Value="{StaticResource BackgroundPrimaryBrush}"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
         <Setter Property="Padding" Value="{StaticResource SpaceLG}"/>
     </Style>
     
     <!-- Section Header Style -->
-    <Style x:Key="SectionHeader" Selector="TextBlock">
+    <Style Selector="TextBlock.sectionHeader">
         <Setter Property="FontSize" Value="{StaticResource FontSizeMD}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
     </Style>
     
     <!-- Primary Button Style -->
-    <Style x:Key="PrimaryButton" Selector="Button">
+    <Style Selector="Button.primary">
         <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
         <Setter Property="Foreground" Value="#FFFFFF"/>
         <Setter Property="Padding" Value="15,8"/>
@@ -36,7 +40,8 @@
     </Style>
     
     <!-- Secondary Button Style -->
-    <Style x:Key="SecondaryButton" Selector="Button">
+    <!-- Secondary Button Style -->
+    <Style Selector="Button.secondary">
         <Setter Property="Background" Value="{StaticResource BackgroundTertiaryBrush}"/>
         <Setter Property="Foreground" Value="#FFFFFF"/>
         <Setter Property="Padding" Value="15,8"/>
@@ -44,11 +49,72 @@
     </Style>
     
     <!-- Danger Button Style -->
-    <Style x:Key="DangerButton" Selector="Button">
+    <Style Selector="Button.danger">
         <Setter Property="Background" Value="{StaticResource DangerBrush}"/>
         <Setter Property="Foreground" Value="#FFFFFF"/>
         <Setter Property="Padding" Value="15,8"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusSM}"/>
     </Style>
+
+    <!-- ========================================== -->
+    <!-- NEW: Premium UI Components -->
+    <!-- ========================================== -->
+
+    <!-- Animated Button Base -->
+    <Style Selector="Button.animated">
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.animated:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.02)"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.animated:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.98)"/>
+    </Style>
+
+    <!-- Glass Card -->
+    <Style Selector="Border.glass">
+        <Setter Property="Background" Value="{StaticResource GlassBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource GlassBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusLG}"/>
+        <Setter Property="BoxShadow" Value="0 4 10 0 #20000000"/>
+        <Setter Property="Padding" Value="{StaticResource SpaceXL}"/>
+    </Style>
     
-</ResourceDictionary>
+    <!-- Glow Button -->
+    <Style Selector="Button.glow">
+        <Setter Property="Background" Value="{StaticResource PrimaryGradient}"/>
+        <Setter Property="Foreground" Value="#050510"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Padding" Value="20,10"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMD}"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.glow:pointerover">
+        <Setter Property="RenderTransform" Value="scale(1.05)"/>
+    </Style>
+
+    <!-- Status Badge -->
+    <Style Selector="Border.badge">
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="8,2"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    
+    <!-- Focus Accessibility -->
+    <Style Selector="Button:focus-visible">
+        <Setter Property="RenderTransform" Value="scale(1.05)"/>
+        <Setter Property="ZIndex" Value="1"/>
+    </Style>
+    
+</Styles>

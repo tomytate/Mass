@@ -31,13 +31,23 @@ public partial class NavigationService : ObservableObject, INavigationService
             navigableFrom.OnNavigatedFrom();
         }
 
-        var viewModel = _serviceProvider.GetRequiredService(viewModelType) as ViewModelBase;
-        if (viewModel == null)
+        try
         {
-            throw new InvalidOperationException($"Could not resolve ViewModel of type {viewModelType.Name}");
-        }
+            var viewModel = _serviceProvider.GetRequiredService(viewModelType) as ViewModelBase;
+            if (viewModel == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[Navigation] FATAL: ViewModel resolved as null for {viewModelType.Name}");
+                throw new InvalidOperationException($"Could not resolve ViewModel of type {viewModelType.Name}");
+            }
 
-        CurrentViewModel = viewModel;
+            CurrentViewModel = viewModel;
+            System.Diagnostics.Debug.WriteLine($"[Navigation] Success: Navigated to {viewModelType.Name}");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Navigation] ERROR: Failed to resolve {viewModelType.Name}. Exception: {ex}");
+            throw; // Rethrow to be caught by ShellViewModel
+        }
 
         if (CurrentViewModel is INavigable navigableTo)
         {

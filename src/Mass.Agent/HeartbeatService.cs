@@ -59,7 +59,7 @@ public class HeartbeatService : BackgroundService
         try
         {
             _hubConnection = new HubConnectionBuilder()
-                .WithUrl($"{_config.DashboardUrl}/agenthub")
+                .WithUrl($"{_config.DashboardUrl}/hubs/agents")
                 .WithAutomaticReconnect()
                 .Build();
 
@@ -74,8 +74,12 @@ public class HeartbeatService : BackgroundService
 
     private static double GetCpuUsage()
     {
+        // Approximate CPU usage based on process time vs elapsed time
         var process = System.Diagnostics.Process.GetCurrentProcess();
-        return process.TotalProcessorTime.TotalMilliseconds / Environment.ProcessorCount / process.TotalProcessorTime.TotalMilliseconds * 100;
+        var cpuTime = process.TotalProcessorTime.TotalMilliseconds;
+        var elapsed = (DateTime.UtcNow - process.StartTime.ToUniversalTime()).TotalMilliseconds;
+        if (elapsed <= 0) return 0;
+        return Math.Min(100, (cpuTime / (elapsed * Environment.ProcessorCount)) * 100);
     }
 
     private static long GetMemoryUsage()

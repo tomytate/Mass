@@ -3,16 +3,19 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Mass.Core.Security;
 
 public class CredentialService : ICredentialService
 {
     private readonly string _credentialPath;
-    private List<StoredCredential> _credentials = new();
+    private readonly ILogger<CredentialService>? _logger;
+    private List<StoredCredential> _credentials = [];
 
-    public CredentialService()
+    public CredentialService(ILogger<CredentialService>? logger = null)
     {
+        _logger = logger;
         var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite");
         Directory.CreateDirectory(appData);
         _credentialPath = Path.Combine(appData, "credentials.dat");
@@ -108,8 +111,9 @@ public class CredentialService : ICredentialService
                 _credentials = JsonSerializer.Deserialize<List<StoredCredential>>(json) ?? new List<StoredCredential>();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogError(ex, "Failed to load credentials from {Path}. Starting with empty credential store.", _credentialPath);
             _credentials = new List<StoredCredential>();
         }
     }
@@ -121,7 +125,10 @@ public class CredentialService : ICredentialService
             var json = JsonSerializer.Serialize(_credentials);
             File.WriteAllText(_credentialPath, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to save credentials to {Path}", _credentialPath);
+        }
     }
 
     private static string EncryptString(string plainText)
@@ -132,7 +139,9 @@ public class CredentialService : ICredentialService
             var encryptedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
             return Convert.ToBase64String(encryptedBytes);
         }
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(plainText));
+        
+        // Cross-platform: Use AES-256 with machine-derived key
+        return EncryptWithAes(plainText);
     }
 
     private static string DecryptString(string encryptedText)
@@ -143,7 +152,56 @@ public class CredentialService : ICredentialService
             var plainBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
             return Encoding.UTF8.GetString(plainBytes);
         }
-        return Encoding.UTF8.GetString(Convert.FromBase64String(encryptedText));
+        
+        // Cross-platform: Use AES-256 with machine-derived key
+        return DecryptWithAes(encryptedText);
+    }
+
+    private static byte[] GetMachineKey()
+    {
+        // Derive a machine-specific key from hostname + user
+        var machineInfo = $"{Environment.MachineName}|{Environment.UserName}|MassSuite-v1";
+        using var sha256 = SHA256.Create();
+        return sha256.ComputeHash(Encoding.UTF8.GetBytes(machineInfo));
+    }
+
+    private static string EncryptWithAes(string plainText)
+    {
+        var key = GetMachineKey();
+        var nonce = RandomNumberGenerator.GetBytes(AesGcm.NonceByteSizes.MaxSize); // 12 bytes
+        var tag = new byte[AesGcm.TagByteSizes.MaxSize]; // 16 bytes
+        var plainBytes = Encoding.UTF8.GetBytes(plainText);
+        var cipherBytes = new byte[plainBytes.Length];
+
+        using var aesGcm = new AesGcm(key, AesGcm.TagByteSizes.MaxSize);
+        aesGcm.Encrypt(nonce, plainBytes, cipherBytes, tag);
+
+        // Format: nonce (12) | tag (16) | ciphertext
+        var result = new byte[nonce.Length + tag.Length + cipherBytes.Length];
+        Buffer.BlockCopy(nonce, 0, result, 0, nonce.Length);
+        Buffer.BlockCopy(tag, 0, result, nonce.Length, tag.Length);
+        Buffer.BlockCopy(cipherBytes, 0, result, nonce.Length + tag.Length, cipherBytes.Length);
+
+        return Convert.ToBase64String(result);
+    }
+
+    private static string DecryptWithAes(string encryptedText)
+    {
+        var key = GetMachineKey();
+        var fullData = Convert.FromBase64String(encryptedText);
+
+        const int nonceSize = 12; // AesGcm.NonceByteSizes.MaxSize
+        const int tagSize = 16;   // AesGcm.TagByteSizes.MaxSize
+
+        var nonce = fullData.AsSpan(0, nonceSize);
+        var tag = fullData.AsSpan(nonceSize, tagSize);
+        var cipherBytes = fullData.AsSpan(nonceSize + tagSize);
+        var plainBytes = new byte[cipherBytes.Length];
+
+        using var aesGcm = new AesGcm(key, tagSize);
+        aesGcm.Decrypt(nonce, cipherBytes, tag, plainBytes);
+
+        return Encoding.UTF8.GetString(plainBytes);
     }
 
     private static string SecureStringToString(SecureString secureString)

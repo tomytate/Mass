@@ -1,183 +1,65 @@
-# Mass Suite API Reference
+# Mass Suite API Documentation
 
 ## Overview
 
-Mass Suite exposes REST APIs via ASP.NET Core for workflow management, device operations, and agent coordination.
-
-**Base URL**: `http://localhost:5000/api/v1`
+The Mass Suite API is a RESTful interface powered by ASP.NET Core 10. It provides access to PXE services, agent management, and system configuration.
 
 ## Authentication
 
-Bearer token authentication:
+All API endpoints require a valid JWT token in the `Authorization` header:
 
-```http
-Authorization: Bearer <token>
+```
+Authorization: Bearer <your_token>
 ```
 
-## Endpoints
-
-### Health
-
-```http
-GET /health
-```
-
-Returns service health status.
-
-### Workflows
-
-#### List Workflows
-
-```http
-GET /api/v1/workflows
-```
-
-Response:
-```json
-[
-  {
-    "id": "burn-iso",
-    "name": "Burn ISO to USB",
-    "version": "1.0.0",
-    "stepCount": 5,
-    "lastRun": "2024-12-05T10:30:00Z"
-  }
-]
-```
-
-#### Get Workflow
-
-```http
-GET /api/v1/workflows/{id}
-```
-
-#### Execute Workflow
-
-```http
-POST /api/v1/workflows/{id}/execute
-Content-Type: application/json
-
-{
-  "parameters": {
-    "isoPath": "C:\\Images\\win11.iso",
-    "targetDevice": "\\\\.\\PhysicalDrive2"
-  }
-}
-```
-
-Response:
-```json
-{
-  "executionId": "abc123",
-  "status": "Running",
-  "startedAt": "2024-12-05T10:30:00Z"
-}
-```
-
-### Devices
-
-#### List USB Devices
-
-```http
-GET /api/v1/devices/usb
-```
-
-Response:
-```json
-[
-  {
-    "deviceId": "\\\\.\\PhysicalDrive2",
-    "name": "SanDisk Ultra",
-    "sizeBytes": 32000000000,
-    "isRemovable": true
-  }
-]
-```
-
-### Agents
-
-#### List Connected Agents
-
-```http
-GET /api/v1/agents
-```
-
-Response:
-```json
-[
-  {
-    "agentId": "a1b2c3d4",
-    "name": "WORKSTATION-01",
-    "status": "Online",
-    "lastHeartbeat": "2024-12-05T10:29:55Z"
-  }
-]
-```
-
-#### Send Command to Agent
-
-```http
-POST /api/v1/agents/{agentId}/commands
-Content-Type: application/json
-
-{
-  "command": "ExecuteWorkflow",
-  "parameters": {
-    "workflowId": "deploy-image"
-  }
-}
-```
-
-### Plugins
-
-#### List Installed Plugins
-
-```http
-GET /api/v1/plugins
-```
-
-#### Install Plugin
-
-```http
-POST /api/v1/plugins/install
-Content-Type: application/json
-
-{
-  "pluginId": "autowim"
-}
-```
-
-## Error Responses
-
-All errors follow RFC 7807 Problem Details:
-
-```json
-{
-  "type": "https://mass.suite/errors/validation",
-  "title": "Validation Error",
-  "status": 400,
-  "detail": "The 'isoPath' field is required.",
-  "instance": "/api/v1/workflows/burn-iso/execute"
-}
-```
+Tokens are obtained via the `/api/v1/auth/login` endpoint.
 
 ## Versioning
 
-API versioning via URL path: `/api/v1/`, `/api/v2/`
+The API uses URL versioning. The current version is `v1`.
+Base URL: `https://your-server/api/v1`
 
-Breaking changes increment major version. Minor versions maintain backward compatibility.
+## Endpoints
 
-## Rate Limiting
+### Agents
 
-| Tier | Requests/Min |
-|------|--------------|
-| Free | 60 |
-| Pro | 300 |
-| Enterprise | Unlimited |
+- **GET /api/v1/agents** - List all registered agents
+- **GET /api/v1/agents/{id}** - Get details for a specific agent
+- **POST /api/v1/agents/register** - Register a new agent
+- **POST /api/v1/agents/heartbeat** - Send a heartbeat
 
-Rate limit headers:
-```http
-X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 45
-X-RateLimit-Reset: 1701777600
+### PXE Services
+
+- **GET /api/v1/boot/config/{macAddress}** - Get boot configuration for a specific machine
+- **GET /api/v1/images** - List available boot images
+
+### System
+
+- **GET /health** - System health status
+- **GET /metrics** - Prometheus metrics (OpenTelemetry)
+
+## Data Models
+
+### AgentRegistrationRequest
+
+```json
+{
+  "hostname": "string",
+  "macAddress": "string",
+  "ipAddress": "string",
+  "osVersion": "string",
+  "agentVersion": "string"
+}
+```
+
+### AgentHeartbeatRequest
+
+```json
+{
+  "agentId": "string",
+  "status": "Idle|Busy|Error|Offline",
+  "cpuUsage": 0.0,
+  "memoryUsage": 0.0,
+  "activeJobId": "string" // optional
+}
 ```

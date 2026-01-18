@@ -76,13 +76,13 @@
     private int _activePlugins = 8;
 
     private List<ActivityItem> _recentActivities = new()
-    {
-        new("✅", "USB burn completed: Windows 11 Pro", "2 min ago"),
-        new("🚀", "Workflow 'deploy-image' executed", "15 min ago"),
-        new("🌐", "PXE boot: 192.168.1.105", "32 min ago"),
-        new("🔌", "Plugin installed: AutoWIM", "1 hour ago"),
-        new("⚠️", "Workflow 'backup' failed", "2 hours ago"),
-    };
+{
+new("✅", "USB burn completed: Windows 11 Pro", "2 min ago"),
+new("🚀", "Workflow 'deploy-image' executed", "15 min ago"),
+new("🌐", "PXE boot: 192.168.x.x", "32 min ago"),
+new("🔌", "Plugin installed: AutoWIM", "1 hour ago"),
+new("⚠️", "Workflow 'backup' failed", "2 hours ago"),
+};
 
     private record ActivityItem(string Icon, string Description, string TimeAgo);
 

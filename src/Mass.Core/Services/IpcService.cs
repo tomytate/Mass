@@ -61,7 +61,7 @@ public class IpcService : IIpcService, IDisposable
             };
 
             _serverProcess = Process.Start(startInfo);
-            
+
             // Give it a moment to start
             await Task.Delay(2000, ct);
 
@@ -76,7 +76,7 @@ public class IpcService : IIpcService, IDisposable
             _serverPipe = new NamedPipeServerStream(_pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
             _serverTask = Task.Run(async () => await RunServerAsync(_serverCts.Token), _serverCts.Token);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -91,7 +91,7 @@ public class IpcService : IIpcService, IDisposable
         try
         {
             _serverCts?.Cancel();
-            
+
             if (_serverTask != null)
             {
                 await _serverTask;
@@ -109,7 +109,7 @@ public class IpcService : IIpcService, IDisposable
                 _serverProcess.Dispose();
                 _serverProcess = null;
             }
-            
+
             return true;
         }
         catch
@@ -121,15 +121,37 @@ public class IpcService : IIpcService, IDisposable
     private string? FindServerExecutable()
     {
         var currentDir = AppContext.BaseDirectory;
-        
+
         // 1. Production/Same Directory
         var localPath = Path.Combine(currentDir, "ProPXEServer.API.exe");
         if (File.Exists(localPath)) return localPath;
 
         // 2. Development (Relative path from Mass.Launcher bin)
-        // Mass/src/Mass.Launcher/bin/Debug/net10.0 -> Mass/src/ProPXEServer/ProPXEServer.API/bin/Debug/net10.0
         var devPath = Path.GetFullPath(Path.Combine(currentDir, "../../../../ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe"));
         if (File.Exists(devPath)) return devPath;
+
+        // 3. Deployment Structure (e.g. plugins folder)
+        var pluginPath = Path.Combine(currentDir, "ProPXEServer", "ProPXEServer.API.exe");
+        if (File.Exists(pluginPath)) return pluginPath;
+
+        // 4. Detailed recursive search for dev environments
+        var searchPaths = new List<string>
+        {
+            // Direct Dev Path found in diagnostics
+            Path.GetFullPath(Path.Combine(currentDir, "../../../../ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe")),
+            // Standard relative path
+            Path.GetFullPath(Path.Combine(currentDir, "../ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe")),
+             // Flat deployment
+            Path.GetFullPath(Path.Combine(currentDir, "ProPXEServer.API.exe")),
+            // Subfolder deployment
+             Path.GetFullPath(Path.Combine(currentDir, "ProPXEServer", "ProPXEServer.API.exe"))
+        };
+
+        foreach (var path in searchPaths)
+        {
+            // _logger.LogInformation($"Searching for server at: {path}"); // Optional verbose logging
+            if (File.Exists(path)) return path;
+        }
 
         return null;
     }
@@ -158,11 +180,11 @@ public class IpcService : IIpcService, IDisposable
             await client.WriteAsync(bytes, ct);
 
             var responseLengthBytes = new byte[4];
-            await client.ReadAsync(responseLengthBytes, ct);
+            await ReadExactAsync(client, responseLengthBytes, ct);
             var responseLength = BitConverter.ToInt32(responseLengthBytes);
 
             var responseBytes = new byte[responseLength];
-            await client.ReadAsync(responseBytes, ct);
+            await ReadExactAsync(client, responseBytes, ct);
 
             var responseJson = Encoding.UTF8.GetString(responseBytes);
             return JsonSerializer.Deserialize<IpcResponse>(responseJson, _jsonOptions) ?? new IpcResponse
@@ -196,7 +218,7 @@ public class IpcService : IIpcService, IDisposable
                 await _serverPipe.WaitForConnectionAsync(ct);
 
                 var messageLengthBytes = new byte[4];
-                await _serverPipe.ReadAsync(messageLengthBytes, ct);
+                await ReadExactAsync(_serverPipe, messageLengthBytes, ct);
                 var messageLength = BitConverter.ToInt32(messageLengthBytes);
 
                 if (messageLength > MaxMessageSize)
@@ -212,7 +234,7 @@ public class IpcService : IIpcService, IDisposable
                 }
 
                 var messageBytes = new byte[messageLength];
-                await _serverPipe.ReadAsync(messageBytes, ct);
+                await ReadExactAsync(_serverPipe, messageBytes, ct);
 
                 var messageJson = Encoding.UTF8.GetString(messageBytes);
                 var request = JsonSerializer.Deserialize<IpcRequest>(messageJson, _jsonOptions);
@@ -238,6 +260,17 @@ public class IpcService : IIpcService, IDisposable
                     _serverPipe.Disconnect();
                 }
             }
+        }
+    }
+
+    private async Task ReadExactAsync(Stream stream, byte[] buffer, CancellationToken ct)
+    {
+        int totalRead = 0;
+        while (totalRead < buffer.Length)
+        {
+            int read = await stream.ReadAsync(buffer.AsMemory(totalRead, buffer.Length - totalRead), ct);
+            if (read == 0) throw new System.IO.EndOfStreamException("Stream closed before all bytes were read.");
+            totalRead += read;
         }
     }
 
