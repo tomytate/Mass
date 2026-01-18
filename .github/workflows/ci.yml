@@ -46,21 +46,21 @@ jobs:
 
     - name: Upload Launcher Artifact
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: Mass-Launcher-Windows
         path: ./publish/Launcher
 
     - name: Upload Agent Artifact
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: Mass-Agent-Windows
         path: ./publish/Agent
 
     - name: Upload Dashboard Artifact
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: Mass-Dashboard-Windows
         path: ./publish/Dashboard
