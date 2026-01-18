@@ -115,9 +115,12 @@ public partial class HomeViewModel : ViewModelBase
         {
             switch (target)
             {
+                case "ProUSB":
+                    _navigationService.NavigateTo<ProUSB.UI.ViewModels.MainViewModel>();
+                    break;
                 case "MassBoot":
-                    // Navigate to MassBoot
-                    // Navigation logic will be implemented in future phases
+                    // Navigate to Health view which shows MassBoot server status and all module statuses
+                    _navigationService.NavigateTo<HealthViewModel>();
                     break;
                 case "Workflows":
                     _navigationService.NavigateTo<WorkflowsViewModel>();

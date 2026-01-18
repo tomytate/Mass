@@ -73,7 +73,7 @@ public class RegistryServiceTests
     }
 
     [Fact]
-    public void RegisterStep_ShouldBeThreadSafe()
+    public async Task RegisterStep_ShouldBeThreadSafe()
     {
         // Arrange
         var serviceProvider = new TestServiceProvider();
@@ -91,7 +91,7 @@ public class RegistryServiceTests
             }));
         }
 
-        Task.WaitAll(tasks.ToArray());
+        await Task.WhenAll(tasks);
 
         // Assert
         var steps = registry.ListSteps();

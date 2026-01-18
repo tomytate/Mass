@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using Mass.Spec.Contracts.Ipc;
+using Mass.Core.Interfaces;
 
 namespace Mass.Core.Services;
 
@@ -21,8 +22,11 @@ public class IpcService : IIpcService, IDisposable
     public event EventHandler<IpcMessage>? MessageReceived;
     public bool IsServerRunning => _serverPipe != null && _serverPipe.IsConnected;
 
-    public IpcService()
+    private readonly ILogService _logger;
+
+    public IpcService(ILogService logger)
     {
+        _logger = logger;
         _pipeName = $"{PipeNamePrefix}{Environment.UserName}";
         _jsonOptions = new JsonSerializerOptions
         {
@@ -31,12 +35,41 @@ public class IpcService : IIpcService, IDisposable
         };
     }
 
+    private Process? _serverProcess;
+
     public async Task<bool> StartServerAsync(IServiceProvider serviceProvider, CancellationToken ct = default)
     {
         try
         {
             if (_serverPipe != null)
                 return true;
+
+            // Start the server process
+            var serverPath = FindServerExecutable();
+            if (string.IsNullOrEmpty(serverPath))
+            {
+                _logger.LogError("Could not find ProPXEServer.API.exe");
+                return false;
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = serverPath,
+                UseShellExecute = false,
+                CreateNoWindow = true, // Hide console window
+                WorkingDirectory = Path.GetDirectoryName(serverPath)
+            };
+
+            _serverProcess = Process.Start(startInfo);
+            
+            // Give it a moment to start
+            await Task.Delay(2000, ct);
+
+            if (_serverProcess == null || _serverProcess.HasExited)
+            {
+                _logger.LogError("Server process failed to start or exited immediately.");
+                return false;
+            }
 
             _serviceProvider = serviceProvider;
             _serverCts = new CancellationTokenSource();
@@ -46,8 +79,9 @@ public class IpcService : IIpcService, IDisposable
             
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError($"Error starting server: {ex.Message}");
             return false;
         }
     }
@@ -67,6 +101,14 @@ public class IpcService : IIpcService, IDisposable
             _serverPipe = null;
             _serverCts?.Dispose();
             _serverCts = null;
+
+            if (_serverProcess != null && !_serverProcess.HasExited)
+            {
+                _serverProcess.Kill();
+                _serverProcess.WaitForExit();
+                _serverProcess.Dispose();
+                _serverProcess = null;
+            }
             
             return true;
         }
@@ -74,6 +116,22 @@ public class IpcService : IIpcService, IDisposable
         {
             return false;
         }
+    }
+
+    private string? FindServerExecutable()
+    {
+        var currentDir = AppContext.BaseDirectory;
+        
+        // 1. Production/Same Directory
+        var localPath = Path.Combine(currentDir, "ProPXEServer.API.exe");
+        if (File.Exists(localPath)) return localPath;
+
+        // 2. Development (Relative path from Mass.Launcher bin)
+        // Mass/src/Mass.Launcher/bin/Debug/net10.0 -> Mass/src/ProPXEServer/ProPXEServer.API/bin/Debug/net10.0
+        var devPath = Path.GetFullPath(Path.Combine(currentDir, "../../../../ProPXEServer/ProPXEServer.API/bin/Debug/net10.0/ProPXEServer.API.exe"));
+        if (File.Exists(devPath)) return devPath;
+
+        return null;
     }
 
     public async Task<IpcResponse> SendRequestAsync(IpcRequest request, CancellationToken ct = default)

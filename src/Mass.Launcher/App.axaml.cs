@@ -87,7 +87,7 @@ public partial class App : Application
         builder.Services.AddSingleton<Mass.Core.Interfaces.IConfigurationService>(sp => configService);
 
         builder.Services.AddSingleton<INavigationService, NavigationService>();
-        builder.Services.AddSingleton<Mass.Core.Services.IStatusService, Mass.Core.Services.StatusService>();
+        // StatusService moved to later registration
         builder.Services.AddSingleton<Mass.Core.Services.IActivityService, Mass.Core.Services.ActivityService>();
         
         // Register Telemetry
@@ -155,6 +155,9 @@ public partial class App : Application
         builder.Services.AddSingleton<IPluginLoader>(pluginLoader);
         builder.Services.AddSingleton(pluginDiscovery);
         builder.Services.AddSingleton<PluginLifecycleManager>();
+
+        // Register StatusService after dependencies (IpcService, PluginLifecycleManager)
+        builder.Services.AddSingleton<Mass.Core.Services.IStatusService, Mass.Core.Services.StatusService>();
 
         onStatusUpdate("Building host...");
         Host = builder.Build();

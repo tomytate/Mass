@@ -226,11 +226,12 @@ public class BurnEngine
             using var sourceStream = file.OpenRead();
             using var destStream = File.Create(destFile);
             
-            Span<byte> buffer = stackalloc byte[81920];
+            // Use heap allocation instead of stackalloc to avoid CA2014 stack overflow risk
+            byte[] buffer = new byte[81920];
             int bytesRead;
             while ((bytesRead = sourceStream.Read(buffer)) > 0)
             {
-                destStream.Write(buffer[..bytesRead]);
+                destStream.Write(buffer.AsSpan(0, bytesRead));
             }
             
             currentItem++;

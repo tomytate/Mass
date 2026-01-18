@@ -26,12 +26,13 @@ builder.WebHost.ConfigureKestrel(options =>
 if (builder.Environment.IsProduction())
 {
     // Validate secrets in production
+    var logger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("Startup");
     var requiredSecrets = new[] { "JwtSettings:SecretKey", "Stripe:SecretKey", "Stripe:WebhookSecret" };
     foreach (var secret in requiredSecrets)
     {
         if (string.IsNullOrEmpty(builder.Configuration[secret]))
         {
-            Console.WriteLine($"WARNING: Missing production secret: {secret}");
+            logger.LogWarning("Missing production secret: {Secret}", secret);
         }
     }
 }
@@ -58,7 +59,8 @@ if (string.IsNullOrEmpty(jwtSecret) || jwtSecret.Length < 32)
     
     jwtSecret = Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + 
                 Convert.ToBase64String(Guid.NewGuid().ToByteArray());
-    Console.WriteLine("WARNING: Using auto-generated JWT secret. Set MASS_JWTSETTINGS__SECRETKEY for production.");
+    var logger = LoggerFactory.Create(config => config.AddConsole()).CreateLogger("Startup");
+    logger.LogWarning("Using auto-generated JWT secret. Set MASS_JWTSETTINGS__SECRETKEY for production.");
 }
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");

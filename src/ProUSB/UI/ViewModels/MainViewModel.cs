@@ -114,7 +114,8 @@ public partial class MainViewModel : ViewModelBase {
 
         RefreshProfiles();
         FilterLogs(); 
-        Task.Run(Refresh);
+        // Fire and forget Refresh on the current synchronization context (UI thread)
+        _ = Refresh();
     }
 
     private void Log(string m) {

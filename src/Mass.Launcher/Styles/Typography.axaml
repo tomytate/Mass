@@ -14,9 +14,9 @@
     <x:Double x:Key="SpaceXS">4</x:Double>
     <x:Double x:Key="SpaceSM">8</x:Double>
     <x:Double x:Key="SpaceMD">12</x:Double>
-    <x:Double x:Key="SpaceLG">15</x:Double>
-    <x:Double x:Key="SpaceXL">20</x:Double>
-    <x:Double x:Key="Space2XL">24</x:Double>
+    <Thickness x:Key="SpaceLG">15</Thickness>
+    <Thickness x:Key="SpaceXL">20</Thickness>
+    <Thickness x:Key="Space2XL">24</Thickness>
     
     <!-- Border Radius -->
     <CornerRadius x:Key="RadiusSM">4</CornerRadius>

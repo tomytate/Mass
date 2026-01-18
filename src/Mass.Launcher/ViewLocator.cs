@@ -13,11 +13,17 @@ public class ViewLocator : IDataTemplate
             return null;
 
         var name = data.GetType().FullName!.Replace("ViewModel", "View");
-        var type = Type.GetType(name);
+        
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2057:Type.GetType", Justification = "ViewModel to View mapping is dynamic.")]
+        Type? GetViewType(string typeName) => Type.GetType(typeName);
+
+        var type = GetViewType(name);
 
         if (type != null)
         {
-            return (Control)Activator.CreateInstance(type)!;
+            [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2072:Activator.CreateInstance", Justification = "Views have parameterless constructors by convention.")]
+            object? CreateView() => Activator.CreateInstance(type);
+            return (Control)CreateView()!;
         }
         
         return new TextBlock { Text = "Not Found: " + name };

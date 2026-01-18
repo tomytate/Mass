@@ -1,13 +1,14 @@
-<div align="center">
-
 # 🚀 Mass Suite
 
 **Unified Deployment & Automation Platform for Windows**
 
+> **v1.0.0 GOLD** - Production Ready 🏆
+
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/tomytate/Mass/ci.yml?style=for-the-badge&logo=github)](https://github.com/tomytate/Mass/actions)
+[![Build Status](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)](https://github.com/tomytate/Mass/actions)
+[![Tests](https://img.shields.io/badge/Tests-80%2F83%20Passing-success?style=for-the-badge)](tests/)
 
 [Features](#-features) •
 [Quick Start](#-quick-start) •

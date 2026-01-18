@@ -30,6 +30,8 @@
 
   <PropertyGroup>
     <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <!-- Suppress IL2xxx warnings - only relevant for Native AOT/trimmed builds -->
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
 </Project>

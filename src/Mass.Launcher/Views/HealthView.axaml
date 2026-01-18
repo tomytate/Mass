@@ -15,7 +15,7 @@
             <!-- Resource Cards -->
             <UniformGrid Columns="3" Margin="0,0,-15,0">
                 <!-- CPU Card -->
-                <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}" Margin="0,0,15,0">
+                <Border Classes="CardBorder" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="🧠" FontSize="24"/>
@@ -27,26 +27,25 @@
                 </Border>
 
                 <!-- Memory Card -->
-                <Border Background="#2D2D2D" CornerRadius="8" Padding="20" Margin="0,0,15,0">
+                <Border Classes="CardBorder" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="💾" FontSize="24"/>
                             <TextBlock Text="Memory" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock Text="{Binding CurrentStatus.MemoryDisplay}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
-                         <!-- Simplified progress for memory (assuming 32GB max for visual scale if total unknown, but we have total now) -->
                         <ProgressBar Value="{Binding CurrentStatus.MemoryUsageBytes}" Maximum="{Binding CurrentStatus.TotalMemoryBytes}" Height="8" Foreground="{StaticResource SuccessBrush}" Background="{StaticResource BorderBrush}"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Uptime Card -->
-                <Border Background="#2D2D2D" CornerRadius="8" Padding="20" Margin="0,0,15,0">
+                <Border Classes="CardBorder" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="⏱️" FontSize="24"/>
                             <TextBlock Text="Uptime" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding CurrentStatus.UptimeDisplay}" FontSize="32" FontWeight="Bold" Foreground="#F59E0B"/>
+                        <TextBlock Text="{Binding CurrentStatus.UptimeDisplay}" FontSize="32" FontWeight="Bold" Foreground="{StaticResource WarningBrush}"/>
                         <TextBlock Text="Since Application Start" Opacity="0.5" FontSize="12"/>
                     </StackPanel>
                 </Border>
@@ -54,25 +53,25 @@
 
             <!-- Network Activity -->
             <StackPanel Spacing="15">
-                <TextBlock Text="NETWORK ACTIVITY" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <TextBlock Text="NETWORK ACTIVITY" Classes="SectionHeader" Opacity="0.7"/>
                 <UniformGrid Columns="2" Margin="0,0,-15,0">
-                    <Border Background="#2D2D2D" CornerRadius="8" Padding="20" Margin="0,0,15,0">
+                    <Border Classes="CardBorder" Margin="0,0,15,0">
                         <StackPanel Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="⬆️" FontSize="16"/>
                                 <TextBlock Text="Upload Speed" FontWeight="SemiBold"/>
                             </StackPanel>
-                            <TextBlock Text="{Binding CurrentStatus.Network.UploadSpeedDisplay}" FontSize="20" FontWeight="Bold" Foreground="#3B82F6"/>
+                            <TextBlock Text="{Binding CurrentStatus.Network.UploadSpeedDisplay}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource InfoBrush}"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#2D2D2D" CornerRadius="8" Padding="20" Margin="0,0,15,0">
+                    <Border Classes="CardBorder" Margin="0,0,15,0">
                         <StackPanel Spacing="10">
-                           <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="⬇️" FontSize="16"/>
                                 <TextBlock Text="Download Speed" FontWeight="SemiBold"/>
                             </StackPanel>
-                            <TextBlock Text="{Binding CurrentStatus.Network.DownloadSpeedDisplay}" FontSize="20" FontWeight="Bold" Foreground="#10B981"/>
+                            <TextBlock Text="{Binding CurrentStatus.Network.DownloadSpeedDisplay}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
                         </StackPanel>
                     </Border>
                 </UniformGrid>
@@ -80,7 +79,7 @@
 
             <!-- Disk Usage -->
             <StackPanel Spacing="15">
-                <TextBlock Text="DISK USAGE" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
+                <TextBlock Text="DISK USAGE" Classes="SectionHeader" Opacity="0.7"/>
                 <ItemsControl ItemsSource="{Binding CurrentStatus.Disks}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -89,7 +88,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#2D2D2D" CornerRadius="8" Padding="15" Margin="0,0,15,15" Width="300">
+                            <Border Classes="CardBorder" Margin="0,0,15,15" Width="300">
                                 <StackPanel Spacing="10">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -99,7 +98,7 @@
                                         </StackPanel>
                                         <TextBlock Grid.Column="1" Text="{Binding UsagePercent, StringFormat='{}{0:F1}%'}" FontWeight="Bold"/>
                                     </Grid>
-                                    <ProgressBar Value="{Binding UsagePercent}" Maximum="100" Height="6" Foreground="#8B5CF6" Background="#404040"/>
+                                    <ProgressBar Value="{Binding UsagePercent}" Maximum="100" Height="6" Foreground="{StaticResource PrimaryBrush}" Background="{StaticResource BorderBrush}"/>
                                     <TextBlock FontSize="11" Opacity="0.6">
                                         <Run Text="{Binding FreeSpaceBytes, Converter={StaticResource BytesToGbConverter}}"/>
                                         <Run Text=" GB free of "/>
@@ -116,8 +115,8 @@
             <!-- Service Status -->
             <StackPanel Spacing="15">
                 <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0" Text="SERVICE STATUS" FontSize="14" FontWeight="SemiBold" Opacity="0.7"/>
-                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Padding="10,5"/>
+                    <TextBlock Grid.Column="0" Text="SERVICE STATUS" Classes="SectionHeader" Opacity="0.7"/>
+                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="SecondaryButton"/>
                 </Grid>
                 
                 <ItemsControl ItemsSource="{Binding ModuleStatuses}">
@@ -128,7 +127,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#2D2D2D" CornerRadius="8" Padding="15" Margin="0,0,15,15" Width="200">
+                            <Border Classes="CardBorder" Margin="0,0,15,15" Width="200">
                                 <StackPanel Spacing="10">
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <TextBlock Text="{Binding Icon}" FontSize="20"/>

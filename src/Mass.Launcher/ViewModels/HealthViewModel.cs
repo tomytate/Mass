@@ -68,35 +68,10 @@ public partial class HealthViewModel : ViewModelBase, IDisposable
     private void UpdateModuleStatuses()
     {
         ModuleStatuses.Clear();
-        
-        // Check MassBoot
-        var massBoot = _pluginManager.LoadedPlugins.Values.FirstOrDefault(p => p.Manifest.Id == "massboot");
-        ModuleStatuses.Add(new ModuleStatus 
-        { 
-            Name = "MassBoot Server", 
-            Status = massBoot?.State == Mass.Core.Plugins.PluginState.Running ? "Running" : "Stopped",
-            Icon = "🖥️",
-            Color = massBoot?.State == Mass.Core.Plugins.PluginState.Running ? "#10B981" : "#6B7280"
-        });
-
-        // Check ProUSB
-        var proUsb = _pluginManager.LoadedPlugins.Values.FirstOrDefault(p => p.Manifest.Id == "prousb");
-        ModuleStatuses.Add(new ModuleStatus 
-        { 
-            Name = "ProUSB Engine", 
-            Status = proUsb?.State == Mass.Core.Plugins.PluginState.Running ? "Ready" : "Inactive",
-            Icon = "💾",
-            Color = proUsb?.State == Mass.Core.Plugins.PluginState.Running ? "#10B981" : "#6B7280"
-        });
-
-        // Check Telemetry
-        ModuleStatuses.Add(new ModuleStatus 
-        { 
-            Name = "Telemetry Service", 
-            Status = _appSettings.Telemetry.Enabled ? "Active" : "Disabled",
-            Icon = "📊",
-            Color = _appSettings.Telemetry.Enabled ? "#10B981" : "#6B7280"
-        });
+        foreach (var status in _statusService.GetModuleStatuses())
+        {
+            ModuleStatuses.Add(status);
+        }
     }
 
     [RelayCommand]

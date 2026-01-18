@@ -23,11 +23,12 @@ public partial class WorkflowsViewModel : ViewModelBase
         Title = "Workflows";
         _workflowDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite", "workflows");
         Directory.CreateDirectory(_workflowDirectory);
-        LoadWorkflows();
+        Directory.CreateDirectory(_workflowDirectory);
+        _ = LoadWorkflows();
     }
 
     [RelayCommand]
-    private async void LoadWorkflows()
+    private async Task LoadWorkflows()
     {
         Workflows.Clear();
         

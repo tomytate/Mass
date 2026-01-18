@@ -14,8 +14,15 @@ public class StatusService : IStatusService, IDisposable
     
     public event EventHandler<SystemStatus>? StatusUpdated;
 
-    public StatusService()
+    private readonly IIpcService? _ipcService;
+    private readonly Mass.Core.Plugins.PluginLifecycleManager? _pluginManager;
+
+    public StatusService(
+        IIpcService ipcService,
+        Mass.Core.Plugins.PluginLifecycleManager pluginManager)
     {
+        _ipcService = ipcService;
+        _pluginManager = pluginManager;
         _currentProcess = Process.GetCurrentProcess();
         
         try
@@ -31,6 +38,12 @@ public class StatusService : IStatusService, IDisposable
         catch
         {
         }
+    }
+
+    // Default constructor for design-time or fallback
+    public StatusService()
+    {
+        _currentProcess = Process.GetCurrentProcess();
     }
 
     public void StartMonitoring()
@@ -52,12 +65,39 @@ public class StatusService : IStatusService, IDisposable
 
     public IEnumerable<ModuleStatus> GetModuleStatuses()
     {
-        return new[]
-        {
-            new ModuleStatus { Name = "ProUSB", Icon = "💾", Status = "Ready", Color = "#10B981" },
-            new ModuleStatus { Name = "MassBoot", Icon = "🖥️", Status = "Active", Color = "#3B82F6" },
-            new ModuleStatus { Name = "Orchestrator", Icon = "⚙️", Status = "Idle", Color = "#6B7280" }
-        };
+        var statuses = new List<ModuleStatus>();
+
+        // Check MassBoot (IPC Server)
+        bool isServerRunning = _ipcService?.IsServerRunning ?? false;
+        statuses.Add(new ModuleStatus 
+        { 
+            Name = "MassBoot Server", 
+            Icon = "🖥️", 
+            Status = isServerRunning ? "Running" : "Stopped", 
+            Color = isServerRunning ? "#10B981" : "#6B7280" 
+        });
+
+        // Check ProUSB (Plugin)
+        var proUsb = _pluginManager?.LoadedPlugins.Values.FirstOrDefault(p => p.Manifest.Id.Equals("prousb", StringComparison.OrdinalIgnoreCase));
+        bool isProUsbReady = proUsb?.State == Mass.Core.Plugins.PluginState.Running;
+        statuses.Add(new ModuleStatus 
+        { 
+            Name = "ProUSB Engine", 
+            Icon = "💾", 
+            Status = isProUsbReady ? "Ready" : "Inactive", 
+            Color = isProUsbReady ? "#10B981" : "#6B7280" 
+        });
+
+        // Check Orchestrator (Workflows)
+        statuses.Add(new ModuleStatus 
+        { 
+            Name = "Orchestrator", 
+            Icon = "⚙️", 
+            Status = "Ready", 
+            Color = "#10B981" 
+        });
+
+        return statuses;
     }
 
     public SystemStatus GetSystemStatus()
@@ -65,9 +105,9 @@ public class StatusService : IStatusService, IDisposable
         double cpuUsage = 0;
         try
         {
-            if (_cpuCounter != null)
+            if (OperatingSystem.IsWindows() && _cpuCounter != null)
             {
-                cpuUsage = _cpuCounter.NextValue();
+                cpuUsage = GetCpuUsageWindows();
             }
         }
         catch { }
@@ -156,6 +196,12 @@ public class StatusService : IStatusService, IDisposable
         catch { }
         
         return networkStatus;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private double GetCpuUsageWindows()
+    {
+        return _cpuCounter?.NextValue() ?? 0;
     }
 
     public void Dispose()

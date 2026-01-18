@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Mass.Core\Mass.Core.csproj" />
     <ProjectReference Include="..\Mass.Spec\Mass.Spec.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
 </Project>

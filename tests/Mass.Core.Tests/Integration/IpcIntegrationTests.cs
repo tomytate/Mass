@@ -2,6 +2,8 @@ using Mass.Core.Services;
 using Mass.Spec.Contracts.Ipc;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Moq;
+using Mass.Core.Interfaces;
 
 namespace Mass.Core.Tests.Integration;
 
@@ -13,6 +15,7 @@ public class IpcIntegrationTests : IDisposable
     public IpcIntegrationTests()
     {
         var services = new ServiceCollection();
+        services.AddSingleton<ILogService>(new Mock<ILogService>().Object);
         services.AddSingleton<IIpcService, IpcService>();
         _serviceProvider = services.BuildServiceProvider();
         _ipcService = _serviceProvider.GetRequiredService<IIpcService>();
@@ -134,7 +137,7 @@ public class IpcIntegrationTests : IDisposable
             
             Assert.Equal("test", stringVal);
             Assert.Equal(42, intVal);
-            Assert.Equal(true, boolVal);
+            Assert.True(boolVal);
 
             return new IpcResponse
             {

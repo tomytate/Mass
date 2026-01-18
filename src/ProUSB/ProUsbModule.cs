@@ -19,6 +19,9 @@ using ProUSB.Services.Profiles;
 using ProUSB.Services.PxeBoot;
 using ProUSB.Services.IsoDownload;
 using ProUSB.UI.ViewModels;
+using System.Runtime.Versioning;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace ProUSB;
 

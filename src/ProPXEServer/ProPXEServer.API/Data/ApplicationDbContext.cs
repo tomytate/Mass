@@ -12,6 +12,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser> {
     public DbSet<BootFile> BootFiles => Set<BootFile>();
     public DbSet<PxeEvent> PxeEvents => Set<PxeEvent>();
     public DbSet<BootConfiguration> BootConfigurations => Set<BootConfiguration>();
+    public DbSet<Agent> Agents => Set<Agent>();
     
     protected override void OnModelCreating(ModelBuilder builder) {
         base.OnModelCreating(builder);
@@ -28,6 +29,12 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser> {
         builder.Entity<BootConfiguration>()
             .HasIndex(bc => bc.MacAddress)
             .IsUnique();
+
+        builder.Entity<Agent>()
+            .HasIndex(a => a.MacAddress);
+            
+        builder.Entity<Agent>()
+            .HasIndex(a => a.LastHeartbeat);
     }
 }
 
