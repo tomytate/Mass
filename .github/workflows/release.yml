@@ -37,7 +37,7 @@ jobs:
         Compress-Archive -Path ./release/Dashboard/* -DestinationPath Mass-Dashboard.zip
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           Mass-Launcher-Win64.zip
