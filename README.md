@@ -85,13 +85,13 @@ Mass Suite employs a modular **Client-Server-Agent** topology:
 
 ```mermaid
 graph TD
-    User[Admin User] -->|Manages| Launcher[Mass.Launcher (Desktop)]
-    User -->|Views| Dashboard[Mass.Dashboard (Web)]
+    User[Admin User] -->|Manages| Launcher["Mass.Launcher (Desktop)"]
+    User -->|Views| Dashboard["Mass.Dashboard (Web)"]
     
-    Launcher -->|Controls| ProUSB[ProUSB Engine]
+    Launcher -->|Controls| ProUSB["ProUSB Engine"]
     Launcher -->|Configures| PXE[ProPXEServer]
     
-    PXE -->|Boots| ClientPC[Client Machine (Bare Metal)]
+    PXE -->|Boots| ClientPC["Client Machine (Bare Metal)"]
     
     subgraph "Managed Network"
         ClientPC -->|Installs| Agent[Mass.Agent]
