@@ -16,7 +16,7 @@ public record IsoLibraryEntry {
     public required string FileName { get; init; }
     public required long SizeBytes { get; init; }
     public required DateTime LastModified { get; init; }
-    public DateTime LastScanned { get; init; } = DateTime.Now;
+    public DateTime LastScanned { get; init; } = DateTime.UtcNow;
     public string? DetectedOs { get; init; }
     public string? DetectedVersion { get; init; }
     public bool IsBootable { get; init; }
@@ -71,7 +71,7 @@ public class IsoLibraryService {
                     FileName = fileInfo.Name,
                     SizeBytes = fileInfo.Length,
                     LastModified = fileInfo.LastWriteTime,
-                    LastScanned = DateTime.Now,
+                    LastScanned = DateTime.UtcNow,
                     DetectedOs = os,
                     DetectedVersion = version,
                     IsBootable = isValid,
@@ -112,7 +112,7 @@ public class IsoLibraryService {
         var entry = _library.FirstOrDefault(e => e.FilePath.Equals(isoPath, StringComparison.OrdinalIgnoreCase));
         if (entry != null) {
             _library.Remove(entry);
-            _library.Add(entry with { UseCount = entry.UseCount + 1, LastUsed = DateTime.Now });
+            _library.Add(entry with { UseCount = entry.UseCount + 1, LastUsed = DateTime.UtcNow });
             await SaveLibraryAsync();
         }
     }

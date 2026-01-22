@@ -43,6 +43,13 @@ public class Worker : BackgroundService
         }
     }
 
+    public override void Dispose()
+    {
+        _http.Dispose();
+        _cpuCounter?.Dispose();
+        base.Dispose();
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var mac = GetDeterministicMacAddress();

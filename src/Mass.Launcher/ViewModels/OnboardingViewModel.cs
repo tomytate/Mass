@@ -70,7 +70,7 @@ public partial class OnboardingViewModel : ViewModelBase
     [ObservableProperty]
     private string _nextButtonText = "Next";
 
-    private void CompleteOnboarding()
+    private async void CompleteOnboarding()
     {
         // Save that first run is done
         var settings = _configurationService.Get<GeneralSettings>("General");
@@ -80,7 +80,7 @@ public partial class OnboardingViewModel : ViewModelBase
         
         // Since Set takes a key path:
         _configurationService.Set("General.IsFirstRun", false);
-        _configurationService.SaveAsync().ConfigureAwait(false);
+        await _configurationService.SaveAsync();
 
         // Navigate to Home
         _navigationService.NavigateTo<HomeViewModel>();
