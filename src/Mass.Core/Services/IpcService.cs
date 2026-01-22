@@ -303,6 +303,22 @@ public class IpcService : IIpcService, IDisposable
 
     public void Dispose()
     {
-        StopServerAsync().Wait();
+        // Synchronous cleanup to prevent deadlocks from .Wait()
+        _serverCts?.Cancel();
+        _serverPipe?.Dispose();
+        _serverCts?.Dispose();
+        
+        if (_serverProcess != null && !_serverProcess.HasExited)
+        {
+            try
+            {
+                _serverProcess.Kill();
+                _serverProcess.WaitForExit(5000);
+            }
+            catch { }
+            _serverProcess.Dispose();
+        }
+        
+        GC.SuppressFinalize(this);
     }
 }

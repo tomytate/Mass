@@ -77,7 +77,10 @@ public class RemoteTelemetryService : ITelemetryService, IDisposable, IAsyncDisp
 
     public void Dispose()
     {
-        DisposeAsync().AsTask().Wait();
+        // Use synchronous cancellation instead of blocking Wait() to prevent deadlocks
+        _cts.Cancel();
+        _cts.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public async ValueTask DisposeAsync()

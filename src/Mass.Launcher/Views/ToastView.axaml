@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Mass.Launcher.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="200"
+             x:Class="Mass.Launcher.Views.ToastView"
+             x:DataType="vm:ToastViewModel">
+    
+    <ItemsControl ItemsSource="{Binding Toasts}" Margin="0,0,0,10">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="vm:ToastItemViewModel">
+                <Border CornerRadius="8" 
+                        Padding="16,12" 
+                        Margin="0,0,0,8"
+                        Background="{StaticResource BackgroundSecondaryBrush}"
+                        BorderBrush="{StaticResource AccentBrush}"
+                        BorderThickness="1"
+                        BoxShadow="0 4 12 0 #40000000">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{Binding Title}" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="14"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{Binding Message}" 
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Opacity="0.8"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
+                        <Button Grid.Column="1" 
+                                Content="✕" 
+                                FontSize="12"
+                                Background="Transparent"
+                                Foreground="{StaticResource TextSecondaryBrush}"
+                                Command="{Binding $parent[ItemsControl].DataContext.DismissCommand}"
+                                CommandParameter="{Binding}"
+                                VerticalAlignment="Top"
+                                Margin="8,0,0,0"
+                                Cursor="Hand"/>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+    </ItemsControl>
+</UserControl>

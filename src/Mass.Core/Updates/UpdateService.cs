@@ -4,10 +4,11 @@ using System.Text.Json;
 
 namespace Mass.Core.Updates;
 
-public class UpdateService : IUpdateService
+public class UpdateService : IUpdateService, IDisposable
 {
     private const string GitHubApiUrl = "https://api.github.com/repos/YourOrg/ProUSBMediaSuite/releases/latest";
     private readonly HttpClient _httpClient;
+    private bool _disposed;
 
     public string CurrentVersion { get; }
     public event EventHandler<UpdateStatus>? StatusChanged;
@@ -187,5 +188,15 @@ public class UpdateService : IUpdateService
         public string Name { get; set; } = string.Empty;
         public string BrowserDownloadUrl { get; set; } = string.Empty;
         public long Size { get; set; }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _httpClient.Dispose();
+            _disposed = true;
+        }
+        GC.SuppressFinalize(this);
     }
 }
