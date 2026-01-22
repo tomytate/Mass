@@ -5,7 +5,7 @@ using Mass.Spec.Contracts.Logging;
 
 namespace Mass.Core.Telemetry;
 
-public class LocalTelemetryService : ITelemetryService
+public class LocalTelemetryService : ITelemetryService, IDisposable
 {
     private readonly IConfigurationService _configService;
     private readonly ConcurrentQueue<TelemetryEvent> _eventBuffer = new();
@@ -103,5 +103,11 @@ public class LocalTelemetryService : ITelemetryService
         }
 
         return sanitized;
+    }
+
+    public void Dispose()
+    {
+        _flushTimer.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

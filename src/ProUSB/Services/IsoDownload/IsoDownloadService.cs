@@ -10,7 +10,7 @@ using ProUSB.Services.Logging;
 
 namespace ProUSB.Services.IsoDownload;
 
-public class IsoDownloadService {
+public class IsoDownloadService : IDisposable {
     private readonly FileLogger _logger;
     private readonly HttpClient _httpClient;
 
@@ -49,7 +49,7 @@ public class IsoDownloadService {
             var buffer = new byte[81920]; 
             long bytesDownloaded = 0;
             var stopwatch = Stopwatch.StartNew();
-            var lastUpdate = DateTime.Now;
+            var lastUpdate = DateTime.UtcNow;
 
             await using var contentStream = await response.Content.ReadAsStreamAsync(ct);
             await using var fileStream = File.Create(outputPath);
@@ -60,7 +60,7 @@ public class IsoDownloadService {
                 bytesDownloaded += bytesRead;
 
                 
-                if ((DateTime.Now - lastUpdate).TotalMilliseconds >= 200) {
+                if ((DateTime.UtcNow - lastUpdate).TotalMilliseconds >= 200) {
                     var speedBps = bytesDownloaded / stopwatch.Elapsed.TotalSeconds;
                     var remaining = totalBytes > 0 && speedBps > 0
                         ? TimeSpan.FromSeconds((totalBytes - bytesDownloaded) / speedBps)
@@ -75,7 +75,7 @@ public class IsoDownloadService {
                         Status = $"Downloading... {FormatBytes(bytesDownloaded)} / {FormatBytes(totalBytes)}"
                     });
 
-                    lastUpdate = DateTime.Now;
+                    lastUpdate = DateTime.UtcNow;
                 }
             }
 
@@ -162,6 +162,11 @@ public class IsoDownloadService {
             len = len / 1024;
         }
         return $"{len:0.##} {sizes[order]}";
+    }
+
+    public void Dispose() {
+        _httpClient.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 
