@@ -51,6 +51,11 @@ public class TelemetrySettings
 public class GeneralSettings
 {
     /// <summary>
+    /// Whether this is the first run of the application.
+    /// </summary>
+    public bool IsFirstRun { get; set; } = true;
+
+    /// <summary>
     /// Application language code (e.g., en-US).
     /// </summary>
     public string Language { get; set; } = "en-US";
