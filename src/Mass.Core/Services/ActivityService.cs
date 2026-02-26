@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Mass.Core.Interfaces;
 
 namespace Mass.Core.Services;
 
@@ -6,16 +7,18 @@ public class ActivityService : IActivityService
 {
     private readonly string _activityPath;
     private readonly string _favoritesPath;
+    private readonly ILogService _logger;
     private List<ActivityItem> _activities = new();
     private List<FavoriteItem> _favorites = new();
     private const int MaxHistory = 50;
 
-    public ActivityService()
+    public ActivityService(ILogService logger, string? storagePath = null)
     {
-        var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite");
-        Directory.CreateDirectory(appData);
-        _activityPath = Path.Combine(appData, "activity_history.json");
-        _favoritesPath = Path.Combine(appData, "favorites.json");
+        _logger = logger;
+        var basePath = storagePath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MassSuite");
+        Directory.CreateDirectory(basePath);
+        _activityPath = Path.Combine(basePath, "activity_history.json");
+        _favoritesPath = Path.Combine(basePath, "favorites.json");
         LoadData();
     }
 
@@ -100,8 +103,9 @@ public class ActivityService : IActivityService
                 _favorites = JsonSerializer.Deserialize<List<FavoriteItem>>(json) ?? new List<FavoriteItem>();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError("Failed to load activity data", ex, "ActivityService");
             // Ignore load errors, start fresh
             _activities = new List<ActivityItem>();
             _favorites = new List<FavoriteItem>();
@@ -115,7 +119,10 @@ public class ActivityService : IActivityService
             var json = JsonSerializer.Serialize(_activities);
             File.WriteAllText(_activityPath, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to save activities", ex, "ActivityService");
+        }
     }
 
     private void SaveFavorites()
@@ -125,6 +132,9 @@ public class ActivityService : IActivityService
             var json = JsonSerializer.Serialize(_favorites);
             File.WriteAllText(_favoritesPath, json);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError("Failed to save favorites", ex, "ActivityService");
+        }
     }
 }
