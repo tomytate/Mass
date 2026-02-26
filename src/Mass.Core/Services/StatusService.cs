@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.NetworkInformation;
+using Mass.Core.Interfaces;
 
 namespace Mass.Core.Services;
 
@@ -19,13 +20,16 @@ public class StatusService : IStatusService, IDisposable
 
     private readonly IIpcService? _ipcService;
     private readonly Mass.Core.Plugins.PluginLifecycleManager? _pluginManager;
+    private readonly ILogService? _logger;
 
     public StatusService(
         IIpcService ipcService,
-        Mass.Core.Plugins.PluginLifecycleManager pluginManager)
+        Mass.Core.Plugins.PluginLifecycleManager pluginManager,
+        ILogService? logger = null)
     {
         _ipcService = ipcService;
         _pluginManager = pluginManager;
+        _logger = logger;
         _currentProcess = Process.GetCurrentProcess();
 
         try
@@ -38,8 +42,9 @@ public class StatusService : IStatusService, IDisposable
 
             InitializeNetworkCounters();
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogError("Failed to initialize system counters", ex, "StatusService");
             // Suppress initialization errors for counters
         }
     }
@@ -143,7 +148,10 @@ public class StatusService : IStatusService, IDisposable
                 cpuUsage = GetCpuUsageWindows();
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError("Failed to get CPU usage", ex, "StatusService");
+        }
 
         var disks = new List<DiskInfo>();
         try
@@ -159,7 +167,10 @@ public class StatusService : IStatusService, IDisposable
                 });
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError("Failed to get disk info", ex, "StatusService");
+        }
 
         return new SystemStatus
         {
@@ -187,7 +198,10 @@ public class StatusService : IStatusService, IDisposable
                 _previousBytesReceived += stats.BytesReceived;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError("Failed to initialize network counters", ex, "StatusService");
+        }
     }
 
     private NetworkStatus GetNetworkStatus()
@@ -226,7 +240,10 @@ public class StatusService : IStatusService, IDisposable
             _previousBytesReceived = currentBytesReceived;
             _previousNetworkCheck = now;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger?.LogError("Failed to get network status", ex, "StatusService");
+        }
 
         return networkStatus;
     }
