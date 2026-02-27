@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mass.Core.Tests", "tests\Mass.Core.Tests\Mass.Core.Tests.csproj", "{EE8092BF-94E1-4BFF-B2B3-A4B16A15A698}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProUSB.Tests", "tests\ProUSB.Tests\ProUSB.Tests.csproj", "{D1E092BF-94E1-4BFF-B2B3-A4B16A15A699}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

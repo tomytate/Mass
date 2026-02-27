@@ -5,14 +5,14 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using ProUSB.Domain;
-using ProUSB.Services.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace ProUSB.Services.IsoCreation;
 
-public class IsoCreationService {
-    private readonly FileLogger _logger;
+public class IsoCreationService : IIsoCreationService {
+    private readonly ILogger<IsoCreationService> _logger;
     
-    public IsoCreationService(FileLogger logger) {
+    public IsoCreationService(ILogger<IsoCreationService> logger) {
         _logger = logger;
     }
     
@@ -23,10 +23,8 @@ public class IsoCreationService {
         IProgress<IsoCreationProgress> progress,
         CancellationToken ct
     ) {
-        _logger.Info($"Creating ISO from {device.FriendlyName}");
-        _logger.Info($"Output: {outputPath}");
-        _logger.Info($"Mode: {mode}");
-        _logger.Info($"Device size: {FormatBytes(device.TotalSize)}");
+        _logger.LogInformation("Creating ISO from {DeviceName}. Output: {Output}. Mode: {Mode}",
+            device.FriendlyName, outputPath, mode);
         
         return mode switch {
             IsoCreationMode.RawCopy => await CreateRawIsoAsync(device, outputPath, progress, ct),
@@ -46,21 +44,45 @@ public class IsoCreationService {
         
         var physicalPath = $"\\\\.\\PhysicalDrive{device.PhysicalIndex}";
         
-        _logger.Info($"Opening physical device: {physicalPath}");
+        _logger.LogInformation("Opening physical device: {PhysicalPath}", physicalPath);
         
-        var handle = CreateFile(
-            physicalPath,
-            FileAccess.Read,
-            FileShare.ReadWrite,
-            IntPtr.Zero,
-            FileMode.Open,
-            0,
-            IntPtr.Zero
-        );
+        // This is a Windows-specific P/Invoke.
+        // For strict cross-platform, this logic needs to be abstracted behind a platform-specific adapter.
+        // For now, wrapping in try/catch and platform check.
+
+        if (!OperatingSystem.IsWindows())
+        {
+             return new IsoCreationResult {
+                Success = false,
+                ErrorMessage = "Raw copy mode is currently only supported on Windows."
+            };
+        }
+
+        SafeFileHandle handle;
+        try
+        {
+            handle = CreateFile(
+                physicalPath,
+                FileAccess.Read,
+                FileShare.ReadWrite,
+                IntPtr.Zero,
+                FileMode.Open,
+                0,
+                IntPtr.Zero
+            );
+        }
+        catch (Exception ex)
+        {
+             _logger.LogError(ex, "Native error opening device handle");
+             return new IsoCreationResult {
+                Success = false,
+                ErrorMessage = $"Native error opening device: {ex.Message}"
+            };
+        }
         
         if(handle.IsInvalid) {
-            var error = $"Cannot open device {physicalPath}";
-            _logger.Error(error);
+            var error = $"Cannot open device {physicalPath}. Ensure you have Administrator privileges.";
+            _logger.LogError(error);
             return new IsoCreationResult {
                 Success = false,
                 ErrorMessage = error
@@ -71,11 +93,11 @@ public class IsoCreationService {
             using var source = new FileStream(handle, FileAccess.Read);
             using var dest = File.Create(outputPath);
             
-            var buffer = new byte[1024 * 1024];
+            var buffer = new byte[1024 * 1024]; // 1MB buffer
             int bytesRead;
             var lastUpdate = DateTime.Now;
             
-            _logger.Info("Starting raw sector copy...");
+            _logger.LogInformation("Starting raw sector copy...");
             
             while((bytesRead = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0) {
                 await dest.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
@@ -83,7 +105,7 @@ public class IsoCreationService {
                 
                 var now = DateTime.Now;
                 if((now - lastUpdate).TotalMilliseconds >= 500 || copiedBytes == totalBytes) {
-                    var percent = (double)copiedBytes / totalBytes * 100;
+                    var percent = totalBytes > 0 ? (double)copiedBytes / totalBytes * 100 : 0;
                     var elapsed = now - startTime;
                     var speed = elapsed.TotalSeconds > 0 ? copiedBytes / elapsed.TotalSeconds : 0;
                     
@@ -100,8 +122,7 @@ public class IsoCreationService {
             }
             
             var duration = DateTime.Now - startTime;
-            _logger.Info($"ISO creation completed in {duration.TotalSeconds:F1}s");
-            _logger.Info($"Total size: {FormatBytes(copiedBytes)}");
+            _logger.LogInformation("ISO creation completed in {Duration:F1}s. Total size: {Size}", duration.TotalSeconds, FormatBytes(copiedBytes));
             
             return new IsoCreationResult {
                 Success = true,
@@ -112,15 +133,15 @@ public class IsoCreationService {
             };
         }
         catch(Exception ex) {
-            _logger.Error($"ISO creation failed: {ex.Message}");
+            _logger.LogError(ex, "ISO creation failed");
             
             if(File.Exists(outputPath)) {
                 try {
                     File.Delete(outputPath);
-                    _logger.Info("Deleted incomplete ISO file");
+                    _logger.LogInformation("Deleted incomplete ISO file");
                 }
-                catch {
-                    _logger.Warn("Could not delete incomplete ISO file");
+                catch (Exception cleanupEx) {
+                    _logger.LogWarning(cleanupEx, "Could not delete incomplete ISO file");
                 }
             }
             
@@ -134,7 +155,7 @@ public class IsoCreationService {
         }
     }
     
-    private string FormatBytes(long bytes) {
+    private static string FormatBytes(long bytes) {
         string[] sizes = { "B", "KB", "MB", "GB", "TB" };
         double len = bytes;
         int order = 0;
@@ -156,5 +177,3 @@ public class IsoCreationService {
         IntPtr hTemplateFile
     );
 }
-
-
