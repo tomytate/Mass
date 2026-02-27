@@ -54,7 +54,7 @@ public class AgentsController : ControllerBase
 
             return Ok(new AgentRegistrationResponse
             {
-                AgentId = agent.Id,
+                AgentId = agent.Id.ToString(),
                 AuthToken = Guid.NewGuid().ToString(), // Placeholder token
                 HeartbeatIntervalSeconds = 30
             });
