@@ -34,7 +34,7 @@ public class ProPXEServerPlugin : IPlugin
         {
             // Locate the executable
             // Assuming standard build output structure relative to the plugin dll
-            var pluginDir = Path.GetDirectoryName(typeof(ProPXEServerPlugin).Assembly.Location) ?? AppContext.BaseDirectory;
+            var pluginDir = AppContext.BaseDirectory;
             // We need to find ProPXEServer.API.exe. 
             // In dev, it might be in a different path, but for now let's try to find it relative to the plugin or known path.
             
