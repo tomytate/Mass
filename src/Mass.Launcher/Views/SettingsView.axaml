@@ -13,7 +13,7 @@
             
             <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="GENERAL" Classes="SectionHeader"/>
+                    <TextBlock Text="GENERAL" Classes="sectionHeader"/>
                     
                     <StackPanel Spacing="8">
                         <TextBlock Text="Theme" FontSize="12" Opacity="0.7"/>
@@ -53,7 +53,7 @@
             
             <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="MODULES" Classes="SectionHeader"/>
+                    <TextBlock Text="MODULES" Classes="sectionHeader"/>
                     
                     <TextBlock Text="Available modules:" FontSize="12" Opacity="0.7"/>
                     
@@ -70,7 +70,7 @@
                                         </StackPanel>
                                         <ToggleSwitch Grid.Column="2" 
                                                       IsChecked="{Binding Manifest.Enabled}"
-                                                      Command="{Binding #Root.((vm:SettingsViewModel)DataContext).TogglePluginCommand}"
+                                                      Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).TogglePluginCommand}"
                                                       CommandParameter="{Binding}"/>
                                     </Grid>
                                 </Border>
@@ -82,7 +82,7 @@
 
             <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="SECURITY" Classes="SectionHeader"/>
+                    <TextBlock Text="SECURITY" Classes="sectionHeader"/>
                     
                     <Border Background="{StaticResource BackgroundPrimaryBrush}" CornerRadius="{StaticResource RadiusSM}" Padding="{StaticResource SpaceLG}">
                         <Grid ColumnDefinitions="Auto,*,Auto">
@@ -110,7 +110,7 @@
 
             <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="UPDATES" Classes="SectionHeader"/>
+                    <TextBlock Text="UPDATES" Classes="sectionHeader"/>
                     
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Grid.Column="0">
@@ -135,7 +135,7 @@
 
             <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="PRIVACY &amp; TELEMETRY" Classes="SectionHeader"/>
+                    <TextBlock Text="PRIVACY &amp; TELEMETRY" Classes="sectionHeader"/>
                     
                     <StackPanel Spacing="10">
                         <TextBlock Text="Help us improve Mass Suite by sending anonymous usage data." 

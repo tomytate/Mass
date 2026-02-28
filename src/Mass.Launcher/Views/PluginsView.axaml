@@ -16,7 +16,7 @@
             
             <Border Background="{StaticResource BackgroundSecondaryBrush}" CornerRadius="{StaticResource RadiusMD}" Padding="{StaticResource SpaceXL}">
                 <StackPanel Spacing="15">
-                    <TextBlock Text="INSTALLED PLUGINS" Classes="SectionHeader"/>
+                    <TextBlock Text="INSTALLED PLUGINS" Classes="sectionHeader"/>
                     
                     <ItemsControl ItemsSource="{Binding Plugins}">
                         <ItemsControl.ItemTemplate>
@@ -53,7 +53,7 @@
             
             <Border Background="#2D2D2D" CornerRadius="8" Padding="20">
                 <StackPanel Spacing="10">
-                    <TextBlock Text="PLUGIN DIRECTORIES" Classes="SectionHeader"/>
+                    <TextBlock Text="PLUGIN DIRECTORIES" Classes="sectionHeader"/>
                     <TextBlock Text="Plugins are loaded from:" FontSize="12" Opacity="0.7"/>
                     <TextBlock Text="%APPDATA%\MassSuite\plugins\" FontFamily="Consolas" FontSize="11" Opacity="0.6"/>
                     <TextBlock Text=".\plugins\" FontFamily="Consolas" FontSize="11" Opacity="0.6"/>

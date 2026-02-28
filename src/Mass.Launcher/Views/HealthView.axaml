@@ -53,7 +53,7 @@
 
             <!-- Network Activity -->
             <StackPanel Spacing="15">
-                <TextBlock Text="NETWORK ACTIVITY" Classes="SectionHeader" Opacity="0.7"/>
+                <TextBlock Text="NETWORK ACTIVITY" Classes="sectionHeader" Opacity="0.7"/>
                 <UniformGrid Columns="2" Margin="0,0,-15,0">
                     <Border Classes="CardBorder" Margin="0,0,15,0">
                         <StackPanel Spacing="10">
@@ -79,7 +79,7 @@
 
             <!-- Disk Usage -->
             <StackPanel Spacing="15">
-                <TextBlock Text="DISK USAGE" Classes="SectionHeader" Opacity="0.7"/>
+                <TextBlock Text="DISK USAGE" Classes="sectionHeader" Opacity="0.7"/>
                 <ItemsControl ItemsSource="{Binding CurrentStatus.Disks}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -115,7 +115,7 @@
             <!-- Service Status -->
             <StackPanel Spacing="15">
                 <Grid ColumnDefinitions="*,Auto">
-                    <TextBlock Grid.Column="0" Text="SERVICE STATUS" Classes="SectionHeader" Opacity="0.7"/>
+                    <TextBlock Grid.Column="0" Text="SERVICE STATUS" Classes="sectionHeader" Opacity="0.7"/>
                     <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="SecondaryButton"/>
                 </Grid>
                 
