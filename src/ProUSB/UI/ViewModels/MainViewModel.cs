@@ -29,7 +29,7 @@ public partial class MainViewModel : ViewModelBase {
     private readonly ParallelBurnService _burn;
     private readonly MultiDeviceBurnOrchestrator _multiDeviceBurner;
     private readonly BootVerificationService _verifier;
-    private readonly IsoCreationService _isoCreator;
+    private readonly IIsoCreationService _isoCreator;
     private readonly ProfileManager _profileManager;
     private readonly SmartHealthChecker _healthChecker;
     private readonly IDriverFactory _fac;
@@ -97,7 +97,7 @@ public partial class MainViewModel : ViewModelBase {
         ParallelBurnService b,
         MultiDeviceBurnOrchestrator multiDeviceBurner,
         BootVerificationService verifier,
-        IsoCreationService isoCreator,
+        IIsoCreationService isoCreator,
         ProfileManager profileManager,
         SmartHealthChecker healthChecker,
         IDriverFactory f,

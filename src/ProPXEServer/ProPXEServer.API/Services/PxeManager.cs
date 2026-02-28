@@ -16,11 +16,12 @@ public class PxeManager : IPxeManager
     public PxeManager(
         ApplicationDbContext db,
         ILogger<PxeManager> logger,
-        IConfiguration config)
+        IConfiguration config,
+        string? pxeRootPath = null)
     {
         _db = db;
         _logger = logger;
-        _pxeRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pxe"));
+        _pxeRoot = pxeRootPath ?? Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "pxe"));
     }
 
     public async Task<PxeUploadResult> UploadBootFileAsync(
@@ -39,7 +40,13 @@ public class PxeManager : IPxeManager
             var filePath = Path.Combine(targetDir, file.FileName);
 
             // Validate path to prevent traversal
-            if (!Path.GetFullPath(filePath).StartsWith(_pxeRoot, StringComparison.OrdinalIgnoreCase))
+            var fullPath = Path.GetFullPath(filePath);
+
+            // Ensure trailing separator for root to prevent partial match issues (e.g. /root matching /root-sibling)
+            var rootPathWithSeparator = _pxeRoot.EndsWith(Path.DirectorySeparatorChar) ? _pxeRoot : _pxeRoot + Path.DirectorySeparatorChar;
+
+            if (!fullPath.StartsWith(rootPathWithSeparator, StringComparison.OrdinalIgnoreCase) &&
+                !fullPath.Equals(_pxeRoot, StringComparison.OrdinalIgnoreCase)) // Allow root itself if needed, though rare for file upload
             {
                 return new PxeUploadResult
                 {

@@ -32,13 +32,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Mass.Core\Mass.Core.csproj" />
     <ProjectReference Include="..\ProUSB\ProUSB.csproj" />
-    <!-- Ensure these are built so plugin discovery finds them, but don't link them -->
-    <ProjectReference Include="..\ProPXEServer\ProPXEServer.Plugin\ProPXEServer.Plugin.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\ProPXEServer\ProPXEServer.API\ProPXEServer.API.csproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

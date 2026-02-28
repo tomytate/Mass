@@ -65,9 +65,7 @@ public class Bootstrapper
         services.AddSingleton<ITelemetryService, LocalTelemetryService>();
         services.AddSingleton<Mass.Core.Events.IEventBus, Mass.Core.Events.EventBus>();
         services.AddSingleton<Mass.Core.Messaging.IMediator, Mass.Core.Messaging.Mediator>();
-        services.AddSingleton<Mass.Core.Messaging.IMediator, Mass.Core.Messaging.Mediator>();
         services.AddSingleton<Mass.Core.State.IApplicationState, Mass.Core.State.ApplicationState>();
-        services.AddSingleton<Mass.Core.Services.INotificationService, Mass.Core.Services.NotificationService>();
 
         // Validation
         services.AddValidatorsFromAssemblyContaining<Mass.Core.Validation.AgentRegistrationRequestValidator>();

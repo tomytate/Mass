@@ -35,7 +35,7 @@ public static class ServiceCollectionExtensions
         s.AddSingleton<MultiDeviceBurnOrchestrator>();
         s.AddSingleton<BootVerificationService>();
         s.AddSingleton<SmartHealthChecker>();
-        s.AddSingleton<IsoCreationService>();
+        s.AddSingleton<IIsoCreationService, IsoCreationService>();
         s.AddSingleton<ProfileManager>();
         s.AddSingleton<PxeBootImageService>();
         s.AddSingleton<OsCatalogService>();

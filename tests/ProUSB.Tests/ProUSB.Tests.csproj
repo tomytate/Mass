@@ -1,10 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>14</LangVersion>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
@@ -19,8 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Mass.Core\Mass.Core.csproj" />
-    <ProjectReference Include="..\..\src\ProPXEServer\ProPXEServer.API\ProPXEServer.API.csproj" />
+    <ProjectReference Include="..\..\src\ProUSB\ProUSB.csproj" />
   </ItemGroup>
 
 </Project>
