@@ -15,7 +15,7 @@
             <!-- Resource Cards -->
             <UniformGrid Columns="3" Margin="0,0,-15,0">
                 <!-- CPU Card -->
-                <Border Classes="CardBorder" Margin="0,0,15,0">
+                <Border Classes="card" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="🧠" FontSize="24"/>
@@ -27,7 +27,7 @@
                 </Border>
 
                 <!-- Memory Card -->
-                <Border Classes="CardBorder" Margin="0,0,15,0">
+                <Border Classes="card" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="💾" FontSize="24"/>
@@ -39,7 +39,7 @@
                 </Border>
 
                 <!-- Uptime Card -->
-                <Border Classes="CardBorder" Margin="0,0,15,0">
+                <Border Classes="card" Margin="0,0,15,0">
                     <StackPanel Spacing="15">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="⏱️" FontSize="24"/>
@@ -55,7 +55,7 @@
             <StackPanel Spacing="15">
                 <TextBlock Text="NETWORK ACTIVITY" Classes="sectionHeader" Opacity="0.7"/>
                 <UniformGrid Columns="2" Margin="0,0,-15,0">
-                    <Border Classes="CardBorder" Margin="0,0,15,0">
+                    <Border Classes="card" Margin="0,0,15,0">
                         <StackPanel Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="⬆️" FontSize="16"/>
@@ -65,7 +65,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Classes="CardBorder" Margin="0,0,15,0">
+                    <Border Classes="card" Margin="0,0,15,0">
                         <StackPanel Spacing="10">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="⬇️" FontSize="16"/>
@@ -88,7 +88,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Classes="CardBorder" Margin="0,0,15,15" Width="300">
+                            <Border Classes="card" Margin="0,0,15,15" Width="300">
                                 <StackPanel Spacing="10">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -116,7 +116,7 @@
             <StackPanel Spacing="15">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" Text="SERVICE STATUS" Classes="sectionHeader" Opacity="0.7"/>
-                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="SecondaryButton"/>
+                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" Classes="secondary"/>
                 </Grid>
                 
                 <ItemsControl ItemsSource="{Binding ModuleStatuses}">
@@ -127,7 +127,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Classes="CardBorder" Margin="0,0,15,15" Width="200">
+                            <Border Classes="card" Margin="0,0,15,15" Width="200">
                                 <StackPanel Spacing="10">
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <TextBlock Text="{Binding Icon}" FontSize="20"/>
