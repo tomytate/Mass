@@ -31,7 +31,7 @@ public class PortablePathManager {
 
     private bool DetectPortableMode() {
         try {
-            string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string exeDir = AppContext.BaseDirectory;
             if (string.IsNullOrEmpty(exeDir)) {
                 return false;
             }
@@ -44,8 +44,8 @@ public class PortablePathManager {
     }
 
     private string GetPortableDataDirectory() {
-        string? exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        return Path.Combine(exeDir ?? Environment.CurrentDirectory, "Data");
+        string exeDir = AppContext.BaseDirectory;
+        return Path.Combine(exeDir, "Data");
     }
 
     private string GetInstalledDataDirectory() {
