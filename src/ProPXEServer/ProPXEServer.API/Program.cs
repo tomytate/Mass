@@ -184,6 +184,8 @@ app.MapGet("/boot/{**fileName}", async (string fileName, HttpBootService bootSer
 
 app.MapGet("/api/pxe/events", async (ApplicationDbContext db) => {
     return await db.PxeEvents
+        // Disable change tracking for read-only query to improve performance
+        .AsNoTracking()
         .OrderByDescending(e => e.Timestamp)
         .Take(100)
         .ToListAsync();
