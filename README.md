@@ -1,32 +1,32 @@
-# 🚀 Mass Suite
-
 <div align="center">
 
-![Mass Suite Banner](https://capsule-render.vercel.app/api?type=waving&color=0:512BD4,100:239120&height=300&section=header&text=Mass%20Suite&fontSize=90&animation=fadeIn&fontAlignY=38&desc=The%20Gold%20Standard%20for%20IT%20Deployment%20&%20Automation&descAlignY=55&descAlign=50)
+# 🚀 Mass Suite
+
+**The Gold Standard for IT Deployment & Automation**
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
+[![Avalonia UI](https://img.shields.io/badge/Avalonia_UI-Desktop-7B5EA7?style=for-the-badge)](https://avaloniaui.net/)
+[![Blazor](https://img.shields.io/badge/Blazor-Server-512BD4?style=for-the-badge&logo=blazor)](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-success?style=for-the-badge)](https://github.com/tomytate/Mass/actions)
-[![Tests](https://img.shields.io/badge/Tests-80%2F83%20Passing-success?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-80%2F83_Passing-success?style=for-the-badge)](tests/)
 
-**[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Contributing](#-contributing)**
+**[Features](#-features) · [Architecture](#-architecture) · [Quick Start](#-quick-start) · [Project Structure](#-project-structure) · [Contributing](#-contributing)**
 
 </div>
 
 ---
 
-## 💎 The Gold Standard in IT Management
+## 💡 Why Mass Suite?
 
-**Mass Suite** is a unified, premium ecosystem designed to replace the fragmented "tool belt" of IT professionals. It consolidates USB burning, Network Boot (PXE), and Remote Monitoring into a single, cohesive platform suitable for enterprise environments.
+Mass Suite replaces the fragmented tool belt of IT professionals. No more juggling Rufus, Tftpd32, and ad-hoc scripts. One platform handles USB creation, network booting, remote monitoring, and endpoint automation — with a unified design system that looks as good as it performs.
 
-No more switching between Rufus, Tftpd32, and random scripts. Mass Suite does it all, with style.
-
-### 🌟 Why Mass Suite?
-- **Unified**: One dashboard for all your deployment needs.
-- **Modern**: Built on the bleeding edge of **.NET 10** and **Avalonia UI**.
-- **Extensible**: A robust Plugin and Scripting (Lua) engine.
-- **Beautiful**: A "Gold Standard" UI that looks as good as it performs.
+| Pillar | What it means |
+|--------|---------------|
+| **Unified** | One dashboard for all deployment tasks |
+| **Modern** | Built on **.NET 10** and **Avalonia UI** — bleeding-edge stack |
+| **Extensible** | Plugin system and Lua scripting without recompiling core |
+| **Observable** | OpenTelemetry built-in for enterprise-grade tracing |
 
 ---
 
@@ -38,20 +38,20 @@ No more switching between Rufus, Tftpd32, and random scripts. Mass Suite does it
 
 ### 💾 ProUSB
 **The Ultimate Bootable Media Tool**
-- **ISO to USB**: Burn Windows/Linux ISOs with zero friction.
-- **Parallel Burning**: Write to multiple drives simultaneously.
-- **Smart Formatting**: Auto-handles UEFI/BIOS and large files (Split WIM).
-- **Validation**: Verifies integrity after every write.
+- Burn Windows/Linux ISOs to USB with zero friction
+- Write to multiple drives simultaneously (parallel burning)
+- Auto-handles UEFI/BIOS and large files (Split WIM)
+- Verifies write integrity after every operation
 
 </td>
 <td width="50%">
 
 ### 🌐 ProPXEServer
 **Network Boot Reimagined**
-- **Zero-Touch Deployment**: Boot machines over LAN seamlessly.
-- **Integrated Stack**: Built-in DHCP, TFTP, and HTTP servers. No external dependencies.
-- **Secure**: Authentication and Policy enforcement for network boots.
-- **Fast**: Optimized file transfer protocols (HTTP Boot support).
+- Zero-touch network deployment over LAN
+- Integrated DHCP, TFTP, and HTTP servers — no external dependencies
+- Authentication and policy enforcement for network boots
+- HTTP Boot support for optimized large-file transfers
 
 </td>
 </tr>
@@ -59,19 +59,19 @@ No more switching between Rufus, Tftpd32, and random scripts. Mass Suite does it
 <td width="50%">
 
 ### 🤖 Mass.Agent
-**Intelligent Endpoint Monitoring**
-- **Real-Time Telemetry**: Monitor CPU, RAM, and Uptime instantly.
-- **Command & Control**: Execute remote commands (PowerShell/Bash) via SignalR.
-- **Workflow Engine**: Run complex automation sequences (e.g., "Install Office -> Join Domain -> Reboot").
+**Intelligent Endpoint Agent**
+- Real-time telemetry: CPU, RAM, uptime
+- Remote command execution (PowerShell/Bash) via SignalR
+- Workflow engine for complex automation sequences (Install → Join Domain → Reboot)
 
 </td>
 <td width="50%">
 
-### 🧩 Extensibility
-**Built for Developers**
-- **Plugin System**: Add new features without recompiling the core.
-- **Lua Scripting**: Customize logic with lightweight scripts.
-- **OpenTelemetry**: Enterprise-grade observability and tracing built-in.
+### 📊 Mass.Dashboard
+**Blazor Server Web Portal**
+- Centralized view of all managed endpoints
+- Agent telemetry aggregation and status monitoring
+- Accessible from any browser on the network
 
 </td>
 </tr>
@@ -79,23 +79,24 @@ No more switching between Rufus, Tftpd32, and random scripts. Mass Suite does it
 
 ---
 
-## 🏗 Architecture
+## 🏗️ Architecture
 
-Mass Suite employs a modular **Client-Server-Agent** topology:
+Mass Suite uses a modular **Client–Server–Agent** topology:
 
 ```mermaid
 graph TD
-    User[Admin User] -->|Manages| Launcher["Mass.Launcher (Desktop)"]
-    User -->|Views| Dashboard["Mass.Dashboard (Web)"]
-    
+    Admin[IT Administrator] -->|Manages| Launcher["Mass.Launcher (Avalonia Desktop)"]
+    Admin -->|Monitors| Dashboard["Mass.Dashboard (Blazor Server)"]
+
     Launcher -->|Controls| ProUSB["ProUSB Engine"]
-    Launcher -->|Configures| PXE[ProPXEServer]
-    
-    PXE -->|Boots| ClientPC["Client Machine (Bare Metal)"]
-    
-    subgraph "Managed Network"
-        ClientPC -->|Installs| Agent[Mass.Agent]
-        Agent -->|Reports Telemetry| Dashboard
+    Launcher -->|Configures| PXE["ProPXEServer"]
+
+    PXE -->|Boots over LAN| Target["Bare Metal Machine"]
+
+    subgraph "Managed Endpoints"
+        Target -->|Agent installed| Agent["Mass.Agent"]
+        Agent -->|Reports telemetry| Dashboard
+        Agent -->|Executes commands| Workflows["Automation Workflows"]
     end
 ```
 
@@ -104,50 +105,93 @@ graph TD
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **OS**: Windows 10/11 or Windows Server.
-- **Runtime**: [.NET 10 Runtime](https://dotnet.microsoft.com/download) (or SDK to build).
-- **Privileges**: Administrator rights are required for USB formatting and Port binding.
 
-### 📦 Installation
+| Requirement | Details |
+|-------------|----------|
+| **OS** | Windows 10/11 or Windows Server |
+| **Runtime** | [.NET 10 Runtime](https://dotnet.microsoft.com/download) (or SDK to build from source) |
+| **Privileges** | Administrator rights required for USB formatting and port binding |
 
-#### Option A: Build from Source
+### Build from Source
+
 ```bash
 git clone https://github.com/tomytate/Mass.git
 cd Mass
 dotnet build
 ```
 
-#### Option B: Run the Launcher
+### Run a Component
+
 ```bash
-cd src/Mass.Launcher
-dotnet run
+# Desktop launcher (Avalonia UI)
+dotnet run --project src/Mass.Launcher
+
+# Web dashboard (Blazor Server)
+dotnet run --project src/Mass.Dashboard
+
+# CLI tool
+dotnet run --project src/Mass.CLI
+
+# Background agent
+dotnet run --project src/Mass.Agent
 ```
 
-### ⚡ Common Commands
+---
 
-| Component | Command | Description |
-|-----------|---------|-------------|
-| **Launcher** | `dotnet run --project src/Mass.Launcher` | Starts the main Desktop UI. |
-| **CLI** | `dotnet run --project src/Mass.CLI` | Runs the command-line tool. |
-| **Agent** | `dotnet run --project src/Mass.Agent` | Starts the background agent service. |
+## 🗂️ Project Structure
+
+```
+Mass/
+├── src/
+│   ├── Mass.Core/           # Shared business logic, workflow engine, plugin infrastructure
+│   ├── Mass.Spec/           # Shared contracts, DTOs, and interfaces
+│   ├── Mass.Launcher/       # Avalonia UI desktop entry point
+│   ├── Mass.Dashboard/      # Blazor Server web admin portal
+│   ├── Mass.Agent/          # Remote deployment agent (SignalR connectivity)
+│   ├── Mass.CLI/            # Command-line interface for scripting & automation
+│   ├── Mass.UI.Shared/      # Unified design system components
+│   ├── ProUSB/              # USB bootable media creation engine
+│   └── ProPXEServer/        # Network boot server (DHCP + TFTP + HTTP)
+├── tests/                   # Test projects (80/83 passing)
+├── docs/                    # Architecture, API reference, operations manual
+├── scripts/                 # Utility scripts
+├── workflows/               # CI/CD workflow definitions
+├── Mass.sln                 # Solution file
+├── global.json              # .NET SDK version pin (10.0.100)
+└── Directory.Build.props    # Shared MSBuild properties
+```
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) before opening a pull request.
 
-### Project Structure
-- `src/Mass.Core`: Shared business logic and abstractions.
-- `src/Mass.Launcher`: The main Avalonia UI entry point.
-- `src/ProUSB`: The USB burning engine.
-- `src/ProPXEServer`: The network boot server API and logic.
+### Development Setup
+
+```bash
+git clone https://github.com/tomytate/Mass.git
+cd Mass
+dotnet build
+dotnet test
+```
+
+See [docs/](docs/) for architecture documentation, API reference, security guidelines, and the operations manual.
 
 ---
 
-## 📄 License
+## 📄 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a full history of releases.
+
+---
+
+## 📜 License
+
 Released under the [MIT License](LICENSE).
 
+---
+
 <div align="center">
-    <b>Built with ❤️ by Tomy Tolledo</b>
+  <b>Built with ❤️ by Tomy Tate</b>
 </div>
