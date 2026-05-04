@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Mass Suite Banner](https://capsule-render.vercel.app/api?type=waving&color=0:512BD4,100:239120&height=300&section=header&text=Mass%20Suite&fontSize=90&animation=fadeIn&fontAlignY=38&desc=The%20Gold%20Standard%20for%20IT%20Deployment%20&%20Automation&descAlignY=55&descAlign=50)
+![Mass Suite Banner](https://capsule-render.vercel.app/api?type=waving&color=0:512BD4,100:239120&height=300&section=header&text=Mass%20Suite&fontSize=90&animation=fadeIn&fontAlignY=38&desc=The%20Gold%20Standard%20for%20IT%20Deployment%20%26%20Automation&descAlignY=55&descAlign=50)
 
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14-239120?style=for-the-badge&logo=csharp)](https://docs.microsoft.com/dotnet/csharp/)
@@ -86,7 +86,7 @@ Mass Suite employs a modular **Client-Server-Agent** topology:
 ```mermaid
 graph TD
     User[Admin User] -->|Manages| Launcher["Mass.Launcher (Desktop)"]
-    User -->|Views| Dashboard["Mass.Dashboard (Web)"]
+    User -->|Views| Dashboard["Mass.Dashboard (Blazor Server)"]
     
     Launcher -->|Controls| ProUSB["ProUSB Engine"]
     Launcher -->|Configures| PXE[ProPXEServer]
@@ -130,6 +130,7 @@ dotnet run
 | **Launcher** | `dotnet run --project src/Mass.Launcher` | Starts the main Desktop UI. |
 | **CLI** | `dotnet run --project src/Mass.CLI` | Runs the command-line tool. |
 | **Agent** | `dotnet run --project src/Mass.Agent` | Starts the background agent service. |
+| **Dashboard** | `dotnet run --project src/Mass.Dashboard` | Starts the Blazor Server web dashboard. |
 
 ---
 
@@ -138,10 +139,18 @@ dotnet run
 We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to get started.
 
 ### Project Structure
-- `src/Mass.Core`: Shared business logic and abstractions.
-- `src/Mass.Launcher`: The main Avalonia UI entry point.
-- `src/ProUSB`: The USB burning engine.
-- `src/ProPXEServer`: The network boot server API and logic.
+```
+src/
+├── Mass.Core/          # Shared business logic and abstractions
+├── Mass.Spec/          # Shared contracts, DTOs and interfaces
+├── Mass.Launcher/      # Main Avalonia UI desktop entry point
+├── Mass.Dashboard/     # Blazor Server web admin portal
+├── Mass.Agent/         # Remote deployment agent (SignalR)
+├── Mass.CLI/           # Command-line interface
+├── Mass.UI.Shared/     # Unified design system components
+├── ProUSB/             # USB burning engine
+└── ProPXEServer/       # Network boot server API and logic
+```
 
 ---
 
@@ -149,5 +158,5 @@ We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) 
 Released under the [MIT License](LICENSE).
 
 <div align="center">
-    <b>Built with ❤️ by Tomy Tolledo</b>
+    <b>Built with ❤️ by Tomy Tate</b>
 </div>
